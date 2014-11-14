@@ -23,7 +23,8 @@ Wrapper.prototype.setSize = function( w, h ) {
 
 Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 
-	var moduleConstructor = require('./modules/' + moduleType + '/module');
+	var moduleConstructor = require('./modules/' + moduleType + '/module.js').Constructor;
+
 	var module = new moduleConstructor();
 
 	module.init();

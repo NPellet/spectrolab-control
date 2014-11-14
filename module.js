@@ -60,4 +60,4 @@ var modulePrototype = {
 }
 
 
-exports = modulePrototype;
+module.exports = modulePrototype;

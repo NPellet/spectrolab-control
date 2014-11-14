@@ -6,6 +6,7 @@ var keithley = require("../../../keithley/controller"),
 
 var keithley = new keithley( config.instruments.keithley );
 
+
 renderer
 	.getModuleByName("keithleyConnect")
 	.assignKeithley( keithley );

@@ -10,4 +10,4 @@ public.uniqueId = function() {
 
 }
 
-exports = public;
+module.exports = public;

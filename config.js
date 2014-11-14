@@ -9,4 +9,4 @@ var config = {
 };
 
 
-exports = config;
+module.exports = config;

@@ -4,6 +4,8 @@ var WebSocketServer = require('ws').Server,
 	wss = new WebSocketServer( { port: 8080 } ),
 	_connected = false;
 
+var callbacks = {};
+
 wss.on('connection', function( ws ) {
 
 	_connected = true;
@@ -43,4 +45,4 @@ var publicMethods = {
 	}
 }
 
-exports = publicMethods;
+module.exports = publicMethods;

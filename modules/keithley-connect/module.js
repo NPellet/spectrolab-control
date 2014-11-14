@@ -1,9 +1,10 @@
 
-var module = require('../../module');
+var moduleProto = require('../../module'),
+	extend = require('extend');
 
 var KeithleyConnect = function() {};
 
-KeithleyConnect.prototype = $.extend( {}, module, {
+KeithleyConnect.prototype = extend( {}, moduleProto, {
 
 	assignKeithley: function( keithley ) {
 
@@ -41,4 +42,6 @@ KeithleyConnect.prototype = $.extend( {}, module, {
 
 });
 
-module.exports = KeithleyConnect;
+exports = module.exports = {
+	Constructor: KeithleyConnect
+}

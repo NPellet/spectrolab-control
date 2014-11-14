@@ -13,7 +13,7 @@ renderer.addWrapper = function( name ) {
 		throw "A wrapper with the same name (" + name + ") already exists";
 	}
 
-	return wrappers[ name ] = new wrapper;
+	return wrappers[ name ] = new wrapper( this );
 }
 
 renderer.render = function( ) {
@@ -68,4 +68,4 @@ renderer.getModuleByName = function( moduleName ) {
 	return allModulesByName[ moduleName ];
 }
 
-module.exports = renderer
+module.exports = renderer;

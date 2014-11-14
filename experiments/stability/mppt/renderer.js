@@ -15,3 +15,5 @@ wrapperGraphs.addModule("graph", "voltage");
 wrapperGraphs.addModule("graph", "power");
 
 */
+
+module.exports = renderer;
