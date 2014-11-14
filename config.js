@@ -1,11 +1,12 @@
-var params = { 
+var config = { 
 
-	'keithley': {
-		address: '',
-		port: ''
+	instruments: {
+		keithley: {
+			address: '169.254.0.1',
+			port: '23'
+		}
 	}
-
 };
 
 
-module.exports = params;
+exports = config;

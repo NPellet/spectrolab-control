@@ -6,21 +6,24 @@ var Wrapper = function( renderer ) {
 
 Wrapper.prototype.setTitle = function( title ) {
 	this.title = title;
+	return this;
 }
 
 Wrapper.prototype.setPosition = function( left, top ) {
 	this.left = left || 1;
 	this.top = top || 1;	
+	return this;
 }
 
 Wrapper.prototype.setSize = function( w, h ) {
 	this.width = w || 10;
 	this.height = h || 10;
+	return this;
 }
 
 Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 
-	var moduleConstructor = require('/modules/' + moduleType + '/module');
+	var moduleConstructor = require('./modules/' + moduleType + '/module');
 	var module = new moduleConstructor();
 
 	module.init();

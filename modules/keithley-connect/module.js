@@ -1,6 +1,5 @@
 
-var module = require('modules/module'),
-	util = require('/util');
+var module = require('../../module');
 
 var KeithleyConnect = function() {};
 

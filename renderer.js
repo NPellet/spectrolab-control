@@ -1,9 +1,10 @@
 
-var wrapper = require("/wrapper"),
+var wrapper = require("./wrapper"),
 	fs = require('fs');
 
 var renderer = {};
 
+var wrappers = {};
 var allModulesByName = {};
 
 renderer.addWrapper = function( name ) {
@@ -66,4 +67,5 @@ renderer.getModuleByName = function( moduleName ) {
 
 	return allModulesByName[ moduleName ];
 }
+
 module.exports = renderer

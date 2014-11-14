@@ -1,7 +1,7 @@
 
 
-var keithley = require("/keithley/controller"),
-	config = require("/config"),
+var keithley = require("../../../keithley/controller"),
+	config = require("../../../config"),
 	renderer = require("./renderer");
 
 var keithley = new keithley( config.instruments.keithley );

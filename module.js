@@ -1,7 +1,7 @@
 
-var stream = require("/stream"),
+var stream = require("./stream"),
 	fs = require('fs'),
-	util = require("/util");
+	util = require("./util");
 
 var liquid = require("liquid-node"),
 	lengine = new liquid.Engine
@@ -21,7 +21,7 @@ var modulePrototype = {
 
 	assignId: function() {
 		this.id = util.uniqueId();
-	}
+	},
 
 
 	streamOut: function( message ) {
