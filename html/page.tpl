@@ -2,7 +2,10 @@
 <html>
 <head>
 
+
+<link rel="stylesheet" href="css/style.css" />
 <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="http://www.jsgraph.org/js/jsgraph/jsgraph.js"></script>
 
 </head>
 
@@ -10,7 +13,7 @@
 <script>
 
 
-var ws = new WebSocket('ws://127.0.0.1:8080');
+var ws = new WebSocket('ws://128.179.148.93:8080');
 
 ws.onopen = function (event) {
 	
@@ -18,13 +21,42 @@ ws.onopen = function (event) {
 };
 
 ws.onmessage = function( event ) {
-	console.log( event.data );
+	
 	var data = JSON.parse( event.data );
 
 	if( window.io._callbacks[ data.moduleid ] ) {
 
 		window.io._callbacks[ data.moduleid ].map( function( callback ) {
-			callback( data.message );
+
+			if( data.message.method == "lock" ) {
+
+				if( data.message.value ) {
+
+					var dom = $( "#module-" + data.moduleid );
+
+					if( dom.find( '.overlay' ) ) {
+						return;
+					}
+
+					dom.prepend( $( "<div />" ).addClass("overlay").css( {
+
+						top: dom.position().top,
+						left: dom.position().left,
+
+						width: dom.width(),
+						height: dom.height()
+
+					} ) );
+
+				} else {
+
+					dom.find('.overlay').remove();
+
+				}
+			} else {
+
+				callback( data.message );
+			}
 		} );
 	}
 }

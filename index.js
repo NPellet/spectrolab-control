@@ -1,21 +1,16 @@
-
+/*
 var keithley = require( "./keithley/controller" );
 var keithley = new keithley( {
 	port: 5030,
 	host: '128.178.56.5'
 } );
 
-keithley.connect( function() {
+keithley.connect( function() { } );
 
-} );
-
-
-/*
-
+*/
 process.argv.forEach( function( val, index, array ) {
   
   val = val.split('=');
-
   switch( val[ 0 ] ) {
   	
   	case 'experiment':
@@ -24,4 +19,4 @@ process.argv.forEach( function( val, index, array ) {
   	break;
   }
 
-});*/
+});

@@ -37,11 +37,50 @@ renderer.render = function( ) {
 		// TEMP
 		var http = require('http');
 		http.createServer(function (req, res) {
+/*
+		    if(req.url.indexOf('.html') != -1){ //req.url has the pathname, check if it conatins '.html'
+
+		      fs.readFile(__dirname + '/public/chatclient.html', function (err, data) {
+		        if (err) console.log(err);
+		        res.writeHead(200, {'Content-Type': 'text/html'});
+		        res.write(data);
+		        res.end();
+		      });
+
+		    }
+*/
+
+
+		    if(req.url.indexOf('.js') != -1){ //req.url has the pathname, check if it conatins '.js'
+
+		      fs.readFile(__dirname + '/public/' + req.url, function (err, data) {
+		        if (err) console.log(err);
+		        res.writeHead(200, {'Content-Type': 'text/javascript'});
+		        res.write(data);
+		        res.end();
+		      });
+
+		      return;
+
+		    }
+
+		    if(req.url.indexOf('.css') != -1){ //req.url has the pathname, check if it conatins '.css'
+
+		      fs.readFile(__dirname + '/public/' + req.url, function (err, data) {
+		        if (err) console.log(err);
+		        res.writeHead(200, {'Content-Type': 'text/css'});
+		        res.write(data);
+		        res.end();
+		      });
+
+		  	  return;
+
+		    }
 
 		  res.writeHead(200, {'Content-Type': 'text/html'});
 		  res.end( html );
 
-		}).listen(1337, '127.0.0.1');
+		}).listen(1337, '0.0.0.0');
 		// END TEMP
 
 	});

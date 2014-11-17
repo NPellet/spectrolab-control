@@ -13,7 +13,7 @@ wss.on('connection', function( ws ) {
 
     ws.on('message', function( message ) {
         
-        console.log('Received: ' + message );
+//        console.log('Received: ' + message );
 
     	var jsonParsed = JSON.parse( message );
 
@@ -44,9 +44,6 @@ var publicMethods = {
 			message: message
 		}
 
-
-
-
 		_ws.send( JSON.stringify( json ) );
 	},
 
@@ -54,6 +51,10 @@ var publicMethods = {
 
 		callbacks[ moduleid ] = callbacks[ moduleid ] || [ ];
 		callbacks[ moduleid ].push( callback );
+	},
+
+	isReady: function() {
+		return ! _connected;
 	}
 }
 

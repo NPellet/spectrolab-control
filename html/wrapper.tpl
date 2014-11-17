@@ -1,9 +1,13 @@
-<div class="wrapper">
+<div class="wrapper" style="top: {{ position.top }}px; left: {{ position.left }}px; width: {{ size.width }}px; height: {{ size.height }}px;">
+
+<div class="title">{{ title }}</div>
+<div class="content">
 
 {% for module in html %}
 	{{ module }}
 {% endfor %}
 
+</div>
 </div>
 <script type="text/javascript" language="javascript">
 

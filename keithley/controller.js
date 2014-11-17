@@ -1,8 +1,11 @@
 
-var net = require('net');
+var net = require('net'),
+	extend = require('extend'),
+	fs = require('fs');
 
 var Keithley = function( params ) {
 	this.params = params;
+	this.connected = false;
 };
 
 Keithley.prototype = {};
@@ -16,44 +19,17 @@ Keithley.prototype.connect = function( callback ) {
 			allowHalfOpen: true
 		});
 
+
 	this.socket = socket;
 
 	socket.on('connect', function() {
 
+		self.uploadScripts();
 
- 		socket.write("eventlog.enable = 1;errorqueue.clear();\r\n");
-//		socket.write("smua.source.output = smua.OUTPUT_ON;");
-//	 	socket.write("print( smua.measure.i() );\r\n", 'ascii');
+		self.connected = true;
 
-		socket.write("loadscript NormanScripts\r\n");
-
-			socket.write("function sourcev(channel,bias,stime,complianceV,complianceI)\r\n");	// SOURCEV()
-				socket.write("if channel == nil then channel = smua end\r\n");	// Default to smua if no smu is specified.
-				socket.write("if bias == nil then bias = 0 end\r\n");	// Default to 0.0 A
-				socket.write("if stime == nil then stime = 0.04 end\r\n");	// Default settlingtime = 0.04 s
-				socket.write("if complianceV == nil then complianceV = 1 end\r\n");	// Default compliance = 1 V
-				socket.write("channel.source.func = channel.OUTPUT_DCVOLTS\r\n");
-				socket.write("channel.source.levelv=bias\r\n");
-				socket.write("channel.source.rangev=complianceV\r\n");
-				socket.write("channel.measure.rangei = complianceI\r\n");
-				socket.write("channel.source.limiti = complianceI\r\n");
-				socket.write("channel.source.output = channel.OUTPUT_ON\r\n");
-				socket.write("delay(stime)\r\n");
-				socket.write("current=channel.measure.i()\r\n");
-				socket.write("channel.source.output = channel.OUTPUT_OFF\r\n");
-				socket.write("printnumber (current)\r\n");	// Binary output
-			socket.write("end\r\n");
-
-		socket.write("endscript\r\n");
-
-		socket.write("NormanScripts.save()\r\n");
-		socket.write("NormanScripts()\r\n");
-
-		socket.write("sourcev(smua, 0.1, 1, 1, 1 );\r\n");
-
-		socket.on('data', function( data ) {
-			console.log( data.toString( 'ascii' ) );
-		});
+		socket.write("SpetroscopyScripts();\r\n");
+		//socket.write("sourcev(smua, 0.1, 1, 1, 1 );\r\n");
 	});
 
 	if( callback ) {
@@ -61,10 +37,133 @@ Keithley.prototype.connect = function( callback ) {
 	}
 };
 
-Keithley.prototype.sourceV = function( bias, options ) {
+var methods = {
+
+	'sourcev': {
+		defaults: { 
+			bias: 0,
+			channel: 'smua',
+			complianceV: 1,
+			complianceI: 1,
+			settlingTime: 1	
+		},
+
+		method: 'sourcev',
+		parameters: function( options ) {
+			return [ options.channel, options.bias, options.settlingTime, options.complianceV, options.complianceI ]
+		}
+	},
+
+
+	'sweepIV': {
+		defaults: { 
+			channel: 'smua',
+			startV: 0,
+			stopV: 1,
+			settlingTime: 0.02,
+			timeDelay: 0,
+			complianceI: 0.01,
+			nbPoints: 100
+		},
+
+		method: 'LinVSweepMeasureI',
+		parameters: function( options ) {
+
+			return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints ]
+		},
+
+		processing: function( data ) {
+			
+			var current, voltage, dataFinal = [];
+
+			data = data.split(/,[\t\r\s\n]*/);
+		
+			//data.pop();
+		
+			for( var i = 0; i < data.length; i += 2 ) {
+							
+
+				dataFinal.push( parseFloat( data[ i + 1] ) );
+				dataFinal.push( parseFloat( data[ i ] ) );
+				
+			}
+
+		
+
+			return dataFinal;
+		}
+	},
+
 
 }
 
 
+for( var i in methods ) {
+
+	Keithley.prototype[ i ] = function( options, callback ) {
+
+		this._callMethod( methods[ i ], options, callback );
+	}
+}
+
+
+Keithley.prototype._callMethod = function( method, options, callback ) {
+
+	var module = this;
+	options = extend( true, {}, method.defaults, options );
+
+	if( ! this.connected ) {
+		throw "Keithley is not connected";
+	}
+
+	if( typeof options == "function" ) {
+		callback = options;
+		options = {};
+	}
+	
+
+	function end( data ) {
+
+		if( method.processing ) {
+			data = method.processing( data );
+		}
+
+		callback( data );
+	}			
+
+	function listen( prevData ) {
+
+		module.socket.once( 'data', function( data ) {
+			data = prevData + data.toString('ascii');
+			if( data.indexOf("\n") == -1 ) {
+				listen( data );
+			} else {
+				end( data );
+			}
+		} );
+	}
+
+	listen("");
+
+	this.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
+}
+
+
+Keithley.prototype.uploadScripts = function() {
+
+	this.socket.write("loadscript SpetroscopyScripts\r\n");
+
+		// Voltage sourcing, current measurement
+	var files = fs.readdirSync("./keithley/scripts");
+	console.log( files );
+
+	for( var i = 0; i < files.length ; i ++ ) {
+		this.socket.write( fs.readFileSync( "./keithley/scripts/" + files[ i ] ) );
+		this.socket.write("\r\n");
+	}
+
+	this.socket.write("endscript\r\n");
+	this.socket.write("SpetroscopyScripts.save()\r\n");
+}
 
 module.exports = Keithley;

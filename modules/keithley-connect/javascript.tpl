@@ -10,9 +10,9 @@
 	} ); 
 
 
-	stream.onMessage( "{{ module.id }}", function( data ) {
+	stream.onMessage( "{{ module.id }}", function( method ) {
 
-		switch( data ) {
+		switch( message.method ) {
 
 			case 'pending':
 
