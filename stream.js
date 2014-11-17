@@ -9,33 +9,45 @@ var callbacks = {};
 wss.on('connection', function( ws ) {
 
 	_connected = true;
+	_ws = ws;
+
     ws.on('message', function( message ) {
         
+        console.log('Received: ' + message );
+
     	var jsonParsed = JSON.parse( message );
 
-    	if( jsonParsed.moduleId && callbacks[ jsonParsed.moduleid ] ) {
+    	if( jsonParsed.moduleid && callbacks[ jsonParsed.moduleid ] ) {
 
     		callbacks[ jsonParsed.moduleid ].map( function( func ) {
 
-    			func( message );
+    			func( jsonParsed.message );
     		} );
     	}
 
         publicMethods.onMessage( message );
     });
 
-    ws.send('something');
+    //ws.send('something');
 });
 
 var publicMethods = {
 
-	write: function( message ) {
+	write: function( moduleid, message ) {
 
 		if( ! _connected ) {
 			throw "No websocket connection established";
 		}
 
-		ws.send( message );
+		var json = {
+			moduleid: moduleid,
+			message: message
+		}
+
+
+
+
+		_ws.send( JSON.stringify( json ) );
 	},
 
 	onMessage: function( moduleid, callback ) {

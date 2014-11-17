@@ -2,6 +2,11 @@
 var wrapper = require("./wrapper"),
 	fs = require('fs');
 
+var liquid = require("liquid-node"),
+	lengine = new liquid.Engine
+
+var Promise = require('bluebird');
+
 var renderer = {};
 
 var wrappers = {};
@@ -18,36 +23,31 @@ renderer.addWrapper = function( name ) {
 
 renderer.render = function( ) {
 
-	var html = "";
-
-	html += this.getHeader();
-	
+	var html = [];
 	for( var i in wrappers ) {
-		html += wrapper[ i ].render();
+		html.push( wrappers[ i ].render() )
 	}
 
-	html += this.getFooter();
+	Promise.all( html ).then( function() {
 
-	// TEMP
-	var http = require('http');
-	http.createServer(function (req, res) {
+		return lengine.parseAndRender( fs.readFileSync( './html/page.tpl'), { wrappers: arguments } );
 
-	  res.writeHead(200, {'Content-Type': 'text/plain'});
-	  res.end( html );
+	}).then( function( html ) {
 
-	}).listen(1337, '127.0.0.1');
-	// END TEMP
+		// TEMP
+		var http = require('http');
+		http.createServer(function (req, res) {
 
-	return html;
+		  res.writeHead(200, {'Content-Type': 'text/html'});
+		  res.end( html );
+
+		}).listen(1337, '127.0.0.1');
+		// END TEMP
+
+	});
+
 }
 
-renderer.getHeader = function() {
-	return fs.readFileSync("./html/header.html");
-}
-
-renderer.getFooter = function() {
-	return fs.readFileSync("./html/footer.html");
-}
 
 renderer.addModuleByName = function( moduleName, module ) {
 

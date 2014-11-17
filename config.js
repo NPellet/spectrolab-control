@@ -2,7 +2,7 @@ var config = {
 
 	instruments: {
 		keithley: {
-			address: '169.254.0.1',
+			host: '128.178.56.5',
 			port: '23'
 		}
 	}

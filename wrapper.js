@@ -1,4 +1,13 @@
 
+
+
+var fs = require('fs');
+
+var liquid = require("liquid-node"),
+	lengine = new liquid.Engine,
+	Promise = require('bluebird');
+
+
 var Wrapper = function( renderer ) {
 	this.renderer = renderer;
 	this.modules = [];
@@ -28,6 +37,7 @@ Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 	var module = new moduleConstructor();
 
 	module.init();
+	module.setFolder('./modules/' + moduleType );
 
 	this.modules.push( module );
 	this.renderer.addModuleByName( moduleName, module );
@@ -36,19 +46,20 @@ Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 
 Wrapper.prototype.render = function() {
 
-	var html = '<div class="wrapper">';
-	var js = '<script type="text/javascript">';
+	var html = [],
+		js = [];
 
 	for( var i = 0, l = this.modules.length ; i < l ; i ++ ) {
 
-		html += this.modules[ i ].renderHTML();
-		js += this.modules[ i ].renderJS();
+		html.push( this.modules[ i ].renderHTML( ) );
+		js.push( this.modules[ i ].renderJS( ) );
 	}
 
-	html += '</div>';
-	js += '</script>';
+	return Promise.all( [ Promise.all( html ), Promise.all( js ) ] ).then( function( responses ) {
 
-	return html + js;
+
+		return lengine.parseAndRender( fs.readFileSync( './html/wrapper.tpl', 'utf-8' ), { html: responses[ 0 ], js: responses[ 1 ] } );
+	});
 }
 
 module.exports = Wrapper;

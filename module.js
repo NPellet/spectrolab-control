@@ -30,12 +30,7 @@ var modulePrototype = {
 			this.assignId();
 		}
 
-		var json = {
-			moduleid: this.id,
-			message: message
-		}
-
-		stream.write( JSON.stringify( json ) );
+		stream.write( this.id, message );
 	},
 
 	getModuleInfos: function() {
@@ -49,14 +44,24 @@ var modulePrototype = {
 	renderHTML: function() {
 		var moduleTplInfos = this.getModuleInfos();
 		return lengine
-		  .parseAndRender( fs.readFileSync('./html.tpl'), moduleTplInfos )
+		  .parseAndRender( fs.readFileSync( this.getFolder() + '/html.tpl'), moduleTplInfos )
 	},
 
 	renderJS: function() {
 		var moduleTplInfos = this.getModuleInfos();
+
+		
 		return lengine
-		  .parseAndRender( fs.readFileSync('./javascript.tpl'), moduleTplInfos )
-	}	
+		  .parseAndRender( fs.readFileSync( this.getFolder() + '/javascript.tpl'), moduleTplInfos )
+	},
+
+	getFolder: function() {
+		return this.folder;
+	},
+
+	setFolder: function( folder ) {
+		this.folder = folder;
+	}
 }
 
 

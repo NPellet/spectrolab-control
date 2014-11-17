@@ -1,4 +1,17 @@
 
+var keithley = require( "./keithley/controller" );
+var keithley = new keithley( {
+	port: 5030,
+	host: '128.178.56.5'
+} );
+
+keithley.connect( function() {
+
+} );
+
+
+/*
+
 process.argv.forEach( function( val, index, array ) {
   
   val = val.split('=');
@@ -6,10 +19,9 @@ process.argv.forEach( function( val, index, array ) {
   switch( val[ 0 ] ) {
   	
   	case 'experiment':
-
-  		var exp = require('./experiments/' + val[ 1 ] + '/main');
-
+  		global.expFolder = './experiments/' + val[ 1 ];
+  		var exp = require( global.expFolder + '/main' );
   	break;
   }
 
-});
+});*/
