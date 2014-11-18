@@ -6,9 +6,9 @@ var IVDisplay = function() {};
 
 IVDisplay.prototype = extend( {}, moduleProto, {
 
-	setIV: function( iv ) {
+	setIV: function( type, direction, iv ) {
 
-		this.streamOut( { message: 'iv', value: iv } );
+		this.streamOut( "iv", iv );
 
 	},
 

@@ -12,20 +12,23 @@ renderer
 	.on('connected', function() {
 		renderer.getModuleByName( "keithleySweep" ).unlock();
 	});
-/*
-renderer
-	.getModuleByName( "keithleySourceV" )
-	.assignKeithley( keithley );
-*/
+
 renderer
 	.getModuleByName( "keithleySweep" )
 	.assignKeithley( keithley )
-	.onSweepEnd( function( iv ) {
+	.on( "sweepEnd", function( iv ) {
 
 		renderer.getModuleByName( "IV" ).setIV( iv );
-		
 	})
 	.lock();
 
 
 renderer.render();
+
+
+
+/*
+renderer
+	.getModuleByName( "keithleySourceV" )
+	.assignKeithley( keithley );
+*/

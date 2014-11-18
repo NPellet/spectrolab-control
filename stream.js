@@ -54,7 +54,7 @@ var publicMethods = {
 	},
 
 	isReady: function() {
-		return ! _connected;
+		return _connected;
 	}
 }
 

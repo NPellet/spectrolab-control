@@ -11,6 +11,7 @@ var renderer = {};
 
 var wrappers = {};
 var allModulesByName = {};
+var stylesheets = [];
 
 renderer.addWrapper = function( name ) {
 
@@ -19,6 +20,10 @@ renderer.addWrapper = function( name ) {
 	}
 
 	return wrappers[ name ] = new wrapper( this );
+}
+
+renderer.addStylesheet = function( file ) {
+	stylesheets.push( file );
 }
 
 renderer.render = function( ) {
@@ -30,7 +35,11 @@ renderer.render = function( ) {
 
 	Promise.all( html ).then( function() {
 
-		return lengine.parseAndRender( fs.readFileSync( './html/page.tpl'), { wrappers: arguments } );
+		return lengine.parseAndRender( fs.readFileSync( './html/page.tpl'), { 
+
+			wrappers: arguments,
+			stylesheets: stylesheets
+		} );
 
 	}).then( function( html ) {
 
@@ -53,7 +62,7 @@ renderer.render = function( ) {
 
 		    if(req.url.indexOf('.js') != -1){ //req.url has the pathname, check if it conatins '.js'
 
-		      fs.readFile(__dirname + '/public/' + req.url, function (err, data) {
+		      fs.readFile(__dirname + req.url, function (err, data) {
 		        if (err) console.log(err);
 		        res.writeHead(200, {'Content-Type': 'text/javascript'});
 		        res.write(data);
@@ -66,7 +75,7 @@ renderer.render = function( ) {
 
 		    if(req.url.indexOf('.css') != -1){ //req.url has the pathname, check if it conatins '.css'
 
-		      fs.readFile(__dirname + '/public/' + req.url, function (err, data) {
+		      fs.readFile(__dirname + req.url, function (err, data) {
 		        if (err) console.log(err);
 		        res.writeHead(200, {'Content-Type': 'text/css'});
 		        res.write(data);

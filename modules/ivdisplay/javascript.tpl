@@ -15,7 +15,7 @@
 	
 	stream.onMessage( "{{ module.id }}", function( data ) {
 
-		switch( data.message ) {
+		switch( data.method ) {
 
 			case 'iv':
 
@@ -28,8 +28,6 @@
 
 			break;
 		}
-		
-
-	})
+	} );
 
 }) ( window.io );

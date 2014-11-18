@@ -25,39 +25,36 @@ KeithleySourceV.prototype = extend( {}, moduleProto, {
 				case 'sweep':
 
 					var val = message.value;
-					var totaltime = Math.ceil( ( val.stopV - val.startV ) / val.scanspeed );
-					var nbsteps = Math.ceil( ( val.stopV - val.startV ) / val.step );
+					var totaltime = ( val.stopV - val.startV ) / ( val.scanspeed / 1000 );
+					var nbsteps = Math.ceil( ( val.stopV - val.startV ) / ( val.step / 1000 ) );
 
-					var settlingTime = Math.ceil( totaltime / nbsteps );
+					var settlingTime = totaltime / nbsteps;
 
 					var options = {
-						startV: val.startV * 1000,
-						stopV: val.stopV * 1000,
+						startV: val.startV,
+						stopV: val.stopV,
 						channel: val.channel,
 						settlingTime: settlingTime,
 						timeDelay: val.timeDelay,
 						complianceI: val.complianceI,
-						nbPoints: nbsteps
+						nbPoints: nbsteps + 1
 					};
+
+					this.lock();
 
 					module.keithley.sweepIV( options, function( iv ) {
 
 						module.streamOut( { message: 'iv', value: iv } );
+						module.emit("sweepEnd", iv );
 
-						module.sweepEnd.map( function( callback ) {
-							callback( iv );
-						} );
+						module.unlock();
 					} );
 
 				break;
+
+
 			}
 		}
-	},
-
-	onSweepEnd: function( callback ) {
-
-		this.sweepEnd.push( callback );
-		return this;
 	}
 });
 

@@ -21,20 +21,25 @@ KeithleyConnect.prototype = extend( {}, moduleProto, {
 			case 'connect':
 
 				module.streamOut( "pending", true );
+				module.lock();
 
 				module.keithley.connect( function() {
 
 					module.streamOut( "connected" );
 					module.emit("connected");
+
+					module.unlock();
 				} );
 			break;
 
 			case 'disconnect':
 
+				module.lock();
 				module.streamOut( "pending", true );
 
 				module.keithley.disconnect( function() {
 
+					module.unlock();
 					module.streamOut( "disconnected", true );
 					module.emit("disconnected");
 				});

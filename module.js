@@ -10,10 +10,12 @@ var liquid = require("liquid-node"),
 
 var modulePrototype = {
 	
-	init: function() {
+	init: function( type ) {
 
 		var module = this;
 		this._locked = false;
+		this.type = type;
+		
 		this.assignId();
 
 		stream.onMessage( this.id, function( message ) {
@@ -50,9 +52,13 @@ var modulePrototype = {
 	},
 
 	renderHTML: function() {
+		var module = this;
 		var moduleTplInfos = this.getModuleInfos();
-		return lengine
-		  .parseAndRender( fs.readFileSync( this.getFolder() + '/html.tpl'), moduleTplInfos )
+
+		return lengine.parseAndRender( fs.readFileSync( this.getFolder() + '/html.tpl'), moduleTplInfos ).then( function( html ) {
+
+			return lengine.parseAndRender( fs.readFileSync( './html/module.tpl' ), { content: html, locked: module._locked, id: module.id, type: module.type } );
+		});
 	},
 
 	renderJS: function() {

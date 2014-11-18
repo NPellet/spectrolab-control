@@ -10,28 +10,21 @@
 	} ); 
 
 
-	stream.onMessage( "{{ module.id }}", function( method ) {
+	stream.onMessage( "{{ module.id }}", function( message ) {
 
 		switch( message.method ) {
 
-			case 'pending':
-
-				button.prop( 'disabled', true );
-
-			break;
-
 			case 'connected':
 
-				button.prop( 'disabled', false );
+				button.addClass('connected');
 				button.prop( 'value', 'Disconnect' );
 
 			break;
 
 			case 'disconnected':
 
-				button.prop( 'disabled', false );
 				button.prop( 'value', 'Connect' );
-
+				button.removeClass('connected');
 			break;
 		}
 

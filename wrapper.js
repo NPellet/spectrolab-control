@@ -35,11 +35,15 @@ Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 
 	var module = new moduleConstructor();
 
-	module.init();
+	module.init( moduleType );
 	module.setFolder('./modules/' + moduleType );
 
 	this.modules.push( module );
 	this.renderer.addModuleByName( moduleName, module );
+
+	if( fs.existsSync( './modules/' + moduleType + '/style.css' ) ) {
+		this.renderer.addStylesheet( './modules/' + moduleType + '/style.css' );
+	}
 	return module;
 }
 
