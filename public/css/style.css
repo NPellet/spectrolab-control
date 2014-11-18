@@ -10,7 +10,7 @@ body {
 
 }
 
-.wrapper .title {
+.wrapper > .title {
 	height: 20px;
 	line-height: 20px;
 	padding-left: 10px;
@@ -41,4 +41,17 @@ body {
 .overlay {
 	position: absolute;
 	background: rgba( 0, 0, 0, 0.1 );
+}
+
+.module > .title {
+
+	height: 20px;
+	line-height: 20px;
+	padding-left: 10px;
+	color: rgba( 50, 50, 50, 1 );
+	border-top: 1px solid rgba( 50, 50, 50, 0.4 );
+	border-bottom: 1px solid rgba( 50, 50, 50, 0.4 );
+
+	background: #f0f0f0; /* Old browsers */
+
 }

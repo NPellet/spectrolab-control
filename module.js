@@ -42,13 +42,17 @@ var modulePrototype = {
 		} );
 	},
 
-	getModuleInfos: function() {
+	_getModuleInfos: function() {
 		return {
 			module: {
 				id: this.id,
-				locked: this._locked
+				locked: this._locked,
 			}
 		};
+	},
+
+	getModuleInfos: function() {
+		return this._getModuleInfos();
 	},
 
 	renderHTML: function() {
@@ -57,16 +61,21 @@ var modulePrototype = {
 
 		return lengine.parseAndRender( fs.readFileSync( this.getFolder() + '/html.tpl'), moduleTplInfos ).then( function( html ) {
 
-			return lengine.parseAndRender( fs.readFileSync( './html/module.tpl' ), { content: html, locked: module._locked, id: module.id, type: module.type } );
+			return lengine.parseAndRender( fs.readFileSync( './html/module.tpl' ), { 
+
+				content: html,
+				locked: module._locked,
+				id: module.id,
+				type: module.type,
+				title: module.title
+			} );
 		});
 	},
 
 	renderJS: function() {
-		var moduleTplInfos = this.getModuleInfos();
-
-		
+		var moduleTplInfos = this.getModuleInfos();		
 		return lengine
-		  .parseAndRender( fs.readFileSync( this.getFolder() + '/javascript.tpl'), moduleTplInfos )
+		  .parseAndRender( fs.readFileSync( this.getFolder() + '/javascript.tpl'), moduleTplInfos );
 	},
 
 	getFolder: function() {
@@ -93,8 +102,13 @@ var modulePrototype = {
 		if( stream.isReady( ) ) {
 			this.streamOut( 'lock', false );
 		}
+	},
+
+	setTitle: function( title ) {
+		this.title = title;
 	}
 }
 
 modulePrototype = extend( modulePrototype, events.EventEmitter.prototype );
+
 module.exports = modulePrototype;

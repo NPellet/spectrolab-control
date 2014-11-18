@@ -2,7 +2,9 @@
 var moduleProto = require('../../module'),
 	extend = require('extend');
 
-var KeithleySourceV = function() {};
+var KeithleySourceV = function() {
+	this.title = "IV Sweep parameters";
+};
 
 KeithleySourceV.prototype = extend( {}, moduleProto, {
 

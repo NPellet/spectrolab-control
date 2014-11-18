@@ -2,7 +2,9 @@
 var moduleProto = require('../../module'),
 	extend = require('extend');
 
-var KeithleyConnect = function() {};
+var KeithleyConnect = function() {
+	this.title = "Keithley Connection";
+};
 
 KeithleyConnect.prototype = extend( {}, moduleProto, {
 

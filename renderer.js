@@ -37,7 +37,7 @@ renderer.render = function( ) {
 
 		return lengine.parseAndRender( fs.readFileSync( './html/page.tpl'), { 
 
-			wrappers: arguments,
+			wrappers: arguments[ 0 ],
 			stylesheets: stylesheets
 		} );
 

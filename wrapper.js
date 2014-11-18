@@ -25,7 +25,7 @@ Wrapper.prototype.setPosition = function( left, top ) {
 
 Wrapper.prototype.setSize = function( w, h ) {
 	this.width = w || 10;
-	this.height = h || 10;
+	this.height = h || false;
 	return this;
 }
 
@@ -92,8 +92,14 @@ Wrapper.prototype.getPositionLeft = function() {
 Wrapper.prototype.getSizeWidth = function() {
 	return ( this.width || 1 ) * Wrapper.gridX;
 }
+
+// Height behaves slightly differently. Auto height if not defined
 Wrapper.prototype.getSizeHeight = function() {
-	return ( this.height || 1 ) * Wrapper.gridY;
+	if( this.height ) {
+		return this.height * Wrapper.gridY;
+	}
+
+	return false;
 }
 
 Wrapper.gridX = 10;
