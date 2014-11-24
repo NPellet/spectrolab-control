@@ -70,7 +70,6 @@ renderer.render = function( ) {
 		      });
 
 		      return;
-
 		    }
 
 		    if(req.url.indexOf('.css') != -1){ //req.url has the pathname, check if it conatins '.css'
@@ -83,7 +82,6 @@ renderer.render = function( ) {
 		      });
 
 		  	  return;
-
 		    }
 
 		  res.writeHead(200, {'Content-Type': 'text/html'});
@@ -110,7 +108,7 @@ renderer.addModuleByName = function( moduleName, module ) {
 renderer.getModuleByName = function( moduleName ) {
 
 	if( ! allModulesByName[ moduleName ] ) {
-		throw "No such module exists";
+		throw "No module with name " + moduleName + " exists";
 	}
 
 	return allModulesByName[ moduleName ];

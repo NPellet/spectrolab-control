@@ -1,9 +1,11 @@
+
 ( function( global ) {
 
-	var ws = new WebSocket('ws://192.168.0.12:8080');
+	var ws = new WebSocket('ws://127.0.0.1:8080');
 
+	// Stream is ready
 	ws.onopen = function (event) {
-
+		global.io.writeGlobal( "readystate", 1 );
 	};
 
 	ws.onmessage = function( event ) {
@@ -53,7 +55,15 @@
 
 			ws.send( JSON.stringify( { moduleid: moduleId, message: message } ) );
 
+		},
+
+
+		writeGlobal: function( ) {
+
+			ws.send( JSON.stringify( { global: true, message: arguments } ) );
+
 		}
+
 
 	};
 

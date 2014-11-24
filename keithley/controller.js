@@ -1,4 +1,6 @@
 
+"use strict";
+
 var net = require('net'),
 	extend = require('extend'),
 	fs = require('fs');
@@ -11,6 +13,11 @@ var Keithley = function( params ) {
 Keithley.prototype = {};
 
 Keithley.prototype.connect = function( callback ) {
+
+	if( this.connected ) {
+		callback();
+		return;
+	}
 
 	var self = this,
 		socket = net.createConnection( {
@@ -30,11 +37,13 @@ Keithley.prototype.connect = function( callback ) {
 
 		socket.write("SpetroscopyScripts();\r\n");
 		//socket.write("sourcev(smua, 0.1, 1, 1, 1 );\r\n");
+
+
+		if( callback ) {
+			callback();
+		}
 	});
 
-	if( callback ) {
-		callback();
-	}
 };
 
 var methods = {
@@ -73,37 +82,91 @@ var methods = {
 		},
 
 		processing: function( data ) {
-			
 			var current, voltage, dataFinal = [];
-
 			data = data.split(/,[\t\r\s\n]*/);
-		
-			//data.pop();
-		
 			for( var i = 0; i < data.length; i += 2 ) {
-							
-
-				dataFinal.push( parseFloat( data[ i + 1] ) );
-				dataFinal.push( parseFloat( data[ i ] ) );
+				dataFinal.push( [ parseFloat( data[ i + 1] ), parseFloat( data[ i ] ) ] );
 				
 			}
+			return dataFinal;
+		}
+	},
 
-		
+	'VoltageStability': {
+		defaults: { 
+			channel: 'smua',
+			settlingtime: 0.04,
+			totaltime: 10,
+			complianceI: 0.1,
+			complianceV: 1,
+			bias: 0
+		},
+
+		method: 'VoltageStability',
+		parameters: function( options ) {
+
+			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
+		},
+
+		processing: function( data, options ) {
+
+			var current, voltage, dataFinal = [];
+			data = data.split(/,[\t\r\s\n]*/);
+
+			for( var i = 0; i < data.length; i ++ ) {
+
+				dataFinal.push( [ options.settlingtime * i, parseFloat( data[ i ] ) ] );	
+			}
 
 			return dataFinal;
 		}
 	},
 
 
-}
+	'CurrentStability': {
+		defaults: { 
+			channel: 'smua',
+			settlingtime: 0.04,
+			totaltime: 10,
+			complianceI: 0.01,
+			complianceV: 1,
+			bias: 0
+		},
 
+		method: 'CurrentStability',
+		parameters: function( options ) {
+
+			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
+		},
+
+		processing: function( data, options ) {
+
+			var current, voltage, dataFinal = [];
+			data = data.split(/,[\t\r\s\n]*/);
+
+			for( var i = 0; i < data.length; i ++ ) {
+
+				dataFinal.push( [ options.settlingtime * i, parseFloat( data[ i ] ) ] );	
+			}
+
+			return dataFinal;
+		}
+	}
+
+
+}
 
 for( var i in methods ) {
 
-	Keithley.prototype[ i ] = function( options, callback ) {
+	( function( j ) {
 
-		this._callMethod( methods[ i ], options, callback );
-	}
+		Keithley.prototype[ j ] = function( options, callback ) {
+console.log( methods[ j ] );
+			this._callMethod( methods[ j ], options, callback );
+		}
+
+	}) ( i );
+	
 }
 
 
@@ -125,7 +188,7 @@ Keithley.prototype._callMethod = function( method, options, callback ) {
 	function end( data ) {
 
 		if( method.processing ) {
-			data = method.processing( data );
+			data = method.processing( data, options );
 		}
 
 		callback( data );
@@ -144,7 +207,6 @@ Keithley.prototype._callMethod = function( method, options, callback ) {
 	}
 
 	listen("");
-
 	this.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 }
 

@@ -1,43 +1,43 @@
 
 
 var keithley = require( "../../../keithley/controller" ),
+	stream = require( "../../../stream" ),
 	config = require( "../../../config" ),
 	renderer = require( "./renderer" );
 
-var fs = require('fs');
 var igorSaver = require("../../../igorsaver");
-
 var keithley = new keithley( config.instruments.keithley );
 
 renderer
 	.getModuleByName( "keithleyConnect" )
 	.assignKeithley( keithley )
 	.on('connected', function() {
-		renderer.getModuleByName( "keithleySweep" ).unlock();
+		renderer.getModuleByName( "keithleyVocStab" ).unlock(); // Unlock voc stab module
 	});
 
+
 renderer
-	.getModuleByName( "keithleySweep" )
+	.getModuleByName( "keithleyVocStab" )
 	.assignKeithley( keithley )
-	.on( "sweepEnd", function( iv ) {
+	.on( "measurementEnd", function( data ) {
 
-		//renderer.getModuleByName( "IV" ).setIV( iv );
-
-
+		renderer.getModuleByName("GraphVocVsTime").newSerie( "voc_time", data );
 		var info = renderer.getModuleByName("sampleInfo").getSampleInfo();
 
 		var ig = new igorSaver();
-		ig.addWaveFromArray( iv, 0, "voltage", 0, 0.1, "s", "A");
-		ig.addWaveFromArray( iv, 1, "current", 0, 0.1, "s", "V");
+		ig.addWaveFromArray( data, 1, "detectorVoltage", 0, 0.1, "s", "V");
 		ig.saveTo( info.fileName );
-
-
-
+		//renderer.getModuleByName( "IV" ).setIV( iv );
 	})
 	.lock();
 
-
 renderer.render();
+
+
+
+stream.onClientConnection( function() {
+	renderer.getModuleByName("GraphVocVsTime").setXAxisLabel("Time (s)").setYAxisLabel( "Voltage (V)");
+})
 
 
 

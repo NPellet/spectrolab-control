@@ -1,7 +1,7 @@
 
 ( function( stream ) {
 
-	$("#module-{{ module.id }} .channel").toggles({text:{on:'Chan A',off:'Chan B'}});
+//	$("#module-{{ module.id }} .channel").toggles({text:{on:'Chan A',off:'Chan B'}});
 
 
 

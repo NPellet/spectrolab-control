@@ -80,4 +80,6 @@ Voltage
 </tr>
 </table>
 
+<input type="button" id="measure-{{ module.id }}" value="Measure" />
+
 </div>
