@@ -11,13 +11,22 @@ var net = require('net'),
 
 var options = {
   //pythonOptions: ['-m'],
-  scriptPath: path.resolve( __dirname, './python/' ),
-  args: ['12.12.12.12']
+  scriptPath: path.resolve( __dirname, './python-scripts/' ),
+  args: ['169.254.116.155'],
+  mode: "text"
 };
 
-py.run('vxi11.py', options, function (err, results) {
-  if (err) throw err;
-  // results is an array consisting of messages collected during execution
-  console.log('results: %j', results);
-});
+
+var p = new py('test.py', options);
+
+
+ p.stdout.on('data', function (data) {
+  console.log( '"' + data + '"' );
+  });
+
+  p.send('*IDN?');
+  p.send('*IDN?');
+  p.send('*IDN?');
+  p.send('*IDN?');
+  
 
