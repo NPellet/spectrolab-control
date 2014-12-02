@@ -5,7 +5,7 @@ var keithley = require( "../../../keithley/controller" ),
 	renderer = require( "./renderer" );
 
 var fs = require('fs');
-var igorSaver = require("../../../igorsaver");
+var igorSaver = require("../../../itx_maker");
 
 var keithley = new keithley( config.instruments.keithley );
 

@@ -1,5 +1,4 @@
 
-var fs = require('fs');
 
 var IgorSaver = function() {
 
@@ -29,15 +28,9 @@ IgorSaver.prototype = {
 		this.addWave( a2, name, x0, xDelta, xunit, yunit );
 	},
 
-	saveTo: function( filename ) {
+	getFile: function( filename ) {
 
-		fs.writeFile( filename, this.igorString, function( err ) {
-
-			if( err ) { throw err; }
-			console.log('File saved');
-		})
-
-
+		return this.igorString;
 	}
 }
 

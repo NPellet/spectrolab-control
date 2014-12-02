@@ -8,6 +8,7 @@ var keithley = new keithley( {
 keithley.connect( function() { } );
 
 */
+
 process.argv.forEach( function( val, index, array ) {
   
   val = val.split('=');
@@ -19,4 +20,4 @@ process.argv.forEach( function( val, index, array ) {
   	break;
   }
 
-});
+} );

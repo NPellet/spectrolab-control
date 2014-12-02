@@ -10,7 +10,27 @@ KeithleyConnect.prototype = extend( {}, moduleProto, {
 
 	assignKeithley: function( keithley ) {
 
+		var module = this;
+		
 		this.keithley = keithley;
+
+		this.keithley.on("connected", function() {
+
+			module.streamOut( "connected" );
+			module.emit("connected");
+
+			module.unlock();
+		} );
+
+		this.keithley.on( "disconnected", function() {
+
+			module.unlock();
+			module.streamOut( "disconnected", true );
+			module.emit("disconnected");
+		});
+
+
+
 		return this;
 	},
 
@@ -18,34 +38,22 @@ KeithleyConnect.prototype = extend( {}, moduleProto, {
 
 		var module = this;
 
+		
 		switch( message ) {
 
 			case 'connect':
 
 				module.streamOut( "pending", true );
 				module.lock();
+				module.keithley.connect();
 
-				module.keithley.connect( function() {
-
-					module.streamOut( "connected" );
-					module.emit("connected");
-
-					module.unlock();
-				} );
 			break;
 
 			case 'disconnect':
 
 				module.lock();
 				module.streamOut( "pending", true );
-
-				module.keithley.disconnect( function() {
-
-					module.unlock();
-					module.streamOut( "disconnected", true );
-					module.emit("disconnected");
-				});
-				
+				module.keithley.disconnect();
 			break;
 		}
 	}

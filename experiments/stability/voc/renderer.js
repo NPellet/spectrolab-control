@@ -26,7 +26,7 @@ var wrapperConsole = renderer
 	.setSize( 60, 40 )
 	.setPosition( 50, 5 );
 
-wrapperConsole.addModule("generalgraphdisplay", "GraphVocVsTime").setTitle( "" );
+wrapperConsole.addModule("display/graph", "GraphVocVsTime").setTitle( "" );
 
 /*
 var wrapperConsole = renderer

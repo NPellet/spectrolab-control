@@ -1,4 +1,4 @@
-function VoltageStability(channel, bias, settlingtime, totaltime, complianceV, complianceI)	-- VoltageStability()
+function CurrentStability(channel, bias, settlingtime, totaltime, complianceV, complianceI)	-- CurrentStability()
 
 	local l_j
 	local points
@@ -14,20 +14,7 @@ function VoltageStability(channel, bias, settlingtime, totaltime, complianceV, c
 	
 	--channel.source.bias = bias
 	
-	channel.source.leveli = bias
-
-	delay( settlingtime )
-
-	channel.nvbuffer1.clear()
-	channel.nvbuffer1.appendmode = 1
-
-	
- 	channel.source.func = channel.OUTPUT_DCAMPS;
- 	display.smub.measure.func = display.MEASURE_DCVOLTS;
-	channel.source.output = channel.OUTPUT_ON;
-
-	channel.measure.autorangei = channel.AUTORANGE_OFF
-	channel.measure.autorangev = channel.AUTORANGE_OFF
+	channel.source.levelv = bias
 
 	channel.source.rangev = complianceV
 	channel.source.limitv = complianceV
@@ -35,16 +22,24 @@ function VoltageStability(channel, bias, settlingtime, totaltime, complianceV, c
 	channel.source.rangei = complianceI
 	channel.source.limiti = complianceI
 	
+	delay( settlingtime )
+
+	channel.nvbuffer1.clear()
+	channel.nvbuffer1.appendmode = 1
+
+	
+ 	channel.source.func = channel.OUTPUT_DCVOLTS;
+ 	display.smub.measure.func = display.MEASURE_DCAMPS;
+	channel.source.output = channel.OUTPUT_ON;
 
 	for l_j = 1, points do
 
 		delay( settlingtime )
 
-		channel.measure.v( channel.nvbuffer1 )
+		channel.measure.i( channel.nvbuffer1 )
 	
 	end
 
 	channel.source.output = channel.OUTPUT_OFF
 	printbuffer( 1, points, channel.nvbuffer1 )
 end
-

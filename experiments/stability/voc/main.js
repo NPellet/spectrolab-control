@@ -5,7 +5,9 @@ var keithley = require( "../../../keithley/controller" ),
 	config = require( "../../../config" ),
 	renderer = require( "./renderer" );
 
-var igorSaver = require("../../../igorsaver");
+var igorSaver = require("../../../itx_maker"),
+	fileSaver = require("../../../filesaver");
+	
 var keithley = new keithley( config.instruments.keithley );
 
 renderer
@@ -26,7 +28,13 @@ renderer
 
 		var ig = new igorSaver();
 		ig.addWaveFromArray( data, 1, "detectorVoltage", 0, 0.1, "s", "V");
-		ig.saveTo( info.fileName );
+		
+		fileSaver.save( {
+			contents: ig.getFile(),
+			fileName: info.fileName,
+			fileExtension: 'itx',
+			dir: './'
+		} );
 		//renderer.getModuleByName( "IV" ).setIV( iv );
 	})
 	.lock();

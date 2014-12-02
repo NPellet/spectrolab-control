@@ -3,14 +3,15 @@
 
 var net = require('net'),
 	extend = require('extend'),
-	fs = require('fs');
+	fs = require('fs'),
+	events = require("events");
 
 var Keithley = function( params ) {
 	this.params = params;
 	this.connected = false;
 };
 
-Keithley.prototype = {};
+Keithley.prototype = events.EventEmitter.prototype;
 
 Keithley.prototype.connect = function( callback ) {
 
@@ -19,6 +20,7 @@ Keithley.prototype.connect = function( callback ) {
 		return;
 	}
 
+	// Connect by raw TCP sockets
 	var self = this,
 		socket = net.createConnection( {
 			port: this.params.port, 
@@ -32,18 +34,18 @@ Keithley.prototype.connect = function( callback ) {
 	socket.on('connect', function() {
 
 		self.uploadScripts();
-
 		self.connected = true;
-
 		socket.write("SpetroscopyScripts();\r\n");
-		//socket.write("sourcev(smua, 0.1, 1, 1, 1 );\r\n");
-
-
+		console.log('conn');
+		self.emit("connected");
 		if( callback ) {
 			callback();
 		}
 	});
 
+	socket.on('end', function() {
+		self.emit("disconnected");
+	});
 };
 
 var methods = {
@@ -97,14 +99,14 @@ var methods = {
 			channel: 'smua',
 			settlingtime: 0.04,
 			totaltime: 10,
-			complianceI: 0.1,
-			complianceV: 1,
+			complianceI: 1,
+			complianceV: 2,
 			bias: 0
 		},
 
 		method: 'VoltageStability',
 		parameters: function( options ) {
-
+console.log(options.complianceV);
 			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
 		},
 

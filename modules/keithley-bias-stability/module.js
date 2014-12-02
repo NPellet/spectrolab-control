@@ -34,7 +34,7 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 
 						channel: val.channel,
 						complianceI: 1,
-						complianceV: 1,
+						complianceV: 10,
 						totaltime: val.totaltime,
 						settlingtime: val.settlingtime,
 						bias: val.bias

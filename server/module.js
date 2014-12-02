@@ -28,6 +28,8 @@ var modulePrototype = {
 		this.id = util.uniqueId();
 	},
 
+	streamIn: function() {},
+
 
 	streamOut: function( method, value ) {
 

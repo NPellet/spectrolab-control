@@ -1,0 +1,14 @@
+{
+  "name": "python-vxi11",
+  "homepage": "https://github.com/python-ivi/python-vxi11",
+  "_release": "e7f671cd5f",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "e7f671cd5fb93f6979b61a82d3a39bc8fc95fed1"
+  },
+  "_source": "git://github.com/python-ivi/python-vxi11.git",
+  "_target": "*",
+  "_originalSource": "python-ivi/python-vxi11",
+  "_direct": true
+}

@@ -1,11 +1,15 @@
 
-( function( global ) {
+( function( global, $ ) {
 
 	var ws = new WebSocket('ws://127.0.0.1:8080');
+	var connected = false;
+	var onConnected = $.Callbacks();
 
 	// Stream is ready
 	ws.onopen = function (event) {
 		global.io.writeGlobal( "readystate", 1 );
+		connected = true;
+		onConnected.fire();
 	};
 
 	ws.onmessage = function( event ) {
@@ -53,8 +57,14 @@
 
 		write: function( moduleId, message ) {
 
-			ws.send( JSON.stringify( { moduleid: moduleId, message: message } ) );
-
+			if( ! connected ) {
+				onConnected.add( function() {
+					ws.send( JSON.stringify( { moduleid: moduleId, message: message } ) );		
+				})
+			} else {
+				ws.send( JSON.stringify( { moduleid: moduleId, message: message } ) );	
+			}				
+		
 		},
 
 
@@ -67,4 +77,4 @@
 
 	};
 
-}) ( window )
+}) ( window, jQuery )
