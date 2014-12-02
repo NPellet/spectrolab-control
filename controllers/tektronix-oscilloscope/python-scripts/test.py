@@ -116,7 +116,7 @@ def main():
             e = sys.exc_info()[1]
             print('ERROR: %s' % e)
         
-    #v.close()
+    v.close()
 
 if __name__ == '__main__':
     main()

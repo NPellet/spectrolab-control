@@ -25,8 +25,11 @@ var p = new py('test.py', options);
   });
 
   p.send('*IDN?');
-  p.send('*IDN?');
-  p.send('*IDN?');
-  p.send('*IDN?');
+  p.send('DATa:SOUrce CH1');
+  p.send('DATa:SOUrce?');
+  p.send('DATa:ENCdg ASCii');
+  p.send('WFMOutpre:BYT_Nr 8');
+  
+  p.send('CURVE?');
   
 
