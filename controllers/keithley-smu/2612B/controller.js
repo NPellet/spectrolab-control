@@ -4,49 +4,10 @@
 var net = require('net'),
 	extend = require('extend'),
 	fs = require('fs'),
-	events = require("events");
-
-var Keithley = function( params ) {
-	this.params = params;
-	this.connected = false;
-};
-
-Keithley.prototype = events.EventEmitter.prototype;
-
-Keithley.prototype.connect = function( callback ) {
-
-	if( this.connected ) {
-		callback();
-		return;
-	}
-
-	// Connect by raw TCP sockets
-	var self = this,
-		socket = net.createConnection( {
-			port: this.params.port, 
-			host: this.params.host,
-			allowHalfOpen: true
-		});
+	events = require("events"),
+	path = require("path");
 
 
-	this.socket = socket;
-
-	socket.on('connect', function() {
-
-		self.uploadScripts();
-		self.connected = true;
-		socket.write("SpetroscopyScripts();\r\n");
-		console.log('conn');
-		self.emit("connected");
-		if( callback ) {
-			callback();
-		}
-	});
-
-	socket.on('end', function() {
-		self.emit("disconnected");
-	});
-};
 
 var methods = {
 
@@ -106,20 +67,15 @@ var methods = {
 
 		method: 'VoltageStability',
 		parameters: function( options ) {
-console.log(options.complianceV);
 			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
 		},
 
 		processing: function( data, options ) {
-
 			var current, voltage, dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
-
 			for( var i = 0; i < data.length; i ++ ) {
-
 				dataFinal.push( [ options.settlingtime * i, parseFloat( data[ i ] ) ] );	
 			}
-
 			return dataFinal;
 		}
 	},
@@ -130,40 +86,61 @@ console.log(options.complianceV);
 			channel: 'smua',
 			settlingtime: 0.04,
 			totaltime: 10,
-			complianceI: 0.01,
-			complianceV: 1,
+			complianceI: 1,
+			complianceV: 2,
 			bias: 0
 		},
 
 		method: 'CurrentStability',
 		parameters: function( options ) {
-
 			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
 		},
 
 		processing: function( data, options ) {
-
 			var current, voltage, dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
-
 			for( var i = 0; i < data.length; i ++ ) {
-
 				dataFinal.push( [ options.settlingtime * i, parseFloat( data[ i ] ) ] );	
 			}
-
 			return dataFinal;
 		}
 	}
-
-
 }
+
+
+var Keithley = function( params ) {
+	this.params = params;
+	this.connected = false;
+};
+
+Keithley.prototype = events.EventEmitter.prototype;
+
+Keithley.prototype.connect = function( callback ) {
+
+	// Avoid multiple connection
+	if( this.connected ) {
+		callback();
+		return;
+	}
+
+	// Connect by raw TCP sockets
+	var self = this,
+		socket = net.createConnection( {
+			port: this.params.port, 
+			host: this.params.host,
+			allowHalfOpen: true
+		});
+
+	this.socket = socket;
+	this.setEvents();	
+};
+
 
 for( var i in methods ) {
 
 	( function( j ) {
 
 		Keithley.prototype[ j ] = function( options, callback ) {
-console.log( methods[ j ] );
 			this._callMethod( methods[ j ], options, callback );
 		}
 
@@ -174,19 +151,16 @@ console.log( methods[ j ] );
 
 Keithley.prototype._callMethod = function( method, options, callback ) {
 
+	this.checkConnection();
+	
 	var module = this;
 	options = extend( true, {}, method.defaults, options );
-
-	if( ! this.connected ) {
-		throw "Keithley is not connected";
-	}
 
 	if( typeof options == "function" ) {
 		callback = options;
 		options = {};
 	}
 	
-
 	function end( data ) {
 
 		if( method.processing ) {
@@ -209,20 +183,49 @@ Keithley.prototype._callMethod = function( method, options, callback ) {
 	}
 
 	listen("");
+
 	this.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 }
 
+Keithley.prototype.checkConnection = function() {
+
+	if( ! this.socket && this.connected ) {
+		throw "Socket is not alive";
+	}
+}
+
+
+Keithley.prototype.setEvents = function() {
+
+	this.checkConnection();
+
+	var self = this;
+
+	this.socket.on('connect', function() {
+		self.uploadScripts();
+		self.connected = true;
+		socket.write("SpetroscopyScripts();\r\n");
+		self.emit("connected");
+	});
+
+	this.socket.on('end', function() {
+		self.emit("disconnected");
+	});
+
+}
 
 Keithley.prototype.uploadScripts = function() {
 
+	this.checkConnection();
+
 	this.socket.write("loadscript SpetroscopyScripts\r\n");
 
-		// Voltage sourcing, current measurement
-	var files = fs.readdirSync("./keithley/scripts");
+	// Voltage sourcing, current measurement
+	var files = fs.readdirSync( path.resolve( __dirname, "scripts/" ) );
 	console.log( files );
 
 	for( var i = 0; i < files.length ; i ++ ) {
-		this.socket.write( fs.readFileSync( "./keithley/scripts/" + files[ i ] ) );
+		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) );
 		this.socket.write("\r\n");
 	}
 
