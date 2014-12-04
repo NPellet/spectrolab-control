@@ -5,23 +5,18 @@
 
 	function setEvents( graph ) {
 
-		graph.on( "newSerie", function( serie ) {
-
-			newSerie( serie );
-
-		} );
-
 		table.on('change', 'input[type="checkbox"]', function( ) {
 
-			var serie = $( this ).parent().parent().data('serie');
-
+			var serie = $( this )
+							.parent()
+							.parent()
+							.data('serie');
+			
 			if( $( this ).prop( 'checked' ) ) {
 				serie.show();
 			} else {
 				serie.hide();
 			}
-
-
 		} );
 
 		table.on('change', 'input[type="color"]', function( ) {
@@ -39,7 +34,11 @@
 			var serie = tr.data('serie');
 			serie.kill();
 			tr.remove();
-		})
+		} );
+
+		graph.on( "newSerie", function ( serie ) {
+			newSerie( serie );
+		} );
 	}
 
 	function makeSerieDom( serie ) {
@@ -77,18 +76,11 @@
 		table.append( tr );
 	}
 
+	module.onMessage( "assignGraph", function( data ) {
 
-	stream.onMessage( "{{ module.id }}", function( data ) {
-console.log( data );
-		switch( data.instruction ) {
+		module.graph = storage.get( data );
+		setEvents( module.graph );
 
-			case 'assignGraph':
-
-				this.graph = storage.get( data.value );
-				setEvents( this.graph );
-			break;
-		
-		}
 	} );
 
 	module.ready();

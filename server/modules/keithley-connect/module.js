@@ -44,6 +44,7 @@ KeithleyConnect.prototype = extend( {}, moduleProto, {
 			case 'connect':
 
 				module.streamOut( "pending", true );
+				module.emit("connecting");
 				module.lock();
 				module.keithley.connect();
 
@@ -52,6 +53,7 @@ KeithleyConnect.prototype = extend( {}, moduleProto, {
 			case 'disconnect':
 
 				module.lock();
+				module.emit("disconnecting");
 				module.streamOut( "pending", true );
 				module.keithley.disconnect();
 			break;

@@ -31,18 +31,14 @@ Wrapper.prototype.setSize = function( w, h ) {
 Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 
 	var moduleConstructor = require( path.resolve( './server/modules/', moduleType, 'module.js' ) ).Constructor;
-
 	var module = new moduleConstructor();
 
-	module.init( moduleType );
+	module.init( moduleType, moduleName );
 	module.setFolder( path.resolve('./server/modules/', moduleType ) );
 
 	this.modules.push( module );
-	this.renderer.addModuleByName( moduleName, module );
-//console.log( './server/modules/' + moduleType + '/style.css', fs.existsSync( './modules/' + moduleType + '/style.css' ))
-	if( fs.existsSync( './server/modules/' + moduleType + '/style.css' ) ) {
-		this.renderer.addStylesheet( 'modules/' + moduleType + '/style.css' );
-	}
+	this.renderer.addModule( moduleName, module );
+
 	return module;
 }
 
@@ -55,17 +51,14 @@ Wrapper.prototype.render = function() {
 	for( var i = 0, l = this.modules.length ; i < l ; i ++ ) {
 
 		html.push( this.modules[ i ].renderHTML( ) );
-		js.push( this.modules[ i ].renderJS( ) );
+	
 	}
 
-	return Promise.all( [ Promise.all( html ), Promise.all( js ) ] ).then( function( responses ) {
-
+	return Promise.all( html ).then( function( html ) {
 
 		return lengine.parseAndRender( fs.readFileSync( './server/html/wrapper.tpl', 'utf-8' ), { 
 
-
-			html: responses[ 0 ],
-			js: responses[ 1 ],
+			html: html,
 			position: {
 				top: self.getPositionTop(),
 				left: self.getPositionLeft()

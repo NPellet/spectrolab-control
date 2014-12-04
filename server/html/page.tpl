@@ -12,6 +12,12 @@
 <script src="./public/js/lock.js"></script>
 <script src="./public/js/main.js"></script>
 
+<!-- Outputs all the modules saved in nodejs memory -->
+<script src="_modules.js"></script>
+<link rel="stylesheet" href="_modules.css" />
+
+
+
 
 {% for css in stylesheets %}
 	<link rel="stylesheet" href="{{ css }}" />

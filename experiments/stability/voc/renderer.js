@@ -1,6 +1,9 @@
 
 var renderer = require("../../../server/renderer");
 
+var w = renderer.addWrapper('c').setSize( 100 ).setPosition( 0, 0 );
+w.addModule('display/status', 'status');
+
 var wrapperConsole = renderer
 						.addWrapper("keithley-connection")
 						.setTitle("Keithley connection")
@@ -15,10 +18,8 @@ var wrapperConsole = renderer
 	.setSize( 40 )
 	.setPosition( 5, 15 );
 
-wrapperConsole.addModule("keithley-bias-stability", "measureparams").setTitle( "" );
+wrapperConsole.addModule("keithley-bias-stability", "measurementparams").setTitle( "" );
 wrapperConsole.addModule("sample-info", "sampleInfo").setTitle( "Sample information" );
-
-
 
 var wrapperConsole = renderer
 	.addWrapper("vocvstime")

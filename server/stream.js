@@ -1,13 +1,13 @@
 
 var Promise = require("bluebird");
 var EventEmitter = require("events").EventEmitter;
-
 var WebSocketServer = require('ws').Server,
-	wss = new WebSocketServer( { port: 8080 } ),
-	_connected = false;
+	wss = new WebSocketServer( { port: 8080 } );
 
 var moduleCallbacks = {};
 var modulesEventEmittter = new EventEmitter();
+
+var _connected = false;
 
 /*
  MODULES AND COMMUNICATION READY HANDLING
@@ -53,29 +53,32 @@ wss.on('connection', function( ws ) {
 
 	_connected = true;
 	_ws = ws;
-
-    ws.on('message', function( message ) {
-        
-//        console.log('Received: ' + message );
-
-    	var jsonParsed = JSON.parse( message );
-
-    	if( jsonParsed.global ) {
-
-    		handleGlobal( jsonParsed );
-    		return;
-    	}
-
-    	if( jsonParsed.moduleid ) {
-
-			modulesEventEmittter.emit( jsonParsed.moduleid + "." + jsonParsed.instruction, jsonParsed.value, jsonParsed.instruction )
-    	}
-
-//        publicMethods.onMessage( message );
-    });
-
     //ws.send('something');
 });
+
+// On message should be out of the loop. 
+wss.on('message', function( message ) {
+    
+	if( ! _connected ) {
+		return;
+	}
+
+	var jsonParsed = JSON.parse( message );
+
+	if( jsonParsed.global ) {
+
+		handleGlobal( jsonParsed );
+		return;
+	}
+
+	if( jsonParsed.moduleid ) {
+
+		modulesEventEmittter.emit( jsonParsed.moduleid + "." + jsonParsed.instruction, jsonParsed.value, jsonParsed.instruction )
+	}
+
+//        publicMethods.onMessage( message );
+});
+
 
 var publicMethods = {
 
@@ -90,10 +93,11 @@ var publicMethods = {
 		}
 		
 		var json = {
+
 			moduleid: moduleid,
 			instruction: instruction,
 			value: value
-		}
+		};
 
 		_ws.send( JSON.stringify( json ) );
 	},
@@ -104,10 +108,12 @@ var publicMethods = {
 	},
 
 	onClientReady: function( callback ) {
+
 		clientReady.then( callback );
 	},
 
 	isReady: function() {
+
 		return clientReady.isFulfilled();
 	}
 }

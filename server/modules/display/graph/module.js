@@ -30,13 +30,15 @@ GraphDisplay.prototype = extend( {}, moduleProto, {
 		return this;
 	},
 
+	setHeight: function( h ) {
+		this.streamOut( "setHeight", h );
+	},
+
 	streamOn: {
 
 		'graphstored': function( v, i ) {
 	
 			this._graphClientStoreId = v;
-console.log( this );
-			console.log( "EMIT, MOTHER FUCKER");
 			this.emit( "graphStored", this._graphClientStoreId );
 
 		}

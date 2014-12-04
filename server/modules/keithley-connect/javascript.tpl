@@ -5,29 +5,22 @@
 
 	button.on( 'click', function() {
 
-		stream.write( "{{ module.id }}", "connect" );
-
+		module.out( "connect" );
 	} ); 
 
+	module.onMessage( "connected", function() {
 
-	stream.onMessage( "{{ module.id }}", function( message ) {
+		button.addClass('connected');
+		button.prop( 'value', 'Disconnect' );
 
-		switch( message.method ) {
+	});
+	
+	module.onMessage( "disconnected", function() {
 
-			case 'connected':
-
-				button.addClass('connected');
-				button.prop( 'value', 'Disconnect' );
-
-			break;
-
-			case 'disconnected':
-
-				button.prop( 'value', 'Connect' );
-				button.removeClass('connected');
-			break;
-		}
-
-	})
-
+		button.prop( 'value', 'Connect' );
+		button.removeClass('connected');
+	});
+	
+	module.ready();
+	
 }) ( window.io );

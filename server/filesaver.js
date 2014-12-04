@@ -33,11 +33,13 @@ FileSaver.save = function( options ) {
 	options.dir = '../data/' + date.getFullYear() + "." + pad( date.getMonth() + 1 ) + "." + pad( date.getDate() ) + "/" + options.dir;
 
 	mkdirrec( options.dir );
-
-	fs.writeFile( options.dir + "./" + pad( date.getHours() ) + "." + pad( date.getMinutes() ) + "." + pad( date.getSeconds() ) + "_" + ( options.fileName || "no-name" ) + "." + options.fileExtension, options.contents, function( err ) {
+	var fileName = pad( date.getHours() ) + "." + pad( date.getMinutes() ) + "." + pad( date.getSeconds() ) + "_" + ( options.fileName || "no-name" ) + "." + options.fileExtension;
+	fs.writeFile( options.dir + "./" + fileName, options.contents, function( err ) {
 		if( err ) { throw err; }
 		console.log('File saved');
 	});
+
+	return fileName;
 };
 
 module.exports = FileSaver;

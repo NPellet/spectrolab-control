@@ -1,4 +1,5 @@
 
+
 var wrapper = require("./wrapper"),
 	fs = require('fs'),
 	liquid = require("liquid-node"),
@@ -8,7 +9,8 @@ var wrapper = require("./wrapper"),
 
 var	renderer = {},
 	wrappers = {},
-	allModulesByName = {},
+	modulesName = {},
+	modules = [],
 	stylesheets = [];
 
 renderer.addWrapper = function( name ) {
@@ -26,10 +28,31 @@ renderer.addStylesheet = function( file ) {
 
 renderer.render = function( ) {
 
+	var js;
 	var html = [];
 	for( var i in wrappers ) {
 		html.push( wrappers[ i ].render() )
 	}
+
+	// At this point all the modules should have loaded
+
+	// Let's get the client javascript ready
+	Promise.all( modules.map( function( module ) {
+		return module.renderJS();
+	}) ).then( function( a ) {
+		js = Array.prototype.join.call( a, '' );
+	});
+	
+	// And now the css
+	Promise.all( modules.map( function( module ) {
+		return module.renderCSS();
+	}) ).then( function( a ) {
+		
+		css = Array.prototype.join.call( a, '' );
+	});
+	
+
+
 
 	Promise.all( html ).then( function() {
 
@@ -44,6 +67,7 @@ renderer.render = function( ) {
 		// TEMP
 		var http = require('http');
 		http.createServer(function (req, res) {
+			console.log( req.url );
 /*
 		    if(req.url.indexOf('.html') != -1){ //req.url has the pathname, check if it conatins '.html'
 
@@ -57,11 +81,30 @@ renderer.render = function( ) {
 		    }
 */
 
+			if( req.url == "/_modules.js" ) {
+
+				res.writeHead(200, {'Content-Type': 'text/javascript'});
+		        res.write( js );
+		        res.end();
+		        return;
+			}
+
+
+			if( req.url == "/_modules.css" ) {
+
+				res.writeHead(200, {'Content-Type': 'text/css'});
+		        res.write( css );
+		        res.end();
+		        return;
+			}
+
+
 
 		    if(req.url.indexOf('.js') != -1){ //req.url has the pathname, check if it conatins '.js'
 
 		      fs.readFile( path.resolve( __dirname, "." + req.url ), function (err, data) {
 		        if (err) console.log(err);
+		        console.log( req.url );
 		        res.writeHead(200, {'Content-Type': 'text/javascript'});
 		        res.write(data);
 		        res.end();
@@ -93,23 +136,23 @@ renderer.render = function( ) {
 }
 
 
-renderer.addModuleByName = function( moduleName, module ) {
+renderer.addModule = function( moduleName, module ) {
 
-	if( allModulesByName[ moduleName ] ) {
+	if( modulesName[ moduleName ] ) {
 		throw "A module with a similar name already exists";
 	}
-
-	allModulesByName[ moduleName ] = module;
+	modules.push( module ); // Array
+	modulesName[ moduleName ] = module; // Object indexed by name
 	return;
 }
 
 renderer.getModuleByName = function( moduleName ) {
 
-	if( ! allModulesByName[ moduleName ] ) {
+	if( ! modulesName[ moduleName ] ) {
 		throw "No module with name " + moduleName + " exists";
 	}
 
-	return allModulesByName[ moduleName ];
+	return modulesName[ moduleName ];
 }
 
 renderer.getModules = function() {

@@ -4,32 +4,31 @@ var stream = require("./stream"),
 	util = require("./util")
 	events = require("events"),
 	extend = require("extend"),
-	path = require("path");
+	path = require("path"),
+	sass = require('node-sass'),
+	Promise = require('bluebird');
 
 var liquid = require("liquid-node"),
 	lengine = new liquid.Engine
 
 var modulePrototype = {
 	
-	init: function( type ) {
+	init: function( type, name ) {
 
 		var module = this;
 		this.locks = {};
 		this.type = type;
+		this.name = name;
 		
 		this.assignId();
-/*
-		stream.onMessage( this.id, function( message ) {
-
-			module.streamIn( message );
-		} );
-*/
 
 		for( var i in this.streamOn ) {
 
 			( function( callback ) {
+
 				stream.onMessage( module.id, i, ( function() { callback.apply( module, arguments ) } ) );
-			}) ( module.streamOn[ i ] );
+
+			} ) ( module.streamOn[ i ] );
 		}
 	
 	},
@@ -46,7 +45,6 @@ var modulePrototype = {
 		if( ! this.id ) {
 			this.assignId();
 		}
-
 		stream.write( this.id, instruction, value );
 	},
 
@@ -94,9 +92,29 @@ var modulePrototype = {
 
 					return lengine.parseAndRender( fs.readFileSync( './server/html/modulejavascript.tpl' ), { 
 						js: js,
-						moduleid: self.id
+						moduleid: self.id,
+						type: self.type,
+						name: self.name
 					} );
 			  });
+	},
+
+	renderCSS: function() {
+
+		var fPath = './server/modules/' + this.type + '/style.scss';
+//console.log( './server/modules/' + this.type + '/style.scss', fs.existsSync( fPath ) );
+		if( fs.existsSync( fPath )) {
+
+			return new Promise( function( res ) {
+
+				sass.render({
+			    	file: fPath,
+			    	success: res
+				});
+			});
+		}
+
+		return "";
 	},
 
 	getFolder: function() {

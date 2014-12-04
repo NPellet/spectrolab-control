@@ -51,6 +51,7 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 					this.options = options;
 
 					this.lock( "smu.measure" );
+					module.emit( "measuring" );
 
 					switch( val.biastype ) {
 

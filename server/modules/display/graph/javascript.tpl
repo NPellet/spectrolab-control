@@ -1,5 +1,5 @@
 
-( function( stream, store ) {
+( function( store ) {
 
 	var graphi;
 
@@ -10,50 +10,39 @@
 		graphi.setSize( dom.width(), dom.height() );
 
 		module.streamOut( "graphstored", store.store( graphi ) );
-		//stream.write("{{ module.id }}", { method: "graphStored", value: store.store( graphi ) }  );
+		
 //		graphi.getXAxis().toggleGrids( false ).setLabel('Voltage (V)');
 //		graphi.getYAxis().toggleGrids( false ).flip( true ).setLabel('Current (mA)').setLineAt0( true );
 
 		module.ready();
 	});
 	
-	stream.onMessage( "{{ module.id }}", function( data ) {
+	module.onMessage( "newSerie", function( data ) {
 
-		switch( data.instruction ) {
+		// Create a serie
+		var s = graphi
+			.newSerie( data.name )
+			.autoAxis()
+			.setData( data.data );
 
-			case 'newSerie':
-
-				// Create a serie
-			
-				var s = graphi
-							.newSerie( data.value.name )
-							.autoAxis()
-							.setData( data.value.data );
-
-				graphi.redraw();
-				graphi.drawSeries();
-
-			break;
-
-			case 'setXAxisLabel':
-				graphi.getXAxis().setLabel( data.value );
-			break;
-
-			case 'setYAxisLabel':
-				graphi.getYAxis().setLabel( data.value );
-			break;
-
-			case 'setHeight':
-				graphi.setHeight( data.value );
-			break;
-
-			case 'clear':
-				graphi.killSeries();
-			break;
-
-		}
-	} );
-
+		graphi.redraw();
+		graphi.drawSeries();
+	});
 	
+	module.onMessage( "setXAxisLabel", function( data ) {
+		graphi.getXAxis().setLabel( data.value );
+	});
 
-}) ( window.io, window.storage );
+	module.onMessage( "setYAxisLabel", function( data ) {
+		graphi.getYAxis().setLabel( data.value );
+	});
+
+	module.onMessage( "setHeight", function( value ) {
+		graphi.setHeight( value );
+	});
+
+	module.onMessage( "clear", function( data ) {
+		graphi.killSeries();
+	});
+
+}) ( window.storage );

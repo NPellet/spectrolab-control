@@ -24,3 +24,10 @@ Module.prototype.streamOut = function( instruction, value ) {
 
 	window.io.write( this.id, instruction, value );
 }
+
+Module.prototype.out = Module.prototype.streamOut;
+
+Module.prototype.onMessage = function( instruction, callback ) {
+
+	window.io.onMessage( this.id, instruction, callback );
+}

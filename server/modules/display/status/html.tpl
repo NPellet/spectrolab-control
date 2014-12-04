@@ -1,0 +1,1 @@
+<div id="statusbar-{{ module.id }}"></div>

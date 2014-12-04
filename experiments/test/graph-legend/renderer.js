@@ -2,36 +2,18 @@
 var renderer = require("../../../server/renderer");
 
 
-var wrapperConsole = renderer
+var w = renderer
 	.addWrapper("wrapper_graph")
-	.setTitle("")
 	.setSize( 60, 40 )
-	.setPosition( 50, 5 );
+	.setPosition( 0, 3 );
 
-wrapperConsole.addModule("display/graph", "graph").setTitle( "" );
-wrapperConsole.addModule("display/legend", "legend").setTitle( "" );
-
-
-
-/*
-var wrapperConsole = renderer
-	.addWrapper("voc")
-	.setTitle("IV Curve")
-	.setSize( 40 )
-	.setPosition( 50, 0 );
-
-//wrapperConsole.addModule("keithley-sourcev", "keithleySourceV");
-wrapperConsole.addModule("ivdisplay", "IV");
-
-*/
+w.addModule("display/graph", "graph").setTitle( "" );
+w.addModule("display/legend", "legend").setTitle( "" );
 
 
-/*
-var wrapperGraphs = renderer.addWrapper();
-wrapperGraphs.addModule("graph", "current");
-wrapperGraphs.addModule("graph", "voltage");
-wrapperGraphs.addModule("graph", "power");
-
-*/
+var w = renderer.addWrapper('console').setSize( 100, 2 ).setPosition( 0, 0 );
+w
+ .addModule("display/status", "status")
+ .setTitle( "" );
 
 module.exports = renderer;

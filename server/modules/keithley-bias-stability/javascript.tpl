@@ -1,5 +1,5 @@
 
-( function( stream ) {
+( function( ) {
 
 	var form = $( "#control-{{ module.id }}" );
 
@@ -9,7 +9,8 @@
 		e.preventDefault();
 
 		var data = serializeObjectWithFloats( form, [ 'totaltime', 'settlingtime', 'bias' ] );
-		stream.write( "{{ module.id }}", { method: "measure", value: data } );
+		module.out( "measure", data );
+
 	} ); 
 
 
@@ -21,11 +22,7 @@
 		);
 	});
 
-	stream.onMessage( "{{ module.id }}", function( data ) {
 
-		switch( data.method ) {
-
-		}
-	})
-
-}) ( window.io );
+	module.ready();
+	
+}) ( );

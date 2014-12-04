@@ -14,36 +14,50 @@
 	};
 
 	ws.onclose = function( ) {
+		
 		global.io.writeGlobal( "_streamClose", 1 );
 		connected = false;
 		onDisconnected.fire();
 	}
 
+
+	ws.onerror = function( ) {
+		
+		global.io.writeGlobal( "_streamClose", 1 );
+		connected = false;
+		onDisconnected.fire();
+	}
+
+
 	ws.onmessage = function( event ) {
 		
 		var data = JSON.parse( event.data );
+		var instruction = data.instruction;
 
 		if( global.io._callbacks[ data.moduleid ] ) {
 
-			global.io._callbacks[ data.moduleid ].map( function( callback ) {
+			if( data.instruction == "lock" ) {
 
-				if( data.instruction == "lock" ) {
-
-					var dom = $( "#module-" + data.moduleid );
-					if( dom.find( '.overlay' ).length > 0 ) {
-						return;
-					}
-
-					lockModule( dom );
-					
-				} else if( data.instruction == "unlock" ) {
-
-					unlockModule( dom );
-
-				} else {
-
-					callback( data );
+				var dom = $( "#module-" + data.moduleid );
+				if( dom.find( '.overlay' ).length > 0 ) {
+					return;
 				}
+
+				lockModule( dom );
+				return;
+				
+			} else if( data.instruction == "unlock" ) {
+
+				unlockModule( dom );
+				return;
+			}
+		}
+
+		if( global.io._callbacks[ data.moduleid ] && global.io._callbacks[ data.moduleid ][ instruction ] ) {
+
+			global.io._callbacks[ data.moduleid ][ instruction ].map( function( callback ) {
+
+				callback( data.value, data );
 			} );
 		}
 	}
@@ -68,10 +82,12 @@
 
 		_callbacks: {},
 
-		onMessage: function( moduleId, callback ) {
+		onMessage: function( moduleId, instruction, callback ) {
 
 			this._callbacks[ moduleId ] = this._callbacks[ moduleId ] || [];
-			this._callbacks[ moduleId ].push( callback );
+			this._callbacks[ moduleId ][ instruction ] = this._callbacks[ moduleId ][ instruction ] || [];
+
+			this._callbacks[ moduleId ][ instruction ].push( callback );
 
 		},
 

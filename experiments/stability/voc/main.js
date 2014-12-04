@@ -12,25 +12,35 @@ var ITXBuilder = require("../../../server/databuilder/itx").ITXBuilder,
 var keithley = new keithley( config.instruments.keithley );
 var module = renderer.getModuleByName;
 
+var status = renderer.getModule('status');
+
 
 renderer
 	.getModule( "smuconnect" )
 	.assignKeithley( keithley )
+	.on("connecting", function() {
+		status.update("Connecting to Keithley SMU...", 'process');
+	})
 	.on('connected', function() {
+		status.update("Connected to Keithley SMU", 'ok');
 		module( "measureparams" ).unlock( 'smu.connection' ); // Unlock voc stab module
 	})
 	.on('disconnected', function() {
+		status.update("Disconnected from Keithley SMU", 'error');
 		module( 'measureparams' ).lock( 'smu.connection' ); // Unlock voc stab module	
 	});
 
 
 renderer
-	.getModule( "keithleyVocStab" )
+	.getModule( "measurementparams" )
 	.assignKeithley( keithley )
+	.on( "measuring", function( data ) {
+		status.update("Measuring...", "process");
+	})
 	.on( "measurementEnd", function( data ) {
 
 		var info = renderer.getModuleByName("sampleInfo").getSampleInfo();
-		var parameters = renderer.getModule("measureparams").getMeasurementParams();
+		var parameters = renderer.getModule("measurementparams").getMeasurementParams();
 
 		renderer.getModuleByName("GraphVocVsTime").newSerie( info.fileName, data );
 		
@@ -46,15 +56,14 @@ renderer
 		var itxw = itx.newWave( "detectorVoltage" );
 		itxw.setWaveform( w );
 
-
-
-		fileSaver.save( {
+		var fileName = fileSaver.save( {
 			contents: itx.getFile(),
 			fileName: info.fileName,
 			fileExtension: 'itx',
 			dir: './'
 		} );
-		//renderer.getModuleByName( "IV" ).setIV( iv );
+
+		status.update("Measurement ended. File saved under <em>" + fileName + "</em>", "ok");
 	})
 	.lock();
 
@@ -62,7 +71,9 @@ renderer.render();
 
 
 
-stream.onClientConnection( function() {
+stream.onClientReady( function() {
+
+
 	renderer.getModuleByName("GraphVocVsTime").setXAxisLabel("Time (s)").setYAxisLabel( "Voltage (V)").setHeight( 300 );
 })
 

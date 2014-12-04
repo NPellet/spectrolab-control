@@ -8,15 +8,10 @@
 
 	form.on( 'change, keyup', 'input', function() {
 		var data = serializeObjectWithFloats( form, [] );
-		stream.write( "{{ module.id }}", { method: "change", value: data });
+		module.out( "change", data );
 	} ); 
 
 
-	stream.onMessage( "{{ module.id }}", function( data ) {
-
-		switch( data.method ) {
-
-		}
-	})
+	module.ready();
 
 }) ( window.io );
