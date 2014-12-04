@@ -1,17 +1,15 @@
 
 var wrapper = require("./wrapper"),
-	fs = require('fs');
+	fs = require('fs'),
+	liquid = require("liquid-node"),
+	lengine = new liquid.Engine,
+	Promise = require('bluebird'),
+	path = require('path');
 
-var liquid = require("liquid-node"),
-	lengine = new liquid.Engine
-
-var Promise = require('bluebird');
-
-var renderer = {};
-
-var wrappers = {};
-var allModulesByName = {};
-var stylesheets = [];
+var	renderer = {},
+	wrappers = {},
+	allModulesByName = {},
+	stylesheets = [];
 
 renderer.addWrapper = function( name ) {
 
@@ -35,7 +33,7 @@ renderer.render = function( ) {
 
 	Promise.all( html ).then( function() {
 
-		return lengine.parseAndRender( fs.readFileSync( './html/page.tpl'), { 
+		return lengine.parseAndRender( fs.readFileSync( './server/html/page.tpl'), { 
 
 			wrappers: arguments[ 0 ],
 			stylesheets: stylesheets
@@ -62,7 +60,7 @@ renderer.render = function( ) {
 
 		    if(req.url.indexOf('.js') != -1){ //req.url has the pathname, check if it conatins '.js'
 
-		      fs.readFile(__dirname + req.url, function (err, data) {
+		      fs.readFile( path.resolve( __dirname, "." + req.url ), function (err, data) {
 		        if (err) console.log(err);
 		        res.writeHead(200, {'Content-Type': 'text/javascript'});
 		        res.write(data);
@@ -74,7 +72,7 @@ renderer.render = function( ) {
 
 		    if(req.url.indexOf('.css') != -1){ //req.url has the pathname, check if it conatins '.css'
 
-		      fs.readFile(__dirname + req.url, function (err, data) {
+		      fs.readFile( path.resolve( __dirname, "." + req.url ), function (err, data) {
 		        if (err) console.log(err);
 		        res.writeHead(200, {'Content-Type': 'text/css'});
 		        res.write(data);
@@ -113,5 +111,11 @@ renderer.getModuleByName = function( moduleName ) {
 
 	return allModulesByName[ moduleName ];
 }
+
+renderer.getModules = function() {
+	return allModulesByName;
+}
+
+renderer.getModule = renderer.getModuleByName;
 
 module.exports = renderer;

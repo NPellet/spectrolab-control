@@ -1,7 +1,6 @@
 
-
-
-var fs = require('fs');
+var fs = require('fs'),
+	path = require('path');
 
 var liquid = require("liquid-node"),
 	lengine = new liquid.Engine,
@@ -31,18 +30,18 @@ Wrapper.prototype.setSize = function( w, h ) {
 
 Wrapper.prototype.addModule = function( moduleType, moduleName ) {
 
-	var moduleConstructor = require('./modules/' + moduleType + '/module.js').Constructor;
+	var moduleConstructor = require( path.resolve( './server/modules/', moduleType, 'module.js' ) ).Constructor;
 
 	var module = new moduleConstructor();
 
 	module.init( moduleType );
-	module.setFolder('./modules/' + moduleType );
+	module.setFolder( path.resolve('./server/modules/', moduleType ) );
 
 	this.modules.push( module );
 	this.renderer.addModuleByName( moduleName, module );
-
-	if( fs.existsSync( './modules/' + moduleType + '/style.css' ) ) {
-		this.renderer.addStylesheet( './modules/' + moduleType + '/style.css' );
+//console.log( './server/modules/' + moduleType + '/style.css', fs.existsSync( './modules/' + moduleType + '/style.css' ))
+	if( fs.existsSync( './server/modules/' + moduleType + '/style.css' ) ) {
+		this.renderer.addStylesheet( 'modules/' + moduleType + '/style.css' );
 	}
 	return module;
 }
@@ -62,7 +61,7 @@ Wrapper.prototype.render = function() {
 	return Promise.all( [ Promise.all( html ), Promise.all( js ) ] ).then( function( responses ) {
 
 
-		return lengine.parseAndRender( fs.readFileSync( './html/wrapper.tpl', 'utf-8' ), { 
+		return lengine.parseAndRender( fs.readFileSync( './server/html/wrapper.tpl', 'utf-8' ), { 
 
 
 			html: responses[ 0 ],

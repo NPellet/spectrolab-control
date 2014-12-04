@@ -13,9 +13,11 @@
 			stream.write( "{{ module.id }}", "newSerie", [ serie.getName(), serie.getLabel(), serie.getSymbolForLegend.toString() ] );
 		} );
 
-		stream.write("{{ module.id }}", "graphStored", store.store( graphi ) );
+		stream.write("{{ module.id }}", { method: "graphStored", value: store.store( graphi ) }  );
 //		graphi.getXAxis().toggleGrids( false ).setLabel('Voltage (V)');
 //		graphi.getYAxis().toggleGrids( false ).flip( true ).setLabel('Current (mA)').setLineAt0( true );
+
+		module.ready();
 	});
 	
 	stream.onMessage( "{{ module.id }}", function( data ) {
@@ -54,5 +56,7 @@
 
 		}
 	} );
+
+	
 
 }) ( window.io, window.storage );

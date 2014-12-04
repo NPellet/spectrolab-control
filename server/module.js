@@ -3,7 +3,8 @@ var stream = require("./stream"),
 	fs = require('fs'),
 	util = require("./util")
 	events = require("events"),
-	extend = require("extend");
+	extend = require("extend"),
+	path = require("path");
 
 var liquid = require("liquid-node"),
 	lengine = new liquid.Engine
@@ -13,7 +14,7 @@ var modulePrototype = {
 	init: function( type ) {
 
 		var module = this;
-		this._locked = false;
+		this.locks = {};
 		this.type = type;
 		
 		this.assignId();
@@ -61,14 +62,15 @@ var modulePrototype = {
 		var module = this;
 		var moduleTplInfos = this.getModuleInfos();
 
-		return lengine.parseAndRender( fs.readFileSync( this.getFolder() + '/html.tpl'), moduleTplInfos ).then( function( html ) {
+		return lengine.parseAndRender( fs.readFileSync( path.resolve( this.getFolder(), 'html.tpl') ), moduleTplInfos ).then( function( html ) {
 
-			return lengine.parseAndRender( fs.readFileSync( './html/module.tpl' ), { 
+			return lengine.parseAndRender( fs.readFileSync( './server/html/module.tpl' ), { 
 
 				content: html,
 				locked: module._locked,
 				id: module.id,
 				type: module.type,
+				class: module.getClass(),
 				title: module.title
 			} );
 		});
@@ -76,8 +78,18 @@ var modulePrototype = {
 
 	renderJS: function() {
 		var moduleTplInfos = this.getModuleInfos();		
+
 		return lengine
-		  .parseAndRender( fs.readFileSync( this.getFolder() + '/javascript.tpl'), moduleTplInfos );
+		  	.parseAndRender( 
+		  		fs.readFileSync( 
+		  			path.resolve( this.getFolder(), 'javascript.tpl')
+		  		),
+		  		moduleTplInfos ).then( function ( js ) {
+
+					return lengine.parseAndRender( fs.readFileSync( './server/html/modulejavascript.tpl' ), { 
+						js: js
+					} );
+			  });
 	},
 
 	getFolder: function() {
@@ -88,26 +100,41 @@ var modulePrototype = {
 		this.folder = folder;
 	},
 
-	lock: function() {
+	lock: function( lockElement ) {
 
-		this._locked = true;
+		this.locks[ lockElement ] = true;
 
-		if( stream.isReady() ) {
+		if( this.isLocked() && stream.isReady() ) {
 			this.streamOut( 'lock', true );
 		}
 	},
 
-	unlock: function() {
+	unlock: function( lockElement ) {
 
-		this._locked = false;
+		this.locks[ lockElement ] = false;
 
-		if( stream.isReady( ) ) {
+		if( ! this.isLocked() && stream.isReady( ) ) {
 			this.streamOut( 'lock', false );
 		}
 	},
 
+	isLocked: function() {
+
+		for( var i in this.locks ) {
+			if( this.locks[ i ] ) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+
 	setTitle: function( title ) {
 		this.title = title;
+	},
+
+	getClass: function() {
+		return this.type.replace("/", "-");
 	}
 }
 

@@ -25,9 +25,8 @@ function VoltageStability(channel, bias, settlingtime, totaltime, complianceV, c
 	channel.nvbuffer1.appendmode = 1
 
 	complianceI = 0.001
- 	channel.source.func = channel.OUTPUT_DCAMPS;
- 	display.smub.measure.func = display.MEASURE_DCVOLTS;
-	channel.source.output = channel.OUTPUT_ON;
+	complianceV = 2
+
 
 	channel.source.rangev = complianceV
 	channel.source.limitv = complianceV
@@ -35,8 +34,14 @@ function VoltageStability(channel, bias, settlingtime, totaltime, complianceV, c
 	channel.source.rangei = complianceI
 	channel.source.limiti = complianceI
 	
-	channel.measure.autorangei = channel.AUTORANGE_ON
-	channel.measure.autorangev = channel.AUTORANGE_OFF
+
+ 	channel.source.func = channel.OUTPUT_DCAMPS;
+ 	display.smub.measure.func = display.MEASURE_DCVOLTS;
+	channel.source.output = channel.OUTPUT_ON;
+
+	channel.source.autorangei = channel.AUTORANGE_ON
+	channel.source.autorangev = channel.AUTORANGE_ON
+
 
 	for l_j = 1, points do
 

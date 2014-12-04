@@ -9,13 +9,15 @@ keithley.connect( function() { } );
 
 */
 
+var path = require("path");
+
 process.argv.forEach( function( val, index, array ) {
   
   val = val.split('=');
   switch( val[ 0 ] ) {
   	
   	case 'experiment':
-  		global.expFolder = './experiments/' + val[ 1 ];
+  		global.expFolder = path.resolve( __dirname, "../experiments/", val[ 1 ] );
   		var exp = require( global.expFolder + '/main' );
   	break;
   }

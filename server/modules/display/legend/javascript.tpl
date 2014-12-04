@@ -1,49 +1,96 @@
 
 ( function( stream ) {
 
-	var graphi;
+	var table = $("#table-{{ module.id }}");
 
-	$( document ).ready( function() {
+	function setEvents( graph ) {
 
-		var dom = $("#graph-{{ module.id }}");
-		graphi = new Graph( "graph-{{ module.id }}" );
-		graphi.setSize( dom.width(), dom.height() );
+		graph.on( "newSerie", function( serie ) {
 
-//		graphi.getXAxis().toggleGrids( false ).setLabel('Voltage (V)');
-//		graphi.getYAxis().toggleGrids( false ).flip( true ).setLabel('Current (mA)').setLineAt0( true );
-	});
-	
+			newSerie( serie );
+
+		} );
+
+		table.on('change', 'input[type="checkbox"]', function( ) {
+
+			var serie = $( this ).parent().parent().data('serie');
+
+			if( $( this ).prop( 'checked' ) ) {
+				serie.show();
+			} else {
+				serie.hide();
+			}
+
+
+		} );
+
+		table.on('change', 'input[type="color"]', function( ) {
+
+			var tr = $( this ).parent().parent();
+			var serie = tr.data('serie');
+			serie.setLineColor( $(this).prop('value') );
+			serie.updateStyle();	
+			updateSerieMarker( tr );		
+		} );
+
+		table.on('click', '.remove', function() {
+
+			var tr = $( this ).parent().parent();
+			var serie = tr.data('serie');
+			serie.kill();
+			tr.remove();
+		})
+	}
+
+	function makeSerieDom( serie ) {
+//console.dir( serie.getSymbolForLegend() );
+		var symbol = "<svg width='30' height='20'><g transform='translate(0, 10)'></g></svg>";
+
+		var tr = $("<tr />")
+					.append("<td><input type='checkbox' checked='checked' /></td>")
+					.append("<td>" + symbol + "</td>")
+					.append("<td>" + serie.getName() + "</td>")
+					.append("<td><input type='color' /></td>")
+					.append("<td><a class='remove'>[x]</a></td>")
+				.data('serie', serie );
+
+		var group = tr.find('svg g');
+
+		tr.data('serieSymbol', group);
+		updateSerieMarker( tr );
+
+		return tr;
+	}
+
+	function updateSerieMarker( tr ) {
+
+		var serie = tr.data('serie'),
+			g = tr.data( 'serieSymbol' );
+
+		g.html( serie.getSymbolForLegend().outerHTML )
+	}
+
+
+	function newSerie( serie ) {
+
+		var tr = makeSerieDom( serie );
+		table.append( tr );
+	}
+
+
 	stream.onMessage( "{{ module.id }}", function( data ) {
 
 		switch( data.method ) {
 
-			case 'newSerie':
+			case 'assignGraph':
 
-				// Create a serie
-			
-				var s = graphi
-							.newSerie( data.value.name )
-							.autoAxis()
-							.setData( data.value.data );
-
-				graphi.redraw();
-				graphi.drawSeries();
-
+				this.graph = storage.get( data.value );
+				setEvents( this.graph );
 			break;
-
-			case 'setXAxisLabel':
-				graphi.getXAxis().setLabel( data.value );
-			break;
-
-			case 'setYAxisLabel':
-				graphi.getYAxis().setLabel( data.value );
-			break;
-
-			case 'clear':
-				graphi.killSeries();
-			break;
-
+		
 		}
 	} );
+
+	module.ready();
 
 }) ( window.io );

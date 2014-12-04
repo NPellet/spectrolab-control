@@ -32,7 +32,7 @@ IgorFile.prototype = {
 		}
 
 		return this.waves[ name ] = new IgorWave( name );
-	}
+	},
 
 	
 	getFile: function( filename ) {
@@ -60,76 +60,55 @@ var IgorWave = function( name ) {
 
 IgorWave.prototype = {
 
-	setData: function( data ) {	
-		this.data = data;
-	},
-
-	setDataFromArray: function( a, index ) {
-		var a2 = [];
-		for( var i = 0, l = a.length; i < l ; i ++ ) {
-			a2.push( a[ i ][ index ] );
-		}
-
-		this.data = a2;
-	},
-
-	setXUnit: function( xUnit ) {
-		this.xUnit = xUnit;
-	},
-
-	setYUnit: function( yUnit ) {
-		this.yUnit = yUnit;
-	},
-
-	setXScalingDelta: function( x0, xDelta ) {
-		this.xScaling = {
-			mode: 'delta',
-			x0: x0,
-			xDelta: xDelta
-		};
+	setWaveform: function( w ) {
+		this.waveform = w;
 	},
 
 	getText: function() {
 
-		if( ! this.data ) {
-			throw "Wave has no data";
+		if( ! this.waveform ) {
+			throw "No assigned waveform";
 		}
 
 		var string = "";
 		string += "WAVES/D	" + this.name + "\n";
 		string += "BEGIN\n";
-		string += this.data.join("\n");
+		string += this.waveform.getData().join("\n");
 		string += "\n";
 		string += "END\n";
 
-		SetScale/P x 0,3,"", colors
+		// If we have scaling or x axis unit
+		if( this.waveform.hasXScaling() || this.waveform.hasXUnit() ) {
 
-		if( this.xScaling || this.xUnit ) {
-
+			// Then we call the setscale
 			var stringScaling = "x SetScale/";
 
-			if( this.xScaling ) {
-				switch( this.xScaling.mode ) {
+			// If we have actually scaling, let's parse it
+			if( this.waveform.hasXScaling( ) ) {
+
+				switch( this.waveform.getXScalingMode( ) ) {
 
 					case 'delta':
-						stringScaling += "/P x " + this.xScaling.x0 + "," + this.xScaling.xDelta; 
+						stringScaling += "P x " + this.waveform.getXScaling().x0 + "," + this.waveform.getXScaling().xDelta; 
 					break;
 
 
 				}
+			// In case of no scaling, default is delta mode with x0 = 0, xDelta = 1 
 			} else {
-				stringScaling += "/P 0, 1";
+				stringScaling += "P 0, 1";
 			}
-				
-			stringScaling += ", \"" + (this.xUnit || "") + "\"";
+			
+			// Adding the x axis unit
+			stringScaling += ", \"" + ( this.waveform.getXUnit( ) || "" ) + "\"";
 			stringScaling += ", " + this.name + ";";
 			stringScaling += "\n";
 
 			string += stringScaling
 		}
 		
-		if( this.yUnit ) {
-			string += " SetScale y 0, 0,\"" + ( this.yUnit || "" ) + "\", " + this.name + ";\n";	
+		if( this.waveform.hasYUnit( ) ) {
+			string += "x SetScale y 0, 0,\"" + ( this.waveform.getYUnit( ) || "" ) + "\", " + this.name + ";\n";	
 		}
 
 		return string;
@@ -140,8 +119,8 @@ IgorWave.prototype = {
 	}
 }
 
-exports.IgorSaver = IgorFile;
-exports.IgorWave = IgorWave;
+exports.ITXBuilder = IgorFile;
+exports.ITXWave = IgorWave;
 
 module.exports = exports;
 

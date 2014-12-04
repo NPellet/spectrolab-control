@@ -1,5 +1,5 @@
 
-var renderer = require("../../../renderer");
+var renderer = require("../../../server/renderer");
 
 var wrapperConsole = renderer
 						.addWrapper("keithley-connection")
@@ -7,7 +7,7 @@ var wrapperConsole = renderer
 						.setSize( 15 )
 						.setPosition( 5, 5 );
 
-wrapperConsole.addModule("keithley-connect", "keithleyConnect").setTitle("");
+wrapperConsole.addModule("keithley-connect", "smuconnect").setTitle("");
 
 var wrapperConsole = renderer
 	.addWrapper("keithley")
@@ -15,7 +15,7 @@ var wrapperConsole = renderer
 	.setSize( 40 )
 	.setPosition( 5, 15 );
 
-wrapperConsole.addModule("keithley-bias-stability", "keithleyVocStab").setTitle( "" );
+wrapperConsole.addModule("keithley-bias-stability", "measureparams").setTitle( "" );
 wrapperConsole.addModule("sample-info", "sampleInfo").setTitle( "Sample information" );
 
 

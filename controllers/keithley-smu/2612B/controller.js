@@ -67,6 +67,7 @@ var methods = {
 
 		method: 'VoltageStability',
 		parameters: function( options ) {
+			console.log( options );
 			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
 		},
 
@@ -168,7 +169,7 @@ Keithley.prototype._callMethod = function( method, options, callback ) {
 		}
 
 		callback( data );
-	}			
+	}
 
 	function listen( prevData ) {
 
@@ -204,7 +205,7 @@ Keithley.prototype.setEvents = function() {
 	this.socket.on('connect', function() {
 		self.uploadScripts();
 		self.connected = true;
-		socket.write("SpetroscopyScripts();\r\n");
+		self.socket.write("SpetroscopyScripts();\r\n");
 		self.emit("connected");
 	});
 
@@ -225,7 +226,8 @@ Keithley.prototype.uploadScripts = function() {
 	console.log( files );
 
 	for( var i = 0; i < files.length ; i ++ ) {
-		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) );
+		console.log( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ).toString("utf8") );
+		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ) );
 		this.socket.write("\r\n");
 	}
 

@@ -33,4 +33,14 @@ function serializeObjectWithFloats( form, floats ) {
 $(document).ready(function() {
 
 	$(".module.locked").each( function( i, dom ) { lockModule( $( dom ) ); });
+
+	var promises = Module.allModules.map( function( module ) {
+		return module.getReadyPromise();
+	})
+
+	Promise.all( promises ).then( function() {
+
+		window.io.writeGlobal( "modulesReady" );
+
+	})
 });

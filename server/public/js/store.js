@@ -14,6 +14,10 @@
 		return id;
 	}
 
+	exports.get = function( key ) {
+		return private.store[ key ] || undefined;
+	}
+
 	global.storage = exports;
 
 }) ( window )

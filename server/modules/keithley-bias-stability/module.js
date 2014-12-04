@@ -17,6 +17,14 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 		return this;
 	},
 
+	getMeasurementParams: function() {
+		return this.getMeasurementParameters();
+	},
+
+	getMeasurementParameters: function() {
+		return this.options;
+	},
+
 	streamIn: function( message ) {
 
 		var module = this;
@@ -40,8 +48,9 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 						bias: val.bias
 					};
 
-					this.lock();
+					this.options = options;
 
+					this.lock( "smu.measure" );
 
 					switch( val.biastype ) {
 
@@ -54,13 +63,12 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 							method = "VoltageStability";
 						break;
 					}
-console.log( method );
 
 					module.keithley[ method ]( options, function( stab ) {
 
 						//module.streamOut( { message: 'iv', value: voc_time } );
 						module.emit("measurementEnd", stab, options );
-						module.unlock();
+						module.unlock( "smu.measure" );
 					} );
 
 				break;

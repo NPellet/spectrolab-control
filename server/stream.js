@@ -1,26 +1,43 @@
 
+var Promise = require("bluebird");
 
 var WebSocketServer = require('ws').Server,
 	wss = new WebSocketServer( { port: 8080 } ),
 	_connected = false;
 
-var moduleCallbacks = {},
-	streamReadyClbks = [];
+var moduleCallbacks = {};
+
+var streamReadyResolve,
+	modulesReadyResolve;
+
+var streamReady = new Promise( function( resolve ) {
+	streamReadyResolve = resolve;
+});
+
+
+var modulesReady = new Promise( function( resolve ) {
+	modulesReadyResolve = resolve;
+});
+
+var clientReady = Promise.all( [ streamReady, modulesReady ] );
+
 
 function handleGlobal( message ) {
 
 	switch( message.message[ 0 ] ) { // Message header
 
-		case 'readystate':
+		case '_streamOpen':
+			streamReadyResolve();
+		break;
 
-			if( message.message[ 1 ] == 'streamready' ) {
-				streamReady();
-			}
+		case 'modulesReady':
+			modulesReadyResolve();
 		break;
 	}
 }
 
 function streamReady() {
+
 	// Executes all callbacks on stream ready...
 	streamReadyClbks.map( function( c ) {
 		c();
@@ -80,12 +97,12 @@ var publicMethods = {
 		moduleCallbacks[ moduleid ].push( callback );
 	},
 
-	onClientConnection: function( callback ) {
-		streamReadyClbks.push( callback );
+	onClientReady: function( callback ) {
+		clientReady.then( callback );
 	},
 
 	isReady: function() {
-		return _connected;
+		return clientReady.isFulfilled();
 	}
 }
 

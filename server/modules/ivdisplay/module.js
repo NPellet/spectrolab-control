@@ -1,5 +1,5 @@
 
-var moduleProto = require('../../module'),
+var moduleProto = require('../../../module'),
 	extend = require('extend');
 
 var IVDisplay = function() {};

@@ -22,16 +22,19 @@ function mkdirrec( dir ) {
 	}
 }
 
+function pad( val ) {
+	return ( String( val ).length == 1 ) ? "0" + val : val;
+}
 
 FileSaver.save = function( options ) {
 
 	var date = new Date();
 	options.dir = options.dir || "./";
-	options.dir = '../data/' + date.getFullYear() + "." + date.getMonth() + "." + date.getDate() + "/" + options.dir;
+	options.dir = '../data/' + date.getFullYear() + "." + pad( date.getMonth() + 1 ) + "." + pad( date.getDate() ) + "/" + options.dir;
 
 	mkdirrec( options.dir );
 
-	fs.writeFile( options.dir + "./" + date.getHours() + "." + date.getMinutes() + "." + date.getSeconds() + "_" + options.fileName + "." + options.fileExtension, options.contents, function( err ) {
+	fs.writeFile( options.dir + "./" + pad( date.getHours() ) + "." + pad( date.getMinutes() ) + "." + pad( date.getSeconds() ) + "_" + ( options.fileName || "no-name" ) + "." + options.fileExtension, options.contents, function( err ) {
 		if( err ) { throw err; }
 		console.log('File saved');
 	});

@@ -28,6 +28,28 @@ GraphDisplay.prototype = extend( {}, moduleProto, {
 
 		this.streamOut( "setYAxisLabel", label );
 		return this;
+	},
+
+	streamIn: function( message ) {
+
+		var module = this;
+
+		if( message.method ) {
+
+			switch( message.method ) {
+
+				case 'graphStored':
+
+				console.log("Storeid: ", message );
+
+
+					this._graphClientStoreId = message.value;
+					this.emit( "graphStored", this._graphClientStoreId );
+				break;
+
+			}
+		}
+
 	}
 
 } );
