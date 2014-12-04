@@ -1,12 +1,17 @@
 
 var Promise = require("bluebird");
+var EventEmitter = require("events").EventEmitter;
 
 var WebSocketServer = require('ws').Server,
 	wss = new WebSocketServer( { port: 8080 } ),
 	_connected = false;
 
 var moduleCallbacks = {};
+var modulesEventEmittter = new EventEmitter();
 
+/*
+ MODULES AND COMMUNICATION READY HANDLING
+*/
 var streamReadyResolve,
 	modulesReadyResolve;
 
@@ -61,15 +66,12 @@ wss.on('connection', function( ws ) {
     		return;
     	}
 
-    	if( jsonParsed.moduleid && moduleCallbacks[ jsonParsed.moduleid ] ) {
+    	if( jsonParsed.moduleid ) {
 
-    		moduleCallbacks[ jsonParsed.moduleid ].map( function( func ) {
-
-    			func( jsonParsed.message );
-    		} );
+			modulesEventEmittter.emit( jsonParsed.moduleid + "." + jsonParsed.instruction, jsonParsed.value, jsonParsed.instruction )
     	}
 
-        publicMethods.onMessage( message );
+//        publicMethods.onMessage( message );
     });
 
     //ws.send('something');
@@ -77,24 +79,28 @@ wss.on('connection', function( ws ) {
 
 var publicMethods = {
 
-	write: function( moduleid, message ) {
+	write: function( moduleid, instruction, value ) {
 
 		if( ! _connected ) {
 			throw "No websocket connection established";
 		}
 
+		if( Array.isArray( instruction ) ) {
+			instruction = instruction.join( "." );
+		}
+		
 		var json = {
 			moduleid: moduleid,
-			message: message
+			instruction: instruction,
+			value: value
 		}
 
 		_ws.send( JSON.stringify( json ) );
 	},
 
-	onMessage: function( moduleid, callback ) {
+	onMessage: function( moduleid, instruction, callback ) {
 
-		moduleCallbacks[ moduleid ] = moduleCallbacks[ moduleid ] || [ ];
-		moduleCallbacks[ moduleid ].push( callback );
+		modulesEventEmittter.on( moduleid + "." + instruction, callback );
 	},
 
 	onClientReady: function( callback ) {

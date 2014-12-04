@@ -27,25 +27,22 @@
 
 			global.io._callbacks[ data.moduleid ].map( function( callback ) {
 
-				if( data.message.method == "lock" ) {
+				if( data.instruction == "lock" ) {
 
 					var dom = $( "#module-" + data.moduleid );
-
-					if( data.message.value ) {
-
-						if( dom.find( '.overlay' ).length > 0 ) {
-							return;
-						}
-
-						lockModule( dom );
-						
-					} else {
-
-						unlockModule( dom );
+					if( dom.find( '.overlay' ).length > 0 ) {
+						return;
 					}
+
+					lockModule( dom );
+					
+				} else if( data.instruction == "unlock" ) {
+
+					unlockModule( dom );
+
 				} else {
 
-					callback( data.message );
+					callback( data );
 				}
 			} );
 		}
@@ -62,6 +59,10 @@
 		}
 	}
 
+	var sendJSON = function( json ) {
+
+		send( JSON.stringify( json ) );
+	}
 
 	global.io = {
 
@@ -74,20 +75,16 @@
 
 		},
 
-		write: function( moduleId, message ) {
+		write: function( moduleId, instruction, value ) {
 
-			send( JSON.stringify( { moduleid: moduleId, message: message } ) );
-			
+			sendJSON( { moduleid: moduleId, instruction: instruction, value: value } );
 		},
 
 
 		writeGlobal: function( ) {
 
-			send( JSON.stringify( { global: true, message: arguments } ) );
-
+			sendJSON( { global: true, message: arguments } );
 		}
-
-
 	};
 
-}) ( window, jQuery )
+}) ( window, jQuery );

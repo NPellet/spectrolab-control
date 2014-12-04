@@ -9,11 +9,8 @@
 		graphi = new Graph( "graph-{{ module.id }}" );
 		graphi.setSize( dom.width(), dom.height() );
 
-		graphi.on('newSerie', function( serie ) {
-			stream.write( "{{ module.id }}", "newSerie", [ serie.getName(), serie.getLabel(), serie.getSymbolForLegend.toString() ] );
-		} );
-
-		stream.write("{{ module.id }}", { method: "graphStored", value: store.store( graphi ) }  );
+		module.streamOut( "graphstored", store.store( graphi ) );
+		//stream.write("{{ module.id }}", { method: "graphStored", value: store.store( graphi ) }  );
 //		graphi.getXAxis().toggleGrids( false ).setLabel('Voltage (V)');
 //		graphi.getYAxis().toggleGrids( false ).flip( true ).setLabel('Current (mA)').setLineAt0( true );
 
@@ -22,7 +19,7 @@
 	
 	stream.onMessage( "{{ module.id }}", function( data ) {
 
-		switch( data.method ) {
+		switch( data.instruction ) {
 
 			case 'newSerie':
 

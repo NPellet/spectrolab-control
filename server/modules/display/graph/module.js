@@ -30,26 +30,16 @@ GraphDisplay.prototype = extend( {}, moduleProto, {
 		return this;
 	},
 
-	streamIn: function( message ) {
+	streamOn: {
 
-		var module = this;
+		'graphstored': function( v, i ) {
+	
+			this._graphClientStoreId = v;
+console.log( this );
+			console.log( "EMIT, MOTHER FUCKER");
+			this.emit( "graphStored", this._graphClientStoreId );
 
-		if( message.method ) {
-
-			switch( message.method ) {
-
-				case 'graphStored':
-
-				console.log("Storeid: ", message );
-
-
-					this._graphClientStoreId = message.value;
-					this.emit( "graphStored", this._graphClientStoreId );
-				break;
-
-			}
 		}
-
 	}
 
 } );

@@ -8,6 +8,9 @@ GraphDisplay.prototype = extend( {}, moduleProto, {
 
 	
 	assignGraph: function( graphStoreId ) {
+
+		console.log( graphStoreId + "___" );
+
 		this.streamOut( "assignGraph", graphStoreId );
 	}
 

@@ -1,5 +1,5 @@
 
-var moduleInstance = new Module();
+var moduleInstance = new Module( "{{ moduleid }}" );
 Module.allModules.push( moduleInstance );
 
 ( function( module ) {

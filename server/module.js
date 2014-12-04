@@ -18,11 +18,20 @@ var modulePrototype = {
 		this.type = type;
 		
 		this.assignId();
-
+/*
 		stream.onMessage( this.id, function( message ) {
 
 			module.streamIn( message );
 		} );
+*/
+
+		for( var i in this.streamOn ) {
+
+			( function( callback ) {
+				stream.onMessage( module.id, i, ( function() { callback.apply( module, arguments ) } ) );
+			}) ( module.streamOn[ i ] );
+		}
+	
 	},
 
 	assignId: function() {
@@ -30,19 +39,15 @@ var modulePrototype = {
 	},
 
 	streamIn: function() {},
+	streamOn: {},	
 
-
-	streamOut: function( method, value ) {
+	streamOut: function( instruction, value ) {
 
 		if( ! this.id ) {
 			this.assignId();
 		}
 
-		stream.write( this.id, {
-
-			method: method,
-			value: value
-		} );
+		stream.write( this.id, instruction, value );
 	},
 
 	_getModuleInfos: function() {
@@ -77,7 +82,8 @@ var modulePrototype = {
 	},
 
 	renderJS: function() {
-		var moduleTplInfos = this.getModuleInfos();		
+		var moduleTplInfos = this.getModuleInfos(),
+			self = this;
 
 		return lengine
 		  	.parseAndRender( 
@@ -87,7 +93,8 @@ var modulePrototype = {
 		  		moduleTplInfos ).then( function ( js ) {
 
 					return lengine.parseAndRender( fs.readFileSync( './server/html/modulejavascript.tpl' ), { 
-						js: js
+						js: js,
+						moduleid: self.id
 					} );
 			  });
 	},

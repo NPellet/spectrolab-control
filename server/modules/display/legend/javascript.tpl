@@ -79,8 +79,8 @@
 
 
 	stream.onMessage( "{{ module.id }}", function( data ) {
-
-		switch( data.method ) {
+console.log( data );
+		switch( data.instruction ) {
 
 			case 'assignGraph':
 
