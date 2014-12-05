@@ -31,7 +31,7 @@ stream.onClientReady( function() {
 	renderer.getModule("graph").setHeight( 400 );
 
 	renderer
-		.getModuleByName("graph")
+		.getModule("graph")
 		.newSerie( "someName", [1,2,3,4,5,6], {} );
 
 		setInterval( function() {

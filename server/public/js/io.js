@@ -97,9 +97,9 @@
 		},
 
 
-		writeGlobal: function( ) {
+		writeGlobal: function( message ) {
 
-			sendJSON( { global: true, message: arguments } );
+			sendJSON( { global: true, message: message } );
 		}
 	};
 

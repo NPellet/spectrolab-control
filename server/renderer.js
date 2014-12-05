@@ -40,14 +40,14 @@ renderer.render = function( ) {
 	Promise.all( modules.map( function( module ) {
 		return module.renderJS();
 	}) ).then( function( a ) {
-		js = Array.prototype.join.call( a, '' );
+		js = "$(document).ready( function() { " + Array.prototype.join.call( a, '' ) + " });";
 	});
 	
 	// And now the css
 	Promise.all( modules.map( function( module ) {
 		return module.renderCSS();
 	}) ).then( function( a ) {
-		
+
 		css = Array.prototype.join.call( a, '' );
 	});
 	
@@ -67,7 +67,7 @@ renderer.render = function( ) {
 		// TEMP
 		var http = require('http');
 		http.createServer(function (req, res) {
-			console.log( req.url );
+			
 /*
 		    if(req.url.indexOf('.html') != -1){ //req.url has the pathname, check if it conatins '.html'
 
@@ -104,7 +104,6 @@ renderer.render = function( ) {
 
 		      fs.readFile( path.resolve( __dirname, "." + req.url ), function (err, data) {
 		        if (err) console.log(err);
-		        console.log( req.url );
 		        res.writeHead(200, {'Content-Type': 'text/javascript'});
 		        res.write(data);
 		        res.end();

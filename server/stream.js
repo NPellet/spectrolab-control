@@ -15,21 +15,28 @@ var _connected = false;
 var streamReadyResolve,
 	modulesReadyResolve;
 
-var streamReady = new Promise( function( resolve ) {
-	streamReadyResolve = resolve;
-});
+
+function makePromise() {
+	var streamReady = new Promise( function( resolve ) {
+		streamReadyResolve = resolve;
+	});
 
 
-var modulesReady = new Promise( function( resolve ) {
-	modulesReadyResolve = resolve;
-});
+	var modulesReady = new Promise( function( resolve ) {
+		modulesReadyResolve = resolve;
+	});
 
-var clientReady = Promise.all( [ streamReady, modulesReady ] );
+	return Promise.all( [ streamReady, modulesReady ] ).then( function() {
 
+		clientReadyCallbacks.map( function( c ) { c(); } );
+	});
+}
+
+makePromise();
 
 function handleGlobal( message ) {
 
-	switch( message.message[ 0 ] ) { // Message header
+	switch( message.message ) { // Message header
 
 		case '_streamOpen':
 			streamReadyResolve();
@@ -49,15 +56,8 @@ function streamReady() {
 	});
 }
 
-wss.on('connection', function( ws ) {
-
-	_connected = true;
-	_ws = ws;
-    //ws.send('something');
-});
-
-// On message should be out of the loop. 
-wss.on('message', function( message ) {
+function messageReceived( message ) {
+	
     
 	if( ! _connected ) {
 		return;
@@ -77,8 +77,28 @@ wss.on('message', function( message ) {
 	}
 
 //        publicMethods.onMessage( message );
+
+}
+
+wss.on('connection', function( ws ) {
+
+	if( _connected ) {
+		throw "Cannot connect twice. Another connection is active";
+	}
+
+	_connected = true;
+	_ws = ws;
+
+    // New websocket instance.
+    ws.on('message', messageReceived);
+    ws.on("close", function( ) {
+		_connected = false;
+		makePromise();
+	});
+
 });
 
+var clientReadyCallbacks = [];
 
 var publicMethods = {
 
@@ -109,7 +129,7 @@ var publicMethods = {
 
 	onClientReady: function( callback ) {
 
-		clientReady.then( callback );
+		clientReadyCallbacks.push( callback );
 	},
 
 	isReady: function() {
