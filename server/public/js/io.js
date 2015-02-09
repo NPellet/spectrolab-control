@@ -34,24 +34,29 @@
 		var data = JSON.parse( event.data );
 		var instruction = data.instruction;
 
-		if( global.io._callbacks[ data.moduleid ] ) {
+		//if( global.io._callbacks[ data.moduleid ] ) {
 
-			if( data.instruction == "lock" ) {
+			if( data.instruction == 'lock' || data.instruction == 'unlock' ) {
 
 				var dom = $( "#module-" + data.moduleid );
-				if( dom.find( '.overlay' ).length > 0 ) {
+
+				if( data.instruction == "lock" ) {
+
+					if( dom.find( '.overlay' ).length > 0 ) {
+						return;
+					}
+
+					lockModule( dom );
+					return;
+					
+				} else if( data.instruction == "unlock" ) {
+
+					unlockModule( dom );
 					return;
 				}
-
-				lockModule( dom );
-				return;
-				
-			} else if( data.instruction == "unlock" ) {
-
-				unlockModule( dom );
-				return;
 			}
-		}
+		//}
+
 
 		if( global.io._callbacks[ data.moduleid ] && global.io._callbacks[ data.moduleid ][ instruction ] ) {
 
@@ -84,10 +89,10 @@
 
 		onMessage: function( moduleId, instruction, callback ) {
 
-			this._callbacks[ moduleId ] = this._callbacks[ moduleId ] || [];
-			this._callbacks[ moduleId ][ instruction ] = this._callbacks[ moduleId ][ instruction ] || [];
+			global.io._callbacks[ moduleId ] = global.io._callbacks[ moduleId ] || [];
+			global.io._callbacks[ moduleId ][ instruction ] = global.io._callbacks[ moduleId ][ instruction ] || [];
 
-			this._callbacks[ moduleId ][ instruction ].push( callback );
+			global.io._callbacks[ moduleId ][ instruction ].push( callback );
 
 		},
 

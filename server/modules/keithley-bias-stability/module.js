@@ -25,59 +25,49 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 		return this.options;
 	},
 
-	streamIn: function( message ) {
+	streamOn: {
 
-		var module = this;
-		var method;
+		'measure': function( val ) {
 
-		if( message.method ) {
+			var method;
+			var options = {
 
-			switch( message.method ) {
+				channel: val.channel,
+				complianceI: 1,
+				complianceV: 10,
+				totaltime: val.totaltime,
+				settlingtime: val.settlingtime,
+				bias: val.bias
+			},
+			module = this;
 
-				case 'measure':
+			this.options = options;
 
-					var val = message.value;
+			this.lock( "smu.measure" );
+			module.emit( "measuring" );
 
-					var options = {
+			switch( val.biastype ) {
 
-						channel: val.channel,
-						complianceI: 1,
-						complianceV: 10,
-						totaltime: val.totaltime,
-						settlingtime: val.settlingtime,
-						bias: val.bias
-					};
-
-					this.options = options;
-
-					this.lock( "smu.measure" );
-					module.emit( "measuring" );
-
-					switch( val.biastype ) {
-
-						case 'voltage':
-							method = "CurrentStability";
-						break;
-
-
-						case 'current':
-							method = "VoltageStability";
-						break;
-					}
-
-					module.keithley[ method ]( options, function( stab ) {
-
-						//module.streamOut( { message: 'iv', value: voc_time } );
-						module.emit("measurementEnd", stab, options );
-						module.unlock( "smu.measure" );
-					} );
-
+				case 'voltage':
+					method = "CurrentStability";
 				break;
 
-
+				default:
+				case 'current':
+					method = "VoltageStability";
+				break;
 			}
+
+			module.keithley[ method ]( options, function( stab ) {
+
+				//module.streamOut( { message: 'iv', value: voc_time } );
+				module.emit("measurementEnd", stab, options );
+				module.unlock( "smu.measure" );
+			} );
+
 		}
 	}
+	
 });
 
 exports = module.exports = {

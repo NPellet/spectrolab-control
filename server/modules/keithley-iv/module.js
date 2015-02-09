@@ -16,46 +16,56 @@ KeithleySourceV.prototype = extend( {}, moduleProto, {
 		return this;
 	},
 
-	streamIn: function( message ) {
+	measure: function( options ) {
 
 		var module = this;
+		this.counter++;
 
-		if( message.method ) {
-
-			switch( message.method ) {
-
-				case 'sweep':
-
-					var val = message.value;
-					var totaltime = ( val.stopV - val.startV ) / ( val.scanspeed / 1000 );
-					var nbsteps = Math.ceil( ( val.stopV - val.startV ) / ( val.step / 1000 ) );
-
-					var settlingTime = totaltime / nbsteps;
-
-					var options = {
-						startV: val.startV,
-						stopV: val.stopV,
-						channel: val.channel,
-						settlingTime: settlingTime,
-						timeDelay: val.timeDelay,
-						complianceI: val.complianceI,
-						nbPoints: nbsteps + 1
-					};
-
-					this.lock();
-
-					module.keithley.sweepIV( options, function( iv ) {
-
-						module.streamOut( { message: 'iv', value: iv } );
-						module.emit("sweepEnd", iv );
-
-						module.unlock();
-					} );
-
-				break;
+		options.startV = - options.startV;
+		options.stopV = - options.stopV;
 
 
+console.log( options );
+
+
+		this.keithley.sweepIV( options, function( iv ) {
+
+			module.streamOut( "iv", iv );
+			module.emit("sweepDone", iv );
+
+			if( module.counter < 10 ) {
+				module.measure( options );
 			}
+			
+		} );
+
+
+	},
+
+	streamOn: {
+
+		'sweep': function( val ) {
+
+			var module = this;
+			var totaltime = ( val.stopV - val.startV ) / ( val.scanspeed / 1000 );
+			var nbsteps = Math.ceil( ( val.stopV - val.startV ) / ( val.step / 1000 ) );
+
+			var settlingTime = totaltime / nbsteps;
+
+			var options = {
+				startV: val.startV,
+				stopV: val.stopV,
+				channel: val.channel,
+				settlingTime: settlingTime,
+				timeDelay: val.timeDelay,
+				complianceI: 1,
+				nbPoints: nbsteps + 1
+			};
+
+			this.lock( "measuring" );
+			this.counter = 0;
+			this.measure( options );
+
 		}
 	}
 });

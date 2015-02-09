@@ -9,7 +9,7 @@
 
 	button.on( 'click', function() {
 
-		stream.write( "{{ module.id }}", { method: "sweep", value: 
+		module.out("sweep", 
 
 			{ 	
 				channel: $("#channel-{{ module.id }}").prop('value'),
@@ -21,7 +21,7 @@
 				complianceI: parseFloat( $("#icompliance-{{ module.id }}").prop('value') ),
 			}
 
-		} );
+		);
 
 	} ); 
 

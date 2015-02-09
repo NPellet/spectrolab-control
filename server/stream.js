@@ -14,7 +14,7 @@ var _connected = false;
 */
 var streamReadyResolve,
 	modulesReadyResolve;
-
+var clientReady;
 
 function makePromise() {
 	var streamReady = new Promise( function( resolve ) {
@@ -26,10 +26,7 @@ function makePromise() {
 		modulesReadyResolve = resolve;
 	});
 
-	return Promise.all( [ streamReady, modulesReady ] ).then( function() {
-
-		clientReadyCallbacks.map( function( c ) { c(); } );
-	});
+	clientReady =  Promise.all( [ streamReady, modulesReady ] );
 }
 
 makePromise();
@@ -80,6 +77,7 @@ function messageReceived( message ) {
 
 }
 
+
 wss.on('connection', function( ws ) {
 
 	if( _connected ) {
@@ -104,22 +102,26 @@ var publicMethods = {
 
 	write: function( moduleid, instruction, value ) {
 
-		if( ! _connected ) {
-			throw "No websocket connection established";
-		}
+		clientReady.then( function() {
 
-		if( Array.isArray( instruction ) ) {
-			instruction = instruction.join( "." );
-		}
-		
-		var json = {
+			if( ! _connected ) {
+				throw "No websocket connection established";
+			}
 
-			moduleid: moduleid,
-			instruction: instruction,
-			value: value
-		};
+			if( Array.isArray( instruction ) ) {
+				instruction = instruction.join( "." );
+			}
 
-		_ws.send( JSON.stringify( json ) );
+			
+			var json = {
+
+				moduleid: moduleid,
+				instruction: instruction,
+				value: value
+			};
+
+			_ws.send( JSON.stringify( json ) );
+		});
 	},
 
 	onMessage: function( moduleid, instruction, callback ) {
@@ -128,8 +130,9 @@ var publicMethods = {
 	},
 
 	onClientReady: function( callback ) {
-
-		clientReadyCallbacks.push( callback );
+		clientReady.then( function() {
+			callback();
+		});
 	},
 
 	isReady: function() {

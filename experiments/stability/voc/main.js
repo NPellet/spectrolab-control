@@ -23,11 +23,15 @@ renderer
 	})
 	.on('connected', function() {
 		status.update("Connected to Keithley SMU", 'ok');
-		module( "measureparams" ).unlock( 'smu.connection' ); // Unlock voc stab module
+		module( "measurementparams" ).unlock( 'smu.connection' ); // Unlock voc stab module
 	})
 	.on('disconnected', function() {
-		status.update("Disconnected from Keithley SMU", 'error');
-		module( 'measureparams' ).lock( 'smu.connection' ); // Unlock voc stab module	
+		status.update("Disconnected from Keithley SMU", 'neutral');
+		module( 'measurementparams' ).lock( 'smu.connection' ); // Unlock voc stab module	
+	})
+	.on("connectionerror", function() {
+		status.update("Error while connecting to the keithley", 'error');
+		module( 'measurementparams' ).unlock( 'smu.connection' ); // Unlock voc stab module	
 	});
 
 
@@ -51,7 +55,6 @@ renderer
 		w.setYUnit( "V" );
 		w.setXScalingDelta( 0, parameters.settlingTime );
 
-
 		var itx = new ITXBuilder();
 		var itxw = itx.newWave( "detectorVoltage" );
 		itxw.setWaveform( w );
@@ -67,6 +70,20 @@ renderer
 	})
 	.lock();
 
+
+
+renderer
+	.getModuleByName( "GraphVocVsTime" )
+	.on("graphStored", function( graphStoreId ) {
+
+		renderer
+			.getModuleByName( "legend" )
+			.assignGraph( graphStoreId );
+	})
+
+	
+
+	
 renderer.render();
 
 

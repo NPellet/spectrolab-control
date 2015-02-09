@@ -33,7 +33,14 @@ FileSaver.save = function( options ) {
 	options.dir = '../data/' + date.getFullYear() + "." + pad( date.getMonth() + 1 ) + "." + pad( date.getDate() ) + "/" + options.dir;
 
 	mkdirrec( options.dir );
-	var fileName = pad( date.getHours() ) + "." + pad( date.getMinutes() ) + "." + pad( date.getSeconds() ) + "_" + ( options.fileName || "no-name" ) + "." + options.fileExtension;
+
+	var fileName;
+	if( options.forceFileName ) {
+		fileName = options.forceFileName;
+	} else {
+		fileName = pad( date.getHours() ) + "." + pad( date.getMinutes() ) + "." + pad( date.getSeconds() ) + "_" + ( options.fileName || "no-name" ) + "." + options.fileExtension;
+	}
+	
 	fs.writeFile( options.dir + "./" + fileName, options.contents, function( err ) {
 		if( err ) { throw err; }
 		console.log('File saved');

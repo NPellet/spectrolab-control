@@ -28,10 +28,10 @@ Wrapper.prototype.setSize = function( w, h ) {
 	return this;
 }
 
-Wrapper.prototype.addModule = function( moduleType, moduleName ) {
+Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions ) {
 
 	var moduleConstructor = require( path.resolve( './server/modules/', moduleType, 'module.js' ) ).Constructor;
-	var module = new moduleConstructor();
+	var module = new moduleConstructor( moduleOptions );
 
 	module.init( moduleType, moduleName );
 	module.setFolder( path.resolve('./server/modules/', moduleType ) );

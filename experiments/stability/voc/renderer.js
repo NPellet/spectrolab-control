@@ -21,13 +21,18 @@ var wrapperConsole = renderer
 wrapperConsole.addModule("keithley-bias-stability", "measurementparams").setTitle( "" );
 wrapperConsole.addModule("sample-info", "sampleInfo").setTitle( "Sample information" );
 
-var wrapperConsole = renderer
+var w = renderer
 	.addWrapper("vocvstime")
 	.setTitle("Voc vs Time")
 	.setSize( 60, 40 )
 	.setPosition( 50, 5 );
 
-wrapperConsole.addModule("display/graph", "GraphVocVsTime").setTitle( "" );
+w.addModule("display/graph", "GraphVocVsTime").setTitle( "" );
+
+w.addModule("display/legend", "legend").setTitle( "" );
+
+
+
 
 /*
 var wrapperConsole = renderer

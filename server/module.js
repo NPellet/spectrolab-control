@@ -11,7 +11,11 @@ var stream = require("./stream"),
 var liquid = require("liquid-node"),
 	lengine = new liquid.Engine
 
-var modulePrototype = {
+
+var modulePrototype = new events.EventEmitter;
+
+
+modulePrototype = extend( modulePrototype, {
 	
 	init: function( type, name ) {
 
@@ -34,10 +38,14 @@ var modulePrototype = {
 	},
 
 	assignId: function() {
-		this.id = util.uniqueId();
+
+		if( ! this.id ) {
+			this.id = util.uniqueId();
+		}
 	},
 
 	streamIn: function() {},
+	
 	streamOn: {},	
 
 	streamOut: function( instruction, value ) {
@@ -45,20 +53,27 @@ var modulePrototype = {
 		if( ! this.id ) {
 			this.assignId();
 		}
+
 		stream.write( this.id, instruction, value );
 	},
 
+	out: function() {
+
+		this.streamOut.apply( this, arguments );
+	},
+
 	_getModuleInfos: function() {
-		return {
+		return {};
+	},
+
+	getModuleInfos: function() {
+
+		return extend(true, {
 			module: {
 				id: this.id,
 				locked: this._locked,
 			}
-		};
-	},
-
-	getModuleInfos: function() {
-		return this._getModuleInfos();
+		}, this._getModuleInfos() );
 	},
 
 	renderHTML: function() {
@@ -126,21 +141,32 @@ var modulePrototype = {
 	},
 
 	lock: function( lockElement ) {
-
+		var self = this;
 		this.locks[ lockElement ] = true;
 
-		if( this.isLocked() && stream.isReady() ) {
-			this.streamOut( 'lock', true );
+		if( this.isLocked() ) {
+
+			stream.onClientReady( function() {
+				self.streamOut( 'lock', true );	
+			});
 		}
+
+		return this;
 	},
 
 	unlock: function( lockElement ) {
-
+		var self = this;
 		this.locks[ lockElement ] = false;
 
-		if( ! this.isLocked() && stream.isReady( ) ) {
-			this.streamOut( 'lock', false );
+		if( ! this.isLocked() ) {
+
+			stream.onClientReady( function() {
+
+				self.streamOut( 'unlock', true );	
+			});
 		}
+
+		return this;
 	},
 
 	isLocked: function() {
@@ -156,13 +182,12 @@ var modulePrototype = {
 
 	setTitle: function( title ) {
 		this.title = title;
+		return this;
 	},
 
 	getClass: function() {
 		return this.type.replace("/", "-");
 	}
-}
-
-modulePrototype = extend( modulePrototype, events.EventEmitter.prototype );
+});
 
 module.exports = modulePrototype;

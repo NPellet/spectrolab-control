@@ -44,7 +44,10 @@ renderer.render = function( ) {
 	});
 	
 	// And now the css
+
+
 	Promise.all( modules.map( function( module ) {
+		console.log( module.name );
 		return module.renderCSS();
 	}) ).then( function( a ) {
 
@@ -156,6 +159,36 @@ renderer.getModuleByName = function( moduleName ) {
 
 renderer.getModules = function() {
 	return allModulesByName;
+}
+
+renderer.assign = function( target, source, message ) {
+	this.getModuleByName( target ).assign( this.getModuleByName( source ), message );
+}
+
+renderer.lockModules = function( modules, message ) {
+
+	var self = this;
+	if( ! Array.isArray( modules ) ) {
+		modules = [ modules ];
+	}
+
+	modules.map( function( module ) {
+		self.getModuleByName( module ).lock( message );
+	})
+}
+
+
+renderer.unlockModules = function( modules, message ) {
+
+	var self = this;
+
+	if( ! Array.isArray( modules ) ) {
+		modules = [ modules ];
+	}
+
+	modules.map( function( module ) {
+		self.getModuleByName( module ).unlock( message );
+	})
 }
 
 renderer.getModule = renderer.getModuleByName;

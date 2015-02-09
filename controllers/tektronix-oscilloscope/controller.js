@@ -1,6 +1,4 @@
 
-
-
 "use strict";
 
 var net = require('net'),
@@ -14,10 +12,9 @@ var net = require('net'),
 var waveform = require("../../server/waveform");
 
 
-
-
 var Controller = function( params ) {
   this.params = params;
+  this.queries = [];
   this.connected = false;
 };
 
@@ -64,6 +61,85 @@ Controller.prototype.setEvents = function() {
 function processWave( val ) {
   return val.split(",");
 }
+
+Controller.prototype.set50Ohms = function( channel, bln ) {
+
+  if( bln == undefined ) {
+    bln = true;
+  }
+
+  channel = checkChannel( channel );
+  var terminationValue = getExpValue( bln ? 50 : 1e6 );
+
+  return this.query("CH" + channel + ":TERMINATION " + terminationValue );
+}
+
+
+Controller.prototype.get50Ohms = function( channel ) {
+
+  channel = checkChannel( channel );
+
+  return this.query("CH" + channel + ":TERMINATION?" ).then( function( val ) {
+
+
+  });
+}
+
+
+Controller.prototype.setCoupling = function( channel, coupling ) {
+
+  if( coupling == undefined ) {
+    coupling = "AC";
+  }
+
+  channel = checkChannel( channel );
+  coupling = checkCoupling( coupling );
+  return this.query("CH" + channel + ":COUPLING " + coupling );
+}
+
+Controller.prototype.getCoupling = function( channel ) {
+  channel = checkChannel( channel );
+  return this.query( "CH" + channel + ":COUPLING", true ).then( function( value ) {
+    val 
+    console.log( value );
+  });
+}
+
+
+Controller.prototype.setOffset = function( channel, offset ) {
+  offset = getExpValue( offset );
+  channel = checkChannel( channel );
+  return this.query("CH" + channel + ":OFFSET " + offset );
+}
+
+
+Controller.prototype.getOffset = function( channel ) {
+  channel = checkChannel( channel );
+  return this.query("CH" + channel + ":OFFSET?").then( function( value ) {
+    console.log( value );
+  });
+}
+
+
+
+Controller.prototype.setPosition = function( channel, position ) {
+  position = getExpValue( position );
+  channel = checkChannel( channel );
+  return this.query("CH" + channel + ":POSITION " + position );
+}
+
+
+Controller.prototype.getPosition = function( channel ) {
+  channel = checkChannel( channel );
+  return this.query("CH" + channel + ":POSITION?").then( function( value ) {
+    console.log( value );
+  });
+}
+
+
+
+
+
 
 
 Controller.prototype.getScaling = function() {
@@ -114,53 +190,125 @@ console.log( data );
   );
 
 
-  HORizontal:ACQDURATION? (Query Only)
-This query returns the timebase duration. Group Horizontal
-Syntax HORizontal:ACQDURATION?
-Returns <NR3> returns the duration of the acquisition.
-Examples HORIZONTAL:ACQDURATION? might return :HORIZONTAL:ACQDURATION 5.0E-9, indicating the acquisition duration is 5.0 us.
-HORizontal:ACQLENGTH? (Query Only)
-
-
-
   return Promise.all( [] )
 }
 
 
-Controller.prototype.query = function( query ) {
-  return callCommand( this, query ).then( function( data ) {
+Controller.prototype.query = function( query, ask ) {
+  return callCommand( this, query, ask ).then( function( data ) {
     return data.replace("\n", "");
   } );
 }
 
-function callCommand( instance, cmd ) {
+Controller.prototype.isBusy = function( ) {
 
-  var promise = new Promise();
+}
 
-  if( cmd.indexOf('?') > -1 && clbk ) {
+function callCommand( instance, cmd, ask ) {
 
-    function listen( prevData ) {
+  var queries = instance.queries;
 
-      instance.once( 'data', function( data ) {
 
-        data = prevData + data.toString('ascii');
-        if( data.indexOf("\n") == -1 ) {
-          listen( data );
-        } else {
-          promise.resolve( data );
-        }
-      } );
+  var promise = new Promise( function( resolver, rejecter ) {
+
+    if( ask ) {
+
+
+
+      function listen( prevData ) {
+
+        instance.once( 'data', function( data ) {
+
+          data = prevData + data.toString('ascii');
+          if( data.indexOf("\n") == -1 ) {
+            listen( data );
+          } else {
+
+            if( data.indexOf( cmd ) == 0 ) { // The response is exactly what has been requested
+              resolver( data );  
+            } else {
+              throw "The oscilloscope response was unexpected. Message : " + data;
+            }
+          }
+
+        } );
+      } 
+
+      listen("");
+      instance.send( cmd + "?;*WAI" );
+
+    } else {
+
+      instance.send( cmd );
     }
 
-    listen("");
-  }
+  } );
 
-  instance.send( cmd ); 
+  
 
-  return promise(); 
+  return promise; 
 }
 
 module.exports = Keithley;
 
 
+function checkChannel( ch ) {
+  if( typeof ch == "string" ) {
+    ch = parseInt( ch );
+  }
 
+  if( ch > 0 && ch < 5 ) {
+    return ch;
+  }
+
+  throw "Channel is out of range";
+}
+
+
+
+function checkCoupling( coupling ) {
+  
+  switch ( coupling ) {
+
+    case 'AC':
+    case 'ac':
+    case 'alternative':
+      return 'AC';
+    break;
+
+    case 'DC':
+    case 'dc':
+    case 'direct':
+      return 'DC':
+    break;
+
+    case 'gnd':
+    case 'GND':
+    case 'ground':
+      return 'GND';
+    break;
+  }
+  
+  throw "Coupling not recognized";
+}
+
+
+function getExpValue( val ) {
+
+  if( typeof val == "string" ) {
+    val = parseFloat( val );
+  }
+
+  return val.toExponential().replace("e", "E");
+}
+
+function getFloat( val ) {
+  val = parseFloat( val );
+
+  if( isNaN( val ) ) {
+    throw "Value is NaN";
+    return NaN;
+  }
+  
+  return val;
+}

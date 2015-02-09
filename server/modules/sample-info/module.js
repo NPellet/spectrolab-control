@@ -17,22 +17,14 @@ KeithleyMeasureVoc.prototype = extend( {}, moduleProto, {
 		return this;
 	},
 
-	streamIn: function( message ) {
+	streamOn: {
 
-		var module = this;
+		'change': function( val ) {
 
-		if( message.method ) {
+			this.sampleInfos = val;
+			this.emit("sampleInfoChange", val );
 
-			switch( message.method ) {
 
-				case 'change':
-
-					var val = message.value;
-					this.sampleInfos = val;
-					this.emit("sampleInfoChange", val );
-
-				break;
-			}
 		}
 	},
 

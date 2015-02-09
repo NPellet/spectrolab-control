@@ -5,7 +5,9 @@ var net = require('net'),
 	extend = require('extend'),
 	fs = require('fs'),
 	events = require("events"),
-	path = require("path");
+	path = require("path"),
+	promise = require("bluebird"),
+	Waveform = require("../../../server/waveform");
 
 
 
@@ -34,7 +36,7 @@ var methods = {
 			stopV: 1,
 			settlingTime: 0.02,
 			timeDelay: 0,
-			complianceI: 0.01,
+			complianceI: 1,
 			nbPoints: 100
 		},
 
@@ -45,6 +47,8 @@ var methods = {
 		},
 
 		processing: function( data ) {
+
+			console.log( data );
 			var current, voltage, dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			for( var i = 0; i < data.length; i += 2 ) {
@@ -72,12 +76,20 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-			var current, voltage, dataFinal = [];
+
+			var w = new Waveform();
+			w.setXScalingDelta( 0, options.settlingtime );
+			w.setXUnit( 's' );
+			w.setYUnit( 'V' );
+
+			var dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			for( var i = 0; i < data.length; i ++ ) {
-				dataFinal.push( [ options.settlingtime * i, parseFloat( data[ i ] ) ] );	
+				dataFinal.push( parseFloat( data[ i ] ) );
 			}
-			return dataFinal;
+
+			w.setData( dataFinal );
+			return w;
 		}
 	},
 
@@ -98,42 +110,221 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-			var current, voltage, dataFinal = [];
+			
+
+
+			var w = new Waveform();
+			w.setXScalingDelta( 0, options.settlingtime );
+			w.setXUnit( 's' );
+			w.setYUnit( 'A' );
+
+			var dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			for( var i = 0; i < data.length; i ++ ) {
-				dataFinal.push( [ options.settlingtime * i, parseFloat( data[ i ] ) ] );	
+				dataFinal.push( parseFloat( data[ i ] ) );
 			}
-			return dataFinal;
+
+			w.setData( dataFinal );
+			return w;
+		}
+	},
+
+
+
+	'HallMeasurement': {
+		defaults: { 
+			channel: 'smua',
+			bias: 1e-9
+		},
+
+		method: 'HallMeasurement',
+		parameters: function( options ) {
+			console.log( options );
+			return [ options.channel, options.bias ]
+		},
+
+		processing: function( data, options ) {
+	
+			var w = new Waveform();	
+			var dataFinal = [];
+			data = data.split(/,[\t\r\s\n]*/);
+			for( var i = 0; i < data.length; i ++ ) {
+				dataFinal.push( parseFloat( data[ i ] ) );
+			}
+			w.setData( dataFinal );
+
+			return w;
+		}
+	},
+
+	
+	'Poling': {
+		defaults: { 
+			channel: 'smua',
+			peakVoltage: 10,
+			peakTime: 2,
+			relaxationTime: 10,
+			nbIterations: 10
+		},
+
+		method: 'Poling',
+		parameters: function( options ) {
+			return [ options.channel, options.peakVoltage, options.peakTime, options.relaxationTime, options.nbIterations ]
+		},
+
+		processing: function( data, options ) {
+	
+			var w = new Waveform();	
+			var dataFinal = [];
+			data = data.split(/,[\t\r\s\n]*/);
+			console.log( data );
+			for( var i = 0; i < data.length; i ++ ) {
+				dataFinal.push( parseFloat( data[ i ] ) );
+			}
+
+			w.setXScalingDelta( 0, 0.1 );
+			w.setXUnit("s");
+			w.setYUnit("V");
+
+			w.setData( dataFinal );
+
+			return w;
+		}
+	},
+
+
+	'Sine': {
+		defaults: { 
+			channel: 'smua',
+			sense: "Current",
+			bias: 0,
+			level: 1,
+			complianceI: 1e-6,
+			complianceV: 10,
+			settlingTime: 0.01,
+			nplc: 0.01,
+			points: 1000
+		},
+
+		method: 'SineAmperemetryIV',
+		parameters: function( options ) {
+			console.log( options );
+			return [ options.channel, '"' + options.sense + '"', options.bias, options.level, options.complianceI, options.complianceV, options.settlingTime, options.nplc, options.points ]
+		},
+
+		processing: function( data, options ) {
+	
+			var voltage = new Waveform();	
+			var current = new Waveform();	
+
+			var voltageFinal = [];
+			var currentFinal = [];
+
+			data = data.split(/,[\t\r\s\n]*/);
+			
+			for( var i = 0; i < data.length; i += 3 ) {
+				voltageFinal.push( parseFloat( data[ i ] ) );
+				currentFinal.push( parseFloat( data[ i + 1 ] ) );
+			}
+
+			voltage.setXScalingDelta( 0, options.settlingtime );
+			voltage.setXUnit("s");
+			voltage.setYUnit("V");
+
+			current.setXScalingDelta( 0, options.settlingtime );
+			current.setXUnit("s");
+			current.setYUnit("A");
+
+			voltage.setData( voltageFinal );
+			current.setData( currentFinal );
+
+			return [ voltage, current ];
+		}
+	},
+
+
+	'pulseAndSwitchDiogio': {
+
+		defaults: { 
+			diodePin: 1,
+			switchPin: 2,
+			pulseWidth: 0.1,
+			numberOfPulses: 1,
+			delayBetweenPulses: 1,
+			delaySwitch: 0.1
+		},
+
+		method: 'pulseAndSwitchDiogio',
+		parameters: function( options ) {
+			
+			return [ options.diodePin, options.switchPin, options.pulseWidth, options.numberOfPulses, options.delayBetweenPulses, options.delaySwitch ]
+		},
+
+		processing: function( data, options ) {
+
+			return data;
 		}
 	}
 }
 
-
 var Keithley = function( params ) {
 	this.params = params;
 	this.connected = false;
+	this.queue = [];
 };
 
-Keithley.prototype = events.EventEmitter.prototype;
+Keithley.prototype = new events.EventEmitter;
 
 Keithley.prototype.connect = function( callback ) {
 
-	// Avoid multiple connection
-	if( this.connected ) {
-		callback();
-		return;
-	}
+	var module = this;
 
-	// Connect by raw TCP sockets
-	var self = this,
-		socket = net.createConnection( {
-			port: this.params.port, 
-			host: this.params.host,
-			allowHalfOpen: true
-		});
+	return new Promise( function( resolver, rejecter ) {
 
-	this.socket = socket;
-	this.setEvents();	
+		// Avoid multiple connection
+		if( module.connected ) {
+
+			console.log('Already connected. Remove all Keithley listeners');
+			module.socket.removeAllListeners( 'data' );
+
+
+			if( callback ) {
+				callback();
+			}
+
+			resolver();
+			return;
+		}
+
+		if( module.connecting ) {
+
+			module.queue.push( resolver );
+			return;
+		}
+
+		try {
+			// Connect by raw TCP sockets
+			var self = module,
+				socket = net.createConnection( {
+					port: module.params.port, 
+					host: module.params.host,
+					allowHalfOpen: true
+				});
+
+			module.connecting = true;	
+			module.socket = socket;
+			module.setEvents();	
+			
+
+			resolver();
+
+		} catch( error ) {
+
+			module.emit("connectionerror");
+			rejecter();
+		}
+
+	} );
 };
 
 
@@ -141,8 +332,8 @@ for( var i in methods ) {
 
 	( function( j ) {
 
-		Keithley.prototype[ j ] = function( options, callback ) {
-			this._callMethod( methods[ j ], options, callback );
+		Keithley.prototype[ j ] = function( options ) {
+			return this._callMethod( methods[ j ], options );
 		}
 
 	}) ( i );
@@ -150,47 +341,74 @@ for( var i in methods ) {
 }
 
 
-Keithley.prototype._callMethod = function( method, options, callback ) {
+Keithley.prototype._callMethod = function( method, options ) {
 
-	this.checkConnection();
-	
 	var module = this;
-	options = extend( true, {}, method.defaults, options );
 
-	if( typeof options == "function" ) {
-		callback = options;
-		options = {};
-	}
+	return this.connect().then( function() {
 	
-	function end( data ) {
+		return new Promise( function( resolver, rejecter ) {
 
-		if( method.processing ) {
-			data = method.processing( data, options );
-		}
+			options = extend( true, {}, method.defaults, options );
 
-		callback( data );
-	}
-
-	function listen( prevData ) {
-
-		module.socket.once( 'data', function( data ) {
-			data = prevData + data.toString('ascii');
-			if( data.indexOf("\n") == -1 ) {
-				listen( data );
-			} else {
-				end( data );
+			if( typeof options == "function" ) {
+				callback = options;
+				options = {};
 			}
-		} );
-	}
+			
+			function end( data ) {
 
-	listen("");
+				if( method.processing ) {
+					data = method.processing( data, options );
+				}
 
-	this.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
+				resolver( data );
+			}
+
+			function listen( prevData ) {
+
+				module.socket.once( 'data', function( data ) {
+					data = prevData + data.toString('ascii');
+					if( data.indexOf("\n") == -1 ) {
+						listen( data );
+					} else {
+						end( data );
+					}
+				} );
+			}
+
+			listen("");
+			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
+		});
+	});
+	
+}
+
+Keithley.prototype.command = function( command ) {
+
+	var module = this;
+
+	return this.connect().then( function() {
+
+		return new Promise( function( resolver, rejecter ) {
+
+			module.socket.write( command + "\r\n", function() {
+				
+				resolver();	
+			});
+		});
+	});
+}
+
+Keithley.prototype.flushErrors = function() {
+
+	this.command("errorqueue.clear();");
 }
 
 Keithley.prototype.checkConnection = function() {
 
 	if( ! this.socket && this.connected ) {
+	
 		throw "Socket is not alive";
 	}
 }
@@ -203,13 +421,32 @@ Keithley.prototype.setEvents = function() {
 	var self = this;
 
 	this.socket.on('connect', function() {
+
 		self.uploadScripts();
 		self.connected = true;
+		self.connecting = false;
+
+		console.log('Remove all Keithley listeners');
+		self.socket.removeAllListeners( 'data' );
+
+		self.flushErrors();
+		self.command("digio.writeport(0)");
+		self.command("format.data=format.REAL32");
+		self.command("format.byteorder=format.LITTLEENDIAN");
+
 		self.socket.write("SpetroscopyScripts();\r\n");
 		self.emit("connected");
+
+		self.queue.map( function( resolver ) {
+			resolver();
+		});
+
+		self.queue = [];	
 	});
 
 	this.socket.on('end', function() {
+		console.log('Keithley is being disconnected');
+		module.socket.removeAllListeners( 'data' );
 		self.emit("disconnected");
 	});
 
@@ -223,10 +460,14 @@ Keithley.prototype.uploadScripts = function() {
 
 	// Voltage sourcing, current measurement
 	var files = fs.readdirSync( path.resolve( __dirname, "scripts/" ) );
-	console.log( files );
+	
 
 	for( var i = 0; i < files.length ; i ++ ) {
-		console.log( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ).toString("utf8") );
+		if( files[ i ].substr( 0, 1 ) == '_' ) {
+			continue;
+		}
+
+		console.log("Uploading script: " + files[ i ] );
 		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ) );
 		this.socket.write("\r\n");
 	}

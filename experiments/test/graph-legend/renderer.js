@@ -12,8 +12,6 @@ w.addModule("display/legend", "legend").setTitle( "" );
 
 
 var w = renderer.addWrapper('console').setSize( 100, 2 ).setPosition( 0, 0 );
-w
- .addModule("display/status", "status")
- .setTitle( "" );
+w.addModule("display/status", "status").setTitle( "" );
 
 module.exports = renderer;
