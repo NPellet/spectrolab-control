@@ -48,7 +48,10 @@ experiment.prototype = {
 
 			var recordedWaves = [];
 
-			var timeBases = [ 20e-6, 2000e-6 ];
+			var timeBases = [ 20e-6, 200e-6 ];
+			var yScales = [ 5e-3, 2e-3 ];
+
+			var timeBase;
 
 			// Calculate delays
 			var nbPoints = 35,
@@ -142,17 +145,17 @@ experiment.prototype = {
 
 						recordedWaves = [];
 
-						timeBases.map( function( timeBase ) {
-
-							self.pulse( timeBase, timeDelays[ i ] ).then( function( w ) {
+						for( var n = 0; n < timeBases.length; n += 1 ) {
+							timeBase = timeBases[ n ];
+							self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
 								recordedWaves.push( w );
+								console.log( recordedWaves );
 								p.next();
 							});
-
+console.log( recordedWaves );
 							yield;
-						});
-
-
+						}
+console.log( recordedWaves );
 						// Look on the first voltage wave
 						var level = recordedWaves[ 0 ][ "3" ].findLevel(0.02, {
 							edge: 'descending',
@@ -203,19 +206,20 @@ experiment.prototype = {
 							waveCharges[ i ].push( charges );
 							waveCapacitance[ i ].push( charges / voc );
 
-							wavePulse[ i ].push( allWaves[ "1" ] );
+							/*wavePulse[ i ].push( recordedWaves[ "1" ] );
 							waveCurrent[ i ].push( allWaves[ "2" ] );
 							waveVoltage[ i ].push( allWaves[ "3" ] );
 							waveSwitch[ i ].push( allWaves[ "4" ] );
-
+*/
 							if( self.parameters.progress ) {
-								self.parameters.progress( allWaves, timeDelays[ i ], wavePulse[ i ].length - 1, waveCharges, waveVoc, timeDelays, waveCapacitance );
+								self.parameters.progress( timeDelays[ i ], wavePulse[ i ].length - 1, waveCharges, waveVoc, timeDelays, waveCapacitance );
 							}
 						}
 
 						// Safeguard
-						if( j < 10000 ) {
-							yield;
+						if( j > 10000 ) {
+							break;
+						//	yield;
 						}
 
 					}
@@ -234,10 +238,11 @@ experiment.prototype = {
 
 	},
 
-	pulse: function( timeBase, delaySwitch ) {
+	pulse: function( timeBase, yScale, delaySwitch ) {
 
 		var self = this;
 		self.oscilloscope.setTimeBase( timeBase );
+		self.oscilloscope.setVoltScale( 2, yScale ); // 2mV over channel 2
 
 		return self.keithley.pulseAndSwitchDiogio( {
 
@@ -250,7 +255,7 @@ experiment.prototype = {
 
 		} ).then( function( value ) {
 
-			self.oscilloscope.getWaves().then( function( allWaves ) {
+			return self.oscilloscope.getWaves().then( function( allWaves ) {
 
 				// Zeroing voltage wave
 				var voltageWave = allWaves[ "3" ];
