@@ -1,5 +1,7 @@
 
 
+// Note: This is a singleton instance
+
 var wrapper = require("./wrapper"),
 	fs = require('fs'),
 	liquid = require("liquid-node"),
@@ -42,7 +44,7 @@ renderer.render = function( ) {
 	}) ).then( function( a ) {
 		js = "$(document).ready( function() { " + Array.prototype.join.call( a, '' ) + " });";
 	});
-	
+
 	// And now the css
 
 
@@ -53,13 +55,13 @@ renderer.render = function( ) {
 
 		css = Array.prototype.join.call( a, '' );
 	});
-	
+
 
 
 
 	Promise.all( html ).then( function() {
 
-		return lengine.parseAndRender( fs.readFileSync( './server/html/page.tpl'), { 
+		return lengine.parseAndRender( fs.readFileSync( './server/html/page.tpl'), {
 
 			wrappers: arguments[ 0 ],
 			stylesheets: stylesheets
@@ -70,7 +72,7 @@ renderer.render = function( ) {
 		// TEMP
 		var http = require('http');
 		http.createServer(function (req, res) {
-			
+
 /*
 		    if(req.url.indexOf('.html') != -1){ //req.url has the pathname, check if it conatins '.html'
 
