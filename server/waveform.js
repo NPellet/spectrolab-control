@@ -246,12 +246,27 @@ Waveform.prototype = {
 		return sum[ 0 ] / sum[ 2 ];
 	},
 
+	subset: function( p0, p1 ) {
+		var w = new Waveform();
+		for( var i = p0; i <= p1; i+= 1 ) {
+			w.push( this.data[ i ] );
+		}
+		return w;
+	},
+
 	average: function( p0, p1 ) {
 		return this.getAverageP( p0, p1 );
 	},
 
 	mean: function() {
 		return this.average( 0, this.data.length - 1 );
+	},
+
+	median: function() {
+		var dupl = this.data.slice( 0 );
+		dupl.sort();
+
+		return dupl[ Math.ceil( dupl.length / 2 ) - 1 ];
 	},
 
 	stdDev: function() {

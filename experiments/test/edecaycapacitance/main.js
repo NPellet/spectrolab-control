@@ -98,10 +98,10 @@ function reprocess( charges, vocs, delays, capacitances ) {
 		
 		var i = charges.indexOf( charge );
 
-		dataCharges.push( [ delays[ i ], charge.mean() ] );
+		dataCharges.push( [ delays[ i ], charge.median() ] );
 		dataChargesSDev.push( [ [ charge.stdDev() ] ] );
 
-		wCharges.push( charge.mean() );
+		wCharges.push( charge.median() );
 		wChargesS.push( charge.stdDev() );
 
 		i++;
@@ -119,14 +119,11 @@ function reprocess( charges, vocs, delays, capacitances ) {
 
 		var i = vocs.indexOf( voc );
 
-		dataVoc.push( [ delays[ i ], voc.mean() ] );
+		dataVoc.push( [ delays[ i ], voc.median() ] );
 		dataVocSDev.push( [ [ voc.stdDev() ] ] );
 
-		wVocs.push( voc.mean() );
-		wVocsS.push( voc.stdDev() );
-
-
-		
+		wVocs.push( voc.median() );
+		wVocsS.push( voc.stdDev() );		
 	});
 
 	var dataCapa = [], dataCapaSDev = [];
@@ -137,14 +134,14 @@ function reprocess( charges, vocs, delays, capacitances ) {
 
 		var i = capacitances.indexOf( c );
 		
-		dataCapa.push( [ delays[ i ], c.mean() ] );
+		dataCapa.push( [ delays[ i ], c.median() ] );
 		dataCapaSDev.push( [ [ c.stdDev() ] ] );
 
-		dataCV.push( [ vocs[ i ].mean(), c.mean() ] );
+		dataCV.push( [ vocs[ i ].median(), c.median() ] );
 		dataCVSdev.push( [ [ c.stdDev() ] ] );
 
 
-		wCapa.push( c.mean() );
+		wCapa.push( c.median() );
 		wCapaS.push( c.stdDev() );
 
 	});

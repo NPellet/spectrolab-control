@@ -52,10 +52,12 @@ experiment.prototype = {
 			var availableTimeBases = [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4, 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
 			var timeBase = 2000e-6;
 
-			var b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( 25 - 0 ); 
+			var nbPoints = 35;
+
+			var b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ); 
 			var a = 10e-6 / Math.pow( 10, ( b * 0 ) );
 
-			for( var i = 0; i < 26; i += 1 ) {
+			for( var i = 0; i < nbPoints; i += 1 ) {
 				timeDelays.push( a * Math.pow( 10, b * i ) );
 				timeBases.push( timeBase );
 				minTimeBase.push( availableTimeBases[ 0 ] );
@@ -177,33 +179,37 @@ experiment.prototype = {
 								if( level ) {
 
 
-									if( Math.abs( currentWave.average(0,40) - currentWave.average( 400, 499 ) ) > ( 5e-4 / 50 ) ) { // Difference of more than 50mV => Reject pulse
-										
+									var totalIntegration = currentWave.integrateP( 50, 499 );
+									var partialIntegration = currentWave.integrateP( 400, 499 );
+									var partialIntegration2 = currentWave.integrateP( 150, 499 );
+
+
+									var noise = currentWave.subset( 0, 49 );
+									var stdNoise = noise.stdDev();
+
+console.log( "Last 50 points: " + ( partialIntegration / totalIntegration * 100 ) + "%. Threshold: " + 5 + "%; Average: " + currentWave.average( 400, 499 ) + "; Threshold: " + ( 3e-4 / 50 ) );
+console.log(' Noise level: ' + stdNoise + "; Signal level: " + currentWave.average( 200, 499 ) );
+
+									if( partialIntegration / totalIntegration * 100 > 5 && currentWave.average( 400, 499 ) > ( 3e-4 / 50 ) ) { // If the last 10% of the signal represents more than 5% of the total integration => rejection
+										// Rejection of the timebase
 										timeBases[ i ] = availableTimeBases[ availableTimeBases.indexOf( timeBases[ i ] ) + 1 ];
-										console.log( timeBases );
-
 										minTimeBase[ i ] = timeBases[ i ];
-
-										console.log('Rejecting measurement. Averages: ' + currentWave.average(0,40) + " vs " + currentWave.average( 400, 499 ) );
 										p.next();
 										return;
-									} else {
-										console.log( currentWave.average(0,40), currentWave.average( 449, 499 ) );
-									}
 
-									if( Math.abs( currentWave.average( 150, 200 ) - currentWave.average( 400, 499 ) ) < 0.5e-3 / 50 ) { // We can keep the measurement, but decrease the time res
+									} else if( currentWave.average( 200, 499 ) < stdNoise * 2  ) { // Usually more noise through the transistor => *2
+										console.log('SMALLER');
+									//partialIntegration2 / totalIntegration * 100 < 5 && currentWave.average( 150, 499 ) < ( 3e-4 / 50 ) ) { // We can keep the measurement, but decrease the time res
 
-										if( availableTimeBases.indexOf( timeBases[ i ] ) > 0 ) {
+										if( availableTimeBases.indexOf( timeBases[ i ] ) > 0 && availableTimeBases.indexOf( timeBases[ i ] ) > availableTimeBases.indexOf( minTimeBase[ i ] ) ) {
 											timeBases[ i ] = availableTimeBases[ availableTimeBases.indexOf( timeBases[ i ] ) - 1 ];
+											p.next();
+											return;
 										}
 
-										if( timeBases[ i ] < minTimeBase[ i ] ) {
-											timeBases[ i ] = minTimeBase[ i ];
-										}
-
-										console.log( timeBases );
-										console.log('Changing time base to ' + timeBases[ i ] );
 									}
+
+console.log( timeBases );
 
 									wavePulse[ i ] = wavePulse[ i ] || [];
 									waveVoltage[ i ] = waveVoltage[ i ] || [];
