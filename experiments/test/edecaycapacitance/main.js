@@ -13,6 +13,8 @@ var Waveform = require('../../../server/waveform');
 var g = new Gould( config.instruments.gouldOscilloscope );
 var k = new Keithley( config.instruments.keithley );
 
+var experiment;
+
 renderer
 	.getModule("gouldConnect")
 	.assignGould( g );
@@ -23,6 +25,7 @@ renderer
 
 
 var moduleLocking = [ "start", "gouldConnect", "keithleyConnect" ]
+var moduleGraphs = [ "chargesvstime", "vocvstime", "C-V", "C-t"];
 
 g.on("busy", function() {
 	renderer.lockModules( moduleLocking, 'gouldBusy' );
@@ -52,6 +55,26 @@ g.on("disconnected", function() {
 var vdecay = renderer.getModule("vdecay");
 var jdecay = renderer.getModule("jdecay");
 
+var focusId = false;
+
+moduleGraphs.map( function( g ) {
+
+	renderer.getModule( g ).on("mouseOverPoint", function( serieName, id ) {
+		focusId = id;
+		renderer.getModule("focus").setText("Focus on point " + id );
+	});
+});
+
+renderer.getModule("focus").on("clicked", function() {
+
+	experiment.focusOn( focusId );
+
+	if( focusId !== false ) {
+		focusId = false;
+		renderer.getModule("focus").setText("Stop focus" );
+	}
+	
+});
 
 function reprocess( charges, vocs, delays, capacitances ) {
 
@@ -177,7 +200,7 @@ function reprocess( charges, vocs, delays, capacitances ) {
 
 renderer.getModule("start").on('clicked', function() {
 
-	Device.method( "eDecayCapacitance", {
+	experiment = Device.method( "eDecayCapacitance", {
 		
 		oscilloscope: g,
 		keithley: k,
@@ -219,10 +242,8 @@ renderer.getModule("start").on('clicked', function() {
 		}
 
 
-	} ).then( function() {
-
-
-	});
+	} );
+	experiment.run();
 /*
 	g.getWaves().then( function( waves ) {
 

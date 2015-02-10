@@ -6,7 +6,10 @@ var KeithleyConnect = function() {
 	this.title = "Keithley Connection";
 };
 
-KeithleyConnect.prototype = extend( {}, moduleProto, {
+
+KeithleyConnect.prototype = new moduleProto();
+KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
+
 
 	assignKeithley: function( keithley ) {
 

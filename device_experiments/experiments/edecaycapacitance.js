@@ -18,12 +18,17 @@ experiment.prototype = {
 
 		this.parameters.ledPin = 4;
 		this.parameters.switchPin = 5;
-		this.parameters.pulseTime = 5;
+		this.parameters.pulseTime = 2;
 		this.parameters.delay = 2;
+		this.focus = false;
 	},
 
 	setLEDPin: function() {
 
+	},	
+
+	focusOn: function( id ) {
+		this.focus = id;
 	},
 
 
@@ -42,28 +47,32 @@ experiment.prototype = {
 			var waveCapacitance = [];
 
 			var timeDelays = [];
+			var minTimeBase = [];
+			var timeBases = [];
+			var availableTimeBases = [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4, 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
+			var timeBase = 2000e-6;
 
-
-			var b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( 59 - 0 ); 
+			var b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( 25 - 0 ); 
 			var a = 10e-6 / Math.pow( 10, ( b * 0 ) );
 
-			for( var i = 0; i < 60; i += 1 ) {
+			for( var i = 0; i < 26; i += 1 ) {
 				timeDelays.push( a * Math.pow( 10, b * i ) );
+				timeBases.push( timeBase );
+				minTimeBase.push( availableTimeBases[ 0 ] );
 			}
 
-			console.log( timeDelays );
 
 
 			self.oscilloscope.disableAveraging();
 			
-			self.oscilloscope.setTimeBase( 500e-6 ); // 200us timeBase
+			
 			self.oscilloscope.enable50Ohms( 2 );
 			self.oscilloscope.disable50Ohms( 3 );
 
 			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
 
-			self.oscilloscope.setVoltScale( 2, 5e-3 ); // 2mV over channel 2
+			self.oscilloscope.setVoltScale( 2, 2e-3 ); // 2mV over channel 2
 			self.oscilloscope.setVoltScale( 3, 200e-3 ); // 200mV over channel 3
 			self.oscilloscope.setVoltScale( 4, 1 ); // 1V over channel 4
 
@@ -102,21 +111,32 @@ experiment.prototype = {
 
 					while( true ) {
 
-						// Randomize delay
-						var i = Math.floor( Math.random() * ( timeDelays.length ) );
+						if( self.focus === false ) {
 
-						// Safeguard
-						if( k < 10000 ) {
+							// Randomize delay
+							var i = Math.floor( Math.random() * ( timeDelays.length ) );
 
-							// If standard deviation is lower than 20% of the mean and there has been 8 shots, we're good
-							if( waveCharges[ i ] &&  waveCharges[ i ].getDataLength() > 256 && waveCharges[ i ].stdDev() < waveCharges[ i ].mean() * 0.2 ) {
-								k++;
-								continue;
+							// Safeguard
+							if( k < 10000 ) {
+
+								// If standard deviation is lower than 20% of the mean and there has been 8 shots, we're good
+								if( waveCharges[ i ] &&  waveCharges[ i ].getDataLength() > 256 && waveCharges[ i ].stdDev() < waveCharges[ i ].mean() * 0.2 ) {
+									k++;
+									continue;
+								}
 							}
+
+							k = 0;
+
+						} else {
+							var i = self.focus;
 						}
 
-						k = 0;
+
 						j++;
+
+						self.oscilloscope.setTimeBase( timeBases[ i ] ); // 200us timeBase
+
 
 						console.log("Pulsing with time delay: " + timeDelays[ i ] + "; Iterator number : " + j );
 
@@ -134,9 +154,16 @@ experiment.prototype = {
 							console.log('Pulse has ended');
 							self.oscilloscope.getWaves().then( function( allWaves ) {
 
-
+								// Zeroing voltage wave
 								var voltageWave = allWaves[ "3" ];
 								voltageWave.subtract( voltageWave.average( 400, 499 ) );
+
+								// Zeroing current wave
+								var currentWave = allWaves[ "2" ];
+								currentWave.multiply( -1 );
+								currentWave.divide( 50 );
+								currentWave.subtract( currentWave.average( 0, 40 ) );
+
 
 								var level = voltageWave.findLevel(0.02, {
 									edge: 'descending',
@@ -149,6 +176,34 @@ experiment.prototype = {
 
 								if( level ) {
 
+
+									if( Math.abs( currentWave.average(0,40) - currentWave.average( 400, 499 ) ) > ( 5e-4 / 50 ) ) { // Difference of more than 50mV => Reject pulse
+										
+										timeBases[ i ] = availableTimeBases[ availableTimeBases.indexOf( timeBases[ i ] ) + 1 ];
+										console.log( timeBases );
+
+										minTimeBase[ i ] = timeBases[ i ];
+
+										console.log('Rejecting measurement. Averages: ' + currentWave.average(0,40) + " vs " + currentWave.average( 400, 499 ) );
+										p.next();
+										return;
+									} else {
+										console.log( currentWave.average(0,40), currentWave.average( 449, 499 ) );
+									}
+
+									if( Math.abs( currentWave.average( 150, 200 ) - currentWave.average( 400, 499 ) ) < 0.5e-3 / 50 ) { // We can keep the measurement, but decrease the time res
+
+										if( availableTimeBases.indexOf( timeBases[ i ] ) > 0 ) {
+											timeBases[ i ] = availableTimeBases[ availableTimeBases.indexOf( timeBases[ i ] ) - 1 ];
+										}
+
+										if( timeBases[ i ] < minTimeBase[ i ] ) {
+											timeBases[ i ] = minTimeBase[ i ];
+										}
+
+										console.log( timeBases );
+										console.log('Changing time base to ' + timeBases[ i ] );
+									}
 
 									wavePulse[ i ] = wavePulse[ i ] || [];
 									waveVoltage[ i ] = waveVoltage[ i ] || [];
@@ -165,11 +220,10 @@ experiment.prototype = {
 
 
 									voc.push( level );
-									var currentWave = allWaves[ "2" ];
-									currentWave.multiply( -1 );
-									currentWave.divide( 50 );
+									
+									
 
-									currentWave.subtract( currentWave.average( 0, 40 ) );
+
 									charges.push( currentWave.integrateP( 50, 499 ) );
 
 									allWaves[ "2" ] = currentWave;

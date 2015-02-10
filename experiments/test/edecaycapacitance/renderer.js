@@ -38,9 +38,10 @@ w.addModule("keithley/connect", "keithleyConnect").setTitle( "Keithley Status" )
 var w = renderer
 	.addWrapper("wrapperbtn")
 	.setSize( 20, 40 )
-	.setPosition( 20, 3 );
+	.setPosition( 0, 23 );
 
 w.addModule("display/button", "start").setText( "Start capacitance measurement" );
+w.addModule("display/button", "focus").setText( "Focus on point: " );
 
 
 

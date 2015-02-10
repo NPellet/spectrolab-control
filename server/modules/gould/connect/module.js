@@ -6,7 +6,8 @@ var GouldConnect = function() {
 	this.title = "Gould Connection";
 };
 
-GouldConnect.prototype = extend( {}, moduleProto, {
+GouldConnect.prototype = new moduleProto();
+GouldConnect.prototype = extend( GouldConnect.prototype, {
 
 	assignGould: function( gould ) {
 

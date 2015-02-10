@@ -5,6 +5,7 @@ var moduleProto = require('../../../module'),
 var GraphDisplay = function( graphOptions ) {
 
 	this.streamOut("makeGraph", graphOptions );
+	this.series = {};
 };
 
 function waveToData( data ) {
@@ -24,18 +25,27 @@ function waveToData( data ) {
 	return data;
 }
 
-GraphDisplay.prototype = extend( {}, moduleProto, {
+GraphDisplay.prototype = new moduleProto();
+GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 
 	newSerie: function( name, data, options ) {
 
 		data = waveToData( data );
-		this.streamOut( "newSerie", { name: name, data: data, options: options }  );
+		var s = { name: name, data: data, options: options };
+		this.series[ name ] = s;
+
+		this.streamOut( "newSerie", s );
 		return this;
 	},
 
 	newScatterSerie: function( name, data, options, errors ) {
+
 		data = waveToData( data );
-		this.streamOut( "newScatterSerie", { name: name, data: data, options: options, errors: errors }  );
+		var s = { name: name, data: data, options: options, errors: errors };
+		this.series[ name ] = s;
+
+		
+		this.streamOut( "newScatterSerie", s );
 		return this;
 	},
 
@@ -120,6 +130,11 @@ GraphDisplay.prototype = extend( {}, moduleProto, {
 			this._graphClientStoreId = v;
 			this.emit( "graphStored", this._graphClientStoreId );
 
+		},
+
+		'mouseOverPoint': function( data ) {
+
+			this.emit("mouseOverPoint", data.serieName, data.pointId );
 		}
 	}
 

@@ -81,6 +81,10 @@
 			.setDataError( data.errors )
 			.setErrorStyle( [ 'bar'] );
 
+		s.on( "mouseover", function( id ) {
+			module.streamOut("mouseOverPoint", { serieName: data.name, pointId: id } );
+		});
+
 		graphi.redraw();
 		graphi.drawSeries();
 	});

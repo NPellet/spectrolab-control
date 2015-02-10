@@ -1,10 +1,11 @@
 
-var moduleProto = require('../../../module'),
+var ModuleProto = require('../../../module'),
 	extend = require('extend');
 
 var ButtonDisplay = function() {};
 
-ButtonDisplay.prototype = extend( {}, moduleProto, {
+ButtonDisplay.prototype = new ModuleProto();
+ButtonDisplay.prototype = extend( ButtonDisplay.prototype, {
 
 
 	streamOn: {
@@ -19,6 +20,7 @@ ButtonDisplay.prototype = extend( {}, moduleProto, {
 	setText: function( text ) {
 
 		this.text = text;
+		this.out( "setText", text );
 		return this;
 	},
 

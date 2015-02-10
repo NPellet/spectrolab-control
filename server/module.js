@@ -12,10 +12,11 @@ var liquid = require("liquid-node"),
 	lengine = new liquid.Engine
 
 
-var modulePrototype = new events.EventEmitter;
+var modulePrototype = function() {};
 
+//modulePrototype.prototype = new ();
 
-modulePrototype = extend( modulePrototype, {
+modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototype.prototype, {
 	
 	init: function( type, name ) {
 

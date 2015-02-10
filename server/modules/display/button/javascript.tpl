@@ -8,6 +8,11 @@
 		module.out('click');
 	});
 
+
+	module.onMessage("setText", function( text ) {
+		button.attr('value', text );
+	});
+
 	module.ready();
 
 }) ( window.io );
