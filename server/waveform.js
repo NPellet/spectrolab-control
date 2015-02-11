@@ -7,8 +7,8 @@ var Waveform = function() {
 
 Waveform.prototype = {
 
-	setData: function( data ) {	
-		
+	setData: function( data ) {
+
 		this.data = data;
 		this.length = this.data.length;
 
@@ -29,7 +29,7 @@ Waveform.prototype = {
 	},
 
 	get: function( index ) {
-		return this.data[ index ]; 
+		return this.data[ index ];
 	},
 
 	set: function( index, value ) {
@@ -37,7 +37,39 @@ Waveform.prototype = {
 	},
 
 	push: function( value ) {
-		this.data.push( value );
+
+		if( Array.isArray( value ) ) {
+
+			this.data = this.data.concat( value );
+
+		} else if( value instanceof Waveform ) { // This has to kill the x delta scaling
+
+			switch( this.getXScalingMode() ) {
+
+				case 'delta':
+
+						this.xScaling = {
+							type: 'wave',
+							wave: this.getXWave()
+						};
+
+				break;
+
+				case 'wave': // This is fine, no need to destroy it
+				break;
+			}
+
+			this.data = this.data.concat( value.getData( ) );
+
+			if( this.xScaling ) {
+				this.xScaling.wave.push( value.getXWave() );
+			}
+
+		} else {
+
+			this.data.push( value );
+
+		}
 	},
 
 	setXUnit: function( xUnit ) {
@@ -161,7 +193,7 @@ Waveform.prototype = {
 
 				var d = val - this.data[ k2 ] / ( this.data[ k1 ] - this.data[ k2 ] );
 				if( ! interpolate ) {
-					
+
 					if( d < 0.5 ) {
 						return k1;
 					} else {
@@ -227,16 +259,16 @@ Waveform.prototype = {
 
 
 			case 'wave':
-				
+
 				return this.xScaling.getXFromIndex( p1 ) - this.xScaling.getXFromIndex( p2 );
 			break;
-		}	
+		}
 	},
 
 	getAverageP: function( from, to ) {
 
 		var sum = this._integrateP( from, to );
-		
+
 		return sum[ 0 ] / sum[ 2 ];
 	},
 
@@ -251,8 +283,43 @@ Waveform.prototype = {
 		for( var i = p0; i <= p1; i+= 1 ) {
 			w.push( this.data[ i ] );
 		}
+
+		switch( this.getXScalingMode() ) {
+
+				case 'delta':
+					var start = this.getXFromIndex( p0 );
+					w.setXScalingDelta( start, this.xScaling.xDelta );
+				break;
+
+				case 'wave':
+					w.setXWave( this.xScaling.wave.subset( p0, p1 ) );
+				break;
+		}
+
+		w.setXUnit( this.getXUnit() );
+		w.setYUnit( this.getYUnit() );
+
 		return w;
 	},
+
+	getXWave: function() {
+
+		switch( this.getXScalingMode() ) {
+
+				case 'delta':
+					var w = new Waveform();
+					for( var i = 0; i < this.getDataLength(); i += 1 ) {
+						w.push( this.xScaling.start + i * this.xScaling.delta );
+					}
+					return w;
+				break;
+
+				case 'wave':
+					return this.xScaling.wave;
+				break;
+		}
+	},
+
 
 	average: function( p0, p1 ) {
 		return this.getAverageP( p0, p1 );
@@ -295,7 +362,7 @@ Waveform.prototype = {
 		} else {
 
 			for( var i = 0; i < this.data.length; i ++ ) {
-				
+
 				this.data[ i ] -= val;
 			}
 		}
@@ -310,7 +377,7 @@ Waveform.prototype = {
 		} else {
 			from = this.getIndexFromX( xFrom );
 		}
-		
+
 		if( to == undefined ) {
 			to = this.data.length;
 		} else {
@@ -342,15 +409,15 @@ Waveform.prototype = {
 		} else {
 
 			var deltaTot = this.data.length;
-			
+
 			for( ; from <= to ; from ++ ) {
-			
+
 				sum += this.data[ from ];
 			}
-		
-			
+
+
 		}
-		
+
 		return [ sum, l, deltaTot ];
 	},
 
@@ -365,7 +432,7 @@ Waveform.prototype = {
 	},
 
 	integrateToWave: function() {
-		
+
 		var w = this.duplicate();
 
 		var from = 0, to = this.data.length;
@@ -434,7 +501,7 @@ Waveform.prototype = {
 				for( var i = 0; i < this.data.length; i ++ ) {
 					this.data[ i ] *= val.get( i );
 				}
-				
+
 			} else {
 				throw "Cannot multiply two waves with unequal number of points";
 			}
@@ -463,7 +530,7 @@ Waveform.prototype = {
 	findLevel: function( level, options ) {
 
 		options = extend( {
-			
+
 			box: 1,
 			edge: 'ascending',
 			rounding: 'before',
@@ -523,7 +590,7 @@ Waveform.prototype = {
 
 				if( options.edge == 'descending' ) {
 
-				
+
 					for( j = i + ( box - 1 ) / 2 ; j >= i - ( box - 1 ) / 2 ; j -- ) {
 
 						if( this.data[ j ] < level && this.data[ j - 1 ] > level ) { // Find a crossing
@@ -535,7 +602,7 @@ Waveform.prototype = {
 			}
 		}
 
-		
+
 	}
 }
 
