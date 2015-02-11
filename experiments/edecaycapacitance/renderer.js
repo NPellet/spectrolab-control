@@ -49,17 +49,6 @@ w.addModule("display/button", "focus").setText( "Focus on point: " );
 
 
 
-var w = renderer
-  .addWrapper("wrapper_table")
-  .setTitle("Experiment control")
-  .setSize( 20, 40 )
-  .setPosition( 2, 10 );
-
-w.addModule("gould/connect", "gouldConnect").setTitle( "Gould Status" );
-w.addModule("keithley/connect", "keithleyConnect").setTitle( "Keithley Status" );
-w.addModule("display/button", "start").setText( "Start capacitance measurement" );
-w.addModule("display/button", "focus").setText( "Focus on point: " );
-
 
 
 var w = renderer
