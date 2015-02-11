@@ -14,12 +14,12 @@ var net = require('net'),
 var methods = {
 
 	'sourcev': {
-		defaults: { 
+		defaults: {
 			bias: 0,
 			channel: 'smua',
 			complianceV: 1,
 			complianceI: 1,
-			settlingTime: 1	
+			settlingTime: 1
 		},
 
 		method: 'sourcev',
@@ -30,7 +30,7 @@ var methods = {
 
 
 	'sweepIV': {
-		defaults: { 
+		defaults: {
 			channel: 'smua',
 			startV: 0,
 			stopV: 1,
@@ -53,14 +53,14 @@ var methods = {
 			data = data.split(/,[\t\r\s\n]*/);
 			for( var i = 0; i < data.length; i += 2 ) {
 				dataFinal.push( [ parseFloat( data[ i + 1] ), parseFloat( data[ i ] ) ] );
-				
+
 			}
 			return dataFinal;
 		}
 	},
 
 	'VoltageStability': {
-		defaults: { 
+		defaults: {
 			channel: 'smua',
 			settlingtime: 0.04,
 			totaltime: 10,
@@ -95,7 +95,7 @@ var methods = {
 
 
 	'CurrentStability': {
-		defaults: { 
+		defaults: {
 			channel: 'smua',
 			settlingtime: 0.04,
 			totaltime: 10,
@@ -110,7 +110,7 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-			
+
 
 
 			var w = new Waveform();
@@ -132,7 +132,7 @@ var methods = {
 
 
 	'HallMeasurement': {
-		defaults: { 
+		defaults: {
 			channel: 'smua',
 			bias: 1e-9
 		},
@@ -144,8 +144,8 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-	
-			var w = new Waveform();	
+
+			var w = new Waveform();
 			var dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			for( var i = 0; i < data.length; i ++ ) {
@@ -157,9 +157,9 @@ var methods = {
 		}
 	},
 
-	
+
 	'Poling': {
-		defaults: { 
+		defaults: {
 			channel: 'smua',
 			peakVoltage: 10,
 			peakTime: 2,
@@ -173,8 +173,8 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-	
-			var w = new Waveform();	
+
+			var w = new Waveform();
 			var dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			console.log( data );
@@ -194,7 +194,7 @@ var methods = {
 
 
 	'Sine': {
-		defaults: { 
+		defaults: {
 			channel: 'smua',
 			sense: "Current",
 			bias: 0,
@@ -213,15 +213,15 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-	
-			var voltage = new Waveform();	
-			var current = new Waveform();	
+
+			var voltage = new Waveform();
+			var current = new Waveform();
 
 			var voltageFinal = [];
 			var currentFinal = [];
 
 			data = data.split(/,[\t\r\s\n]*/);
-			
+
 			for( var i = 0; i < data.length; i += 3 ) {
 				voltageFinal.push( parseFloat( data[ i ] ) );
 				currentFinal.push( parseFloat( data[ i + 1 ] ) );
@@ -245,7 +245,7 @@ var methods = {
 
 	'pulseAndSwitchDiogio': {
 
-		defaults: { 
+		defaults: {
 			diodePin: 1,
 			switchPin: 2,
 			pulseWidth: 0.1,
@@ -256,7 +256,7 @@ var methods = {
 
 		method: 'pulseAndSwitchDiogio',
 		parameters: function( options ) {
-			
+
 			return [ options.diodePin, options.switchPin, options.pulseWidth, options.numberOfPulses, options.delayBetweenPulses, options.delaySwitch ]
 		},
 
@@ -264,7 +264,30 @@ var methods = {
 
 			return data;
 		}
-	}
+	},
+
+
+		'longPulse': {
+
+			defaults: {
+				diodePin: 1,
+				pulseWidth: 1,
+				numberOfPulses: 1,
+				delay: 5
+			},
+
+			method: 'longPulse',
+			parameters: function( options ) {
+
+				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ]
+			},
+
+			processing: function( data, options ) {
+
+				return data;
+			}
+		}
+
 }
 
 var Keithley = function( params ) {
@@ -306,15 +329,15 @@ Keithley.prototype.connect = function( callback ) {
 			// Connect by raw TCP sockets
 			var self = module,
 				socket = net.createConnection( {
-					port: module.params.port, 
+					port: module.params.port,
 					host: module.params.host,
 					allowHalfOpen: true
 				});
 
-			module.connecting = true;	
+			module.connecting = true;
 			module.socket = socket;
-			module.setEvents();	
-			
+			module.setEvents();
+
 
 			resolver();
 
@@ -337,7 +360,7 @@ for( var i in methods ) {
 		}
 
 	}) ( i );
-	
+
 }
 
 
@@ -346,7 +369,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 	var module = this;
 
 	return this.connect().then( function() {
-	
+
 		return new Promise( function( resolver, rejecter ) {
 
 			options = extend( true, {}, method.defaults, options );
@@ -355,7 +378,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 				callback = options;
 				options = {};
 			}
-			
+
 			function end( data ) {
 
 				if( method.processing ) {
@@ -381,7 +404,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
 	});
-	
+
 }
 
 Keithley.prototype.command = function( command ) {
@@ -393,8 +416,8 @@ Keithley.prototype.command = function( command ) {
 		return new Promise( function( resolver, rejecter ) {
 
 			module.socket.write( command + "\r\n", function() {
-				
-				resolver();	
+
+				resolver();
 			});
 		});
 	});
@@ -408,7 +431,7 @@ Keithley.prototype.flushErrors = function() {
 Keithley.prototype.checkConnection = function() {
 
 	if( ! this.socket && this.connected ) {
-	
+
 		throw "Socket is not alive";
 	}
 }
@@ -441,7 +464,7 @@ Keithley.prototype.setEvents = function() {
 			resolver();
 		});
 
-		self.queue = [];	
+		self.queue = [];
 	});
 
 	this.socket.on('end', function() {
@@ -460,7 +483,7 @@ Keithley.prototype.uploadScripts = function() {
 
 	// Voltage sourcing, current measurement
 	var files = fs.readdirSync( path.resolve( __dirname, "scripts/" ) );
-	
+
 
 	for( var i = 0; i < files.length ; i ++ ) {
 		if( files[ i ].substr( 0, 1 ) == '_' ) {
