@@ -110,7 +110,6 @@ renderer.render = function( ) {
 
 		      if( req.url.indexOf('getmodule-') > -1 ) {
 
-console.log( path.resolve( __dirname, req.url.replace('getmodule-', '').replace('.js', '') + '/client.js' ) );
 			      fs.readFile( path.resolve( __dirname, "./modules/" + req.url.replace('getmodule-', '').replace('.js', '') + '/client.js' ), function (err, data) {
 			        if (err) console.log(err);
 			        res.writeHead(200, {'Content-Type': 'text/javascript'});
@@ -132,7 +131,6 @@ console.log( path.resolve( __dirname, req.url.replace('getmodule-', '').replace(
 		    }
 
 		    if(req.url.indexOf('.css') != -1){ //req.url has the pathname, check if it conatins '.css'
-console.log( prefix + __dirname, "." + req.url );
 
 
 		      fs.readFile( path.resolve( "." + req.url ), function (err, data) {

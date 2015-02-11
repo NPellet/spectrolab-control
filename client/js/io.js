@@ -38,7 +38,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 
 				var module = moduleFactory.getModule( data.moduleid );
 				var dom = $( "#module-" + data.moduleid );
-
+console.log( module, data.moduleid );
 				if( data.instruction == "lock" ) {
 
 					module._lock();

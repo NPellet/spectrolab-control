@@ -142,7 +142,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.locks[ lockElement ] = true;
 
 		if( this.isLocked() ) {
-			this.out( 'lock', true );
+			this.streamLock();
 		}
 
 		return this;
@@ -153,10 +153,18 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.locks[ lockElement ] = false;
 
 		if( ! this.isLocked() ) {
-			this.out( 'unlock', true );
+			this.streamLock();
 		}
 
 		return this;
+	},
+
+	streamLock: function() {
+		if( this.isLocked() ) {
+			this.out( 'lock', true );
+		} else {
+			this.out( 'unlock', true );
+		}
 	},
 
 	isLocked: function() {

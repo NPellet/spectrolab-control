@@ -9,10 +9,3 @@
 
 </div>
 </div>
-<script type="text/javascript" language="javascript">
-
-{% for module in js %}
-	{{ module }}
-{% endfor %}
-
-</script>

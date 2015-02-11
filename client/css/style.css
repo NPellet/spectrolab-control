@@ -2,9 +2,10 @@
 body {
 	font-family: "Helvetica Neue", Helvetica, Arial;
 	font-size: 12px;
+	position: relative;
 }
 
-.wrapper {	
+.wrapper {
 	position: absolute;
 }
 
@@ -32,7 +33,7 @@ body {
 	background: -ms-linear-gradient(top, #e5f1f9 0%,#f2f4f7 100%); /* IE10+ */
 	background: linear-gradient(to bottom, #e5f1f9 0%,#f2f4f7 100%); /* W3C */
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e5f1f9', endColorstr='#f2f4f7',GradientType=0 ); /* IE6-9 */
-	
+
 }
 
 .wrapper.frame .content {

@@ -9,6 +9,10 @@ var liquid = require("liquid-node"),
 var Wrapper = function( renderer ) {
 	this.renderer = renderer;
 	this.modules = [];
+
+	this.top = 0;
+	this.left = 0;
+	this.width = 1;
 };
 
 Wrapper.prototype.setTitle = function( title ) {
@@ -17,14 +21,19 @@ Wrapper.prototype.setTitle = function( title ) {
 }
 
 Wrapper.prototype.setPosition = function( left, top ) {
-	this.left = left || 1;
-	this.top = top || 1;	
+	this.left = left || 0;
+	this.top = top || 0;
 	return this;
 }
 
 Wrapper.prototype.setSize = function( w, h ) {
 	this.width = w || 10;
 	this.height = h || false;
+	return this;
+}
+
+Wrapper.prototype.setWidth = function( w ) {
+	this.width = w;
 	return this;
 }
 
@@ -35,7 +44,7 @@ Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions ) 
 
 	module.init( moduleType, moduleName );
 	module.setFolder( path.resolve('./server/modules/', moduleType ) );
-	
+
 	module.setRelativePath( moduleType );
 
 	this.modules.push( module );
@@ -53,12 +62,12 @@ Wrapper.prototype.render = function() {
 	for( var i = 0, l = this.modules.length ; i < l ; i ++ ) {
 
 		html.push( this.modules[ i ].renderHTML( ) );
-	
+
 	}
 
 	return Promise.all( html ).then( function( html ) {
 
-		return lengine.parseAndRender( fs.readFileSync( './server/html/wrapper.tpl', 'utf-8' ), { 
+		return lengine.parseAndRender( fs.readFileSync( './server/html/wrapper.tpl', 'utf-8' ), {
 
 			html: html,
 			position: {
@@ -78,13 +87,13 @@ Wrapper.prototype.render = function() {
 }
 
 Wrapper.prototype.getPositionTop = function() {
-	return ( this.top || 1 ) * Wrapper.gridY;
+	return ( this.top ) * ( Wrapper.gridY + 0 ) ;
 }
 Wrapper.prototype.getPositionLeft = function() {
-	return ( this.left || 1 ) * Wrapper.gridX;
+	return ( this.left ) * ( Wrapper.gridX + 0 );
 }
 Wrapper.prototype.getSizeWidth = function() {
-	return ( this.width || 1 ) * Wrapper.gridX;
+	return ( this.width || 1 ) * Wrapper.gridX - 10;
 }
 
 // Height behaves slightly differently. Auto height if not defined
@@ -96,7 +105,7 @@ Wrapper.prototype.getSizeHeight = function() {
 	return false;
 }
 
-Wrapper.gridX = 10;
-Wrapper.gridY = 10;
+Wrapper.gridX = 50;
+Wrapper.gridY = 50;
 
 module.exports = Wrapper;

@@ -17,7 +17,7 @@ wss.on('connection', function( ws ) {
 
   // New websocket instance.
   ws.on( "message", function( message ) {
-  		console.log( message );
+
 		// Parse the JSON
 		var jsonParsed = JSON.parse( message );
 
@@ -32,9 +32,11 @@ wss.on('connection', function( ws ) {
 		if( jsonParsed.moduleid ) {
 
 			if( jsonParsed.instruction == "getStatus" ) { // Module is requesting current status
-console.log('get Status');
+
 				var output = prepareOutput( allModules[ jsonParsed.moduleid ], "setStatus", allModules[ jsonParsed.moduleid ].getStatus() )
 				this.send( output );
+
+				allModules[ jsonParsed.moduleid ].streamLock();
 
 			} else {
 
@@ -49,7 +51,7 @@ console.log('get Status');
 
 		// Remove connections from stack
 		connections.splice( connections.indexOf( this ), 1 );
-		
+
 	});
 
 });

@@ -121,14 +121,14 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 	        stroke: colors2[ l ]
     	};
 
-		
+
 		var vocs = vocsGlobal[ l ];
 		var charges = chargesGlobal[ l ];
 		var capacitances = capacitancesGlobal[ l ];
 
 		var chargesF = chargesFGlobal[ l ];
 		var capacitanceF = capacitancesFGlobal[ l ];
-		
+
 
 
 		var dataCharges = [], dataChargesSDev = [];
@@ -137,7 +137,7 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 		var wTimeDelays = new Waveform();
 		var wCapa = new Waveform();
 		var wCapaS = new Waveform();
-		
+
 		var wCapaF = new Waveform();
 		var wCapaSF = new Waveform();
 
@@ -156,10 +156,6 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 
 			var i = charges.indexOf( charge );
 
-
-console.log( i, charges, chargesF, charges[ i ], chargesF[ i ] );
-
-
 			dataCharges.push( [ delays[ i ], charge.median() ] );
 			dataChargesSDev.push( [ [ charge.stdDev() ] ] );
 
@@ -174,7 +170,7 @@ console.log( i, charges, chargesF, charges[ i ], chargesF[ i ] );
 			wChargesSF.push( chargesF[ i ].stdDev() );
 		});
 
-		
+
 		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
 		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
 		renderer.getModule("chargesvstime").autoscale();
@@ -226,7 +222,7 @@ console.log( i, charges, chargesF, charges[ i ], chargesF[ i ] );
 		});
 
 
-		
+
 
 
 		renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, style );
@@ -238,12 +234,12 @@ console.log( i, charges, chargesF, charges[ i ], chargesF[ i ] );
 		renderer.getModule("C-t").autoscale();
 
 
-		
+
 		renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
 		renderer.getModule("C-V").newScatterSerie("CV_" + l + "_F", dataCVF, { }, dataCVSdevF, style2 );
 		renderer.getModule("C-V").autoscale();
 
-		
+
 		var itxw = itx.newWave( "voc_" + l );
 		itxw.setWaveform( wVocs );
 

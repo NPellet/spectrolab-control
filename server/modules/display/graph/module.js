@@ -6,7 +6,6 @@ var GraphDisplay = function( graphOptions ) {
 
 	this.out("makeGraph", graphOptions );
 	this.series = {};
-	this.status = {};
 };
 
 function waveToData( data ) {
@@ -106,18 +105,19 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 	},
 
 	setXAxisLabel: function( label ) {
-
+		this.status.xAxisLabel = label;
 		this.out( "setXAxisLabel", label );
 		return this;
 	},
 
 	setYAxisLabel: function( label ) {
-
+		this.status.yAxisLabel = label;
 		this.out( "setYAxisLabel", label );
 		return this;
 	},
 
 	setHeight: function( h ) {
+		this.status.height = h;
 		this.out( "setHeight", h );
 		return this;
 	},
@@ -145,6 +145,8 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 
 
 	getStatus: function() {
+
+		console.log( this.status );
 		return this.status;
 	},
 
