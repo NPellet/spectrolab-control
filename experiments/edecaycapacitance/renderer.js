@@ -1,5 +1,5 @@
 
-var renderer = require("../../../server/renderer");
+var renderer = require("../../server/renderer");
 
 
 var graphOptions = {
