@@ -51,7 +51,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 					module._setStatus( data.value );
 
 				} else {
-console.log( data );
+
 					module._receive( data.instruction, data.value );
 				}
 			}

@@ -31,7 +31,7 @@ Gould.prototype.connect = function( ) {
 
 			resolver( module.serialPort );
 			module.connected = true;
-			module.emit("connected");
+			//module.emit("connected");
 			module.emit("idle");
 			return;
 		}

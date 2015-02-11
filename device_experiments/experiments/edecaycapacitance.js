@@ -48,8 +48,8 @@ experiment.prototype = {
 
 			var recordedWaves = [];
 
-			var timeBases = [ 20e-6, 200e-6 ];
-			var yScales = [ 5e-3, 2e-3 ];
+			var timeBases = [ 20e-6, 1000e-6 ];
+			var yScales = [ 10e-3, 2e-3 ];
 
 			var timeBase;
 

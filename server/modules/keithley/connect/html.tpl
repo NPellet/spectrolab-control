@@ -1,2 +1,2 @@
 
-	<input type="button" value="Connect to Keithley" id="{{ module.id }}" />
+	<input type="button" value="Connect to Keithley" id="connect-{{ module.id }}" />
