@@ -45,7 +45,7 @@ define( [ 'client/js/module'], function( defaultModule ) {
 
 	module.prototype.setStatus = function( status ) {
 
-		this.setStatus( status.message );
+		this.setStatusMessage( status.message );
 	}
 
 	return module;
