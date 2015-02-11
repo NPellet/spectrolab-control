@@ -15,7 +15,7 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 	assignKeithley: function( keithley ) {
 
 		var module = this;
-		
+
 		this.keithley = keithley;
 
 		this.keithley.on("connected", function() {
@@ -57,11 +57,11 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 		})
 		.on('disconnected', function() {
 			status.update("Disconnected from Keithley SMU", 'neutral');
-			//module( 'poling' ).lock( 'smu.connection' ); // Unlock voc stab module	
+			//module( 'poling' ).lock( 'smu.connection' ); // Unlock voc stab module
 		})
 		.on("connectionerror", function() {
 			status.update("Error while connecting to the keithley", 'error');
-			//module( 'poling' ).unlock( 'smu.connection' ); // Unlock voc stab module	
+			//module( 'poling' ).unlock( 'smu.connection' ); // Unlock voc stab module
 		});
 	},
 
@@ -69,7 +69,7 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 	streamOn: {
 
 		'connect': function( ) {
-	console.log('REQUEST FOR CONNECTION');
+	
 			var module = this;
 			module.streamOut( "pending", true );
 			module.emit("connecting");

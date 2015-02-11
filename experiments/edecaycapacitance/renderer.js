@@ -45,7 +45,7 @@ w.addModule("gould/connect", "gouldConnect").setTitle( "Gould Status" );
 w.addModule("keithley/connect", "keithleyConnect").setTitle( "Keithley Status" );
 w.addModule("arduino/connect", "arduinoConnect").setTitle( "Arduino Status" );
 
-w.addModule("display/button", "start").setText( "Start capacitance measurement" );
+w.addModule("display/button", "start").setText( "Start capacitance measurement" ).setTitle("Measurement");
 w.addModule("display/button", "focus").setText( "Focus on point: " );
 
 var w = renderer

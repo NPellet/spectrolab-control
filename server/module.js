@@ -105,6 +105,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 	renderCSS: function() {
 
+		var self = this;
 		var fPath = './server/modules/' + this.type + '/style.scss';
 //console.log( './server/modules/' + this.type + '/style.scss', fs.existsSync( fPath ) );
 		if( fs.existsSync( fPath )) {
@@ -112,7 +113,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 			return new Promise( function( res ) {
 
 				sass.render({
-			    	file: fPath,
+			    	data: ".module." + self.getClass() + " { " + fs.readFileSync( fPath ) + " } ",
 			    	success: res
 				});
 			});

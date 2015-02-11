@@ -17,7 +17,6 @@ Status.prototype = extend( Status.prototype, {
 
 
 	getStatus: function() {
-		console.log( this.status );
 		return this.status;
 	}
 

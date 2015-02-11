@@ -16,8 +16,15 @@ ButtonDisplay.prototype = extend( ButtonDisplay.prototype, {
 
 	setText: function( text ) {
 
-		this.text = text;
-		this.out( "setText", text );
+		this.status.text = text;
+		this.out( "setText", this.status.text );
+		return this;
+	},
+
+	setColor: function( color ) {
+
+		this.status.color = color;
+		this.out("setColor", this.status.color );
 		return this;
 	},
 
@@ -25,18 +32,14 @@ ButtonDisplay.prototype = extend( ButtonDisplay.prototype, {
 
 		return {
 			module: {
-				buttonValue: this.text
+				buttonValue: this.status.text
 			}
 		};
 	},
 
 	getStatus: function() {
-
-		return {
-			text: this.text
-		}
+		return this.status;
 	}
-	
 
 } );
 

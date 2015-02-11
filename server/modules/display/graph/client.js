@@ -57,6 +57,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 			switch( type ) {
 
 				case 'scatter':
+					
 					serie.setDataError( data.errors );
 					serie.setErrorStyle( [ 'bar'] );
 					serie.setStyle( data.style );
@@ -64,7 +65,6 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 					serie.on( "mouseover", function( id ) {
 						module.streamOut("mouseOverPoint", { serieName: data.name, pointId: id } );
 					});
-
 
 				break;
 			}
