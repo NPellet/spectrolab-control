@@ -25,7 +25,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.type = type;
 		this.name = name;
 		this.status = {};
-		
+
 		this.assignId();
 
 		for( var i in this.streamOn ) {

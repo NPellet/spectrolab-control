@@ -7,7 +7,7 @@ var Status = function() {};
 
 Status.prototype = new moduleProto();
 Status.prototype = extend( Status.prototype, {
-	
+
 
 	/* Available types: neutral warning error ok process */
 	update: function( message, type ) {
@@ -17,6 +17,7 @@ Status.prototype = extend( Status.prototype, {
 
 
 	getStatus: function() {
+		console.log( this.status );
 		return this.status;
 	}
 
