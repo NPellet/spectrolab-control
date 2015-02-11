@@ -38,6 +38,7 @@ renderer.addWrapper = function(  ) {
 
 	var w = new wrapper( this );
 	wrappers.push( w );
+	return w;
 }
 
 renderer.addStylesheet = function( file ) {
