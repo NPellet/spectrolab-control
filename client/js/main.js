@@ -12,6 +12,10 @@ require( [ 'jquery', 'client/js/modulefactory', 'client/js/io' ] , function( $, 
 
 
 	ModuleFactory.parseDom( document );
+
+
+
+	IO.setIp( $(document).find('head').find('meta[name=application-meta][data-serverip]').attr('data-serverip') );
 	IO.connect();
 
 } );
