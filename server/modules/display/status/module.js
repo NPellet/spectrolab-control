@@ -2,9 +2,12 @@
 var moduleProto = require('../../../module'),
 	extend = require('extend');
 
-var GraphDisplay = function() {};
+var Status = function() {};
 
-GraphDisplay.prototype = extend( {}, moduleProto, {
+
+Status.prototype = new moduleProto();
+Status.prototype = extend( Status.prototype, {
+	
 
 	/* Available types: neutral warning error ok process */
 	update: function( message, type ) {
@@ -20,5 +23,5 @@ GraphDisplay.prototype = extend( {}, moduleProto, {
 } );
 
 exports = module.exports = {
-	Constructor: GraphDisplay
+	Constructor: Status
 }
