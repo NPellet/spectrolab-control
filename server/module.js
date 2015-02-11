@@ -31,18 +31,24 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 			( function( callback ) {
 
-				stream.onMessage( module.id, i, ( function() { callback.apply( module, arguments ) } ) );
+				stream.moduleIn( module.id, i, ( function() { callback.apply( module, arguments ) } ) );
 
 			} ) ( module.streamOn[ i ] );
 		}
 	
 	},
 
+
 	assignId: function() {
 
 		if( ! this.id ) {
 			this.id = util.uniqueId();
 		}
+	},
+
+
+	getId: function() {
+		return this.id;
 	},
 
 	streamIn: function() {},
@@ -55,7 +61,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 			this.assignId();
 		}
 
-		stream.write( this.id, instruction, value );
+		stream.moduleOut( this, instruction, value );
 	},
 
 	out: function() {
@@ -90,29 +96,10 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 				id: module.id,
 				type: module.type,
 				class: module.getClass(),
-				title: module.title
+				title: module.title,
+				path: module.getRelativePath()
 			} );
 		});
-	},
-
-	renderJS: function() {
-		var moduleTplInfos = this.getModuleInfos(),
-			self = this;
-
-		return lengine
-		  	.parseAndRender( 
-		  		fs.readFileSync( 
-		  			path.resolve( this.getFolder(), 'javascript.tpl')
-		  		),
-		  		moduleTplInfos ).then( function ( js ) {
-
-					return lengine.parseAndRender( fs.readFileSync( './server/html/modulejavascript.tpl' ), { 
-						js: js,
-						moduleid: self.id,
-						type: self.type,
-						name: self.name
-					} );
-			  });
 	},
 
 	renderCSS: function() {
@@ -141,15 +128,20 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.folder = folder;
 	},
 
+	setRelativePath: function( path ) {
+		this.relativePath = path;
+	},
+
+	getRelativePath: function() {
+		return this.relativePath;
+	},
+
 	lock: function( lockElement ) {
 		var self = this;
 		this.locks[ lockElement ] = true;
 
 		if( this.isLocked() ) {
-
-			stream.onClientReady( function() {
-				self.streamOut( 'lock', true );	
-			});
+			this.out( 'lock', true );	
 		}
 
 		return this;
@@ -160,11 +152,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.locks[ lockElement ] = false;
 
 		if( ! this.isLocked() ) {
-
-			stream.onClientReady( function() {
-
-				self.streamOut( 'unlock', true );	
-			});
+			this.out( 'unlock', true );	
 		}
 
 		return this;

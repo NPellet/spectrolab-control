@@ -7,15 +7,12 @@ var ButtonDisplay = function() {};
 ButtonDisplay.prototype = new ModuleProto();
 ButtonDisplay.prototype = extend( ButtonDisplay.prototype, {
 
-
 	streamOn: {
 
 		'click': function( ) {
-
 			this.emit( "clicked" );
 		}
 	},
-
 
 	setText: function( text ) {
 
@@ -24,17 +21,22 @@ ButtonDisplay.prototype = extend( ButtonDisplay.prototype, {
 		return this;
 	},
 
-
 	_getModuleInfos: function() {
-		
+
 		return {
-
 			module: {
-
 				buttonValue: this.text
 			}
 		};
 	},
+
+	getStatus: function() {
+
+		return {
+			text: this.text
+		}
+	}
+	
 
 } );
 
