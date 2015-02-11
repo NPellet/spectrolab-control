@@ -36,8 +36,8 @@ var getIp = function() {
 
 renderer.addWrapper = function(  ) {
 
-	var wrapper = new wrapper( this );
-	wrappers.push( wrapper );
+	var w = new wrapper( this );
+	wrappers.push( w );
 }
 
 renderer.addStylesheet = function( file ) {
