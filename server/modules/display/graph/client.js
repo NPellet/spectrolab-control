@@ -43,6 +43,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 					serie.setDataError( data.errors );
 				break;
 			}
+			
 		} else {
 
 			// Create a serie

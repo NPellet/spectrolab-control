@@ -2,21 +2,21 @@
 var moduleProto = require('../../../module'),
 	extend = require('extend');
 
-var GouldConnect = function() {
-	this.title = "Gould Connection";
+var ArduinoConnect = function() {
+	this.title = "Arduino Connection";
 	this.status = {};
 };
 
-GouldConnect.prototype = new moduleProto();
-GouldConnect.prototype = extend( GouldConnect.prototype, {
+ArduinoConnect.prototype = new moduleProto();
+ArduinoConnect.prototype = extend( ArduinoConnect.prototype, {
 
-	assignGould: function( gould ) {
+	assignArduino: function( arduino ) {
 
 		var module = this;
 		
-		this.gould = gould;
+		this.arduino = arduino;
 
-		this.gould.on("connecting", function() {
+		this.arduino.on("connecting", function() {
 
 			module.streamOut("connecting");
 			module.emit("connecting");
@@ -26,7 +26,7 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.status.error = false;
 		} );
 
-		this.gould.on("connected", function() {
+		this.arduino.on("connected", function() {
 
 			module.streamOut( "connected" );
 			module.emit("connected");
@@ -38,7 +38,7 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.unlock();
 		} );
 
-		this.gould.on( "disconnected", function() {
+		this.arduino.on( "disconnected", function() {
 
 			module.unlock();
 			module.streamOut( "disconnected", true );
@@ -49,7 +49,7 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.status.connecting = false;
 		});
 
-		this.gould.on( "connectionerror", function() {
+		this.arduino.on( "connectionerror", function() {
 
 			module.unlock();
 			module.emit("connectionerror");
@@ -69,18 +69,18 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 	assignStatus: function( status ) {
 
 		this.on("connecting", function() {
-			status.update("Connecting to Gould Oscilloscope...", 'process');
+			status.update("Connecting to Arduino...", 'process');
 		})
 		.on('connected', function() {
-			status.update("Connected to Gould Oscilloscope...", 'ok');
+			status.update("Connected to Arduino...", 'ok');
 			//module( "poling" ).unlock( 'smu.connection' ); // Unlock voc stab module
 		})
 		.on('disconnected', function() {
-			status.update("Disconnected from Gould Oscilloscope", 'neutral');
+			status.update("Disconnected from Arduino", 'neutral');
 			//module( 'poling' ).lock( 'smu.connection' ); // Unlock voc stab module	
 		})
 		.on("connectionerror", function() {
-			status.update("Error while connecting to the Gould Oscilloscope", 'error');
+			status.update("Error while connecting to the Arduino", 'error');
 			//module( 'poling' ).unlock( 'smu.connection' ); // Unlock voc stab module	
 		});
 	},
@@ -94,12 +94,12 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.streamOut( "pending", true );
 			module.emit("connecting");
 			module.lock();
-			module.gould.connect();
+			module.arduino.connect();
 		},
 
 		'reset': function() {
 			var module = this;
-			module.gould.reset();
+			module.arduino.reset();
 		},
 
 		'disconnected': function() {
@@ -108,7 +108,7 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.lock();
 			module.emit("disconnecting");
 			module.streamOut( "pending", true );
-			module.gould.disconnect();
+			module.arduino.disconnect();
 		}
 	},
 
@@ -120,5 +120,5 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 });
 
 exports = module.exports = {
-	Constructor: GouldConnect
+	Constructor: ArduinoConnect
 }

@@ -11,17 +11,10 @@ define( [ 'client/js/module'], function( defaultModule ) {
 		this.button = this.getDom().find('.button');
 		
 		var connect = $( "#connect-" + this.getId() );
-		var reset = $( "#reset-" + this.getId() );
-
 		this.connect = connect;
-		this.reset = reset;
-
+		
 		connect.on( 'click', function() {
 			self.out( "connect" );
-		} ); 
-
-		reset.on( 'click', function() {
-			self.out( "reset" );
 		} ); 
 	}
 
@@ -53,8 +46,7 @@ define( [ 'client/js/module'], function( defaultModule ) {
 		this.connect.prop( 'value', 'Disconnect' );
 		this.connect.removeClass('red').addClass('green');
 
-		this.reset.addClass('green');
-		this.reset.attr('disabled', false );
+		
 	}
 
 
@@ -64,8 +56,7 @@ define( [ 'client/js/module'], function( defaultModule ) {
 		this.connect.prop( 'value', 'Connect' );
 		this.connect.removeClass('red').removeClass('green');
 
-		this.reset.removeClass('green');
-		this.reset.attr('disabled', false );
+	
 	}
 
 

@@ -44,7 +44,9 @@ var w = renderer
 
 w.addModule("gould/connect", "gouldConnect").setTitle( "Gould Status" );
 w.addModule("keithley/connect", "keithleyConnect").setTitle( "Keithley Status" );
-w.addModule("display/button", "start").setText( "Start capacitance measurement" );
+w.addModule("arduino/connect", "arduinoConnect").setTitle( "Arduino Status" );
+
+w.addModule("display/button", "start").setText( "Start Voc-Decay measurement" );
 
 
 var w = renderer

@@ -14,7 +14,6 @@ function waveToData( data ) {
 	if( data.getData ) {
 		var data2 = [];
 		var dataY = data.getData();
-		console.log( data );
 		var dataX = data.getXWave().getData();
 
 		for( var i = 0; i < dataY.length; i ++ ) {

@@ -13,11 +13,42 @@ var SerialPort = require('serialport').SerialPort,
 
 var timeout;
 
+function doConnect( arduino, resolver ) {
+
+	if( ! arduino.params || ! arduino.params.host ) {
+		throw "No Arduino host was found";
+	}
+
+	try {	
+
+		var serialPort = new SerialPort( arduino.params.host, {
+				baudrate: arduino.params.baudrate,
+				stopBits: 1,
+				parity: 'none',
+				databits: 8,
+				flowControl: true
+		});
+
+		arduino.serialPort = serialPort;
+
+	} catch ( error ) {
+		console.log( error );
+		throw "Error while connecting to the Arduino";
+
+		arduino.emit("connectionerror");
+		rejecter();
+	}
+
+	setEvents( arduino, resolver );
+}
+
 var Arduino = function( params ) {
 	this.params = params;
 	this.connected = false;
 	this.queue = [];
 };
+
+
 
 Arduino.prototype = new events.EventEmitter;
 
@@ -44,11 +75,6 @@ Arduino.prototype.connect = function( ) {
 		VDTOperationsPort2 $ards.gWhichComStr
 		VDTWrite2/O=2 "2H"																// Added to warm up Arduino!
 	End
-
-
-
-
-
 	*/
 
 	var module = this;
@@ -64,42 +90,36 @@ Arduino.prototype.connect = function( ) {
 
 		module.emit("busy");
 
-		try {
 
+		if( ! module.params.host ) {
 
 			var serialPort = require("serialport");
+
 			serialPort.list(function (err, ports) {
+
 				ports.forEach(function(port) {
-					console.log(port.comName);
-					console.log(port.pnpId);
-					console.log(port.manufacturer);
+					
+					if( port.comName && port.comName.indexOf("/dev/cu.usbmodem") > -1 ) {
+
+						module.params.host = port.comName;
+						doConnect( module, resolver );
+					}
 				});
 			});
 
-return;
-
-			var serialPort = new SerialPort( module.params.host, {
-  				baudrate: module.params.baudrate,
-  				stopBits: 1,
-  				parity: 'none',
-  				databits: 8,
-  				flowControl: true
-			});
-
-			module.serialPort = serialPort;
-
-		} catch ( error ) {
-			console.log( error );
-			throw "Error while connecting to the Arduino";
-
-			module.emit("connectionerror");
-			rejecter();
+			return;
 		}
 
-		setEvents( module, resolver );
-
+		doConnect( module, resolver );
 	} );
 };
+
+
+Arduino.prototype.setWhiteLightLevel = function( whiteLightLevel ) {
+	var cmd = "5," + this.params.whiteLightLED.arduinoAnalogPin + "," + this.params.whiteLightLED.arduinoAnalogValue[ whiteLightLevel ] + ";";
+	return callSerial( this, cmd );
+}
+
 
 Arduino.prototype.close = function() {
 
@@ -120,6 +140,11 @@ Arduino.prototype.checkConnection = function() {
 
 		throw "Socket is not alive";
 	}
+}
+
+Arduino.prototype.sendCommand = function( command ) {
+
+	return callSerial( this, command );
 }
 
 
@@ -249,8 +274,9 @@ function processQueue( Arduino ) {
 
 	return Arduino.connect().then( function( serialPort ) {
 
-
+console.log( queueElement[ 0 ] );
 		serialPort.write( queueElement[ 0 ] + "\n", function( err, results ) {
+			console.log( err, results );
 			if( err ) {
 				console.warn( err );
 			}
@@ -272,7 +298,7 @@ function processQueue( Arduino ) {
 
 		}, 10000 );
 
-		if( queueElement[ 0 ].indexOf('?') > -1 ) {
+		if( queueElement[ 0 ].indexOf('?') > -1 || 1 == 1 ) {
 
 			Arduino.currentCallResolver = queueElement[ 1 ];
 			Arduino.currentCallRejecter = queueElement[ 2 ];
@@ -394,8 +420,10 @@ function setEvents( Arduino, resolver ) {
 	function endData( data ) {
 
 		if( Arduino.currentCallResolver ) {
-
+			console.log("______Response:" + Arduino.currentResponse );	
+			console.log(encodeURIComponent( Arduino.currentResponse ));
 			Arduino.currentCallResolver( Arduino.currentResponse );
+			
 			serialPort.drain( function() {
 
 				serialPort.flush( function() {
@@ -415,8 +443,11 @@ function setEvents( Arduino, resolver ) {
 	}
 
 	serialPort.on( 'data', function( data ) {
+		console.log("_____Chunk: " + data );
 		Arduino.currentResponse = Arduino.currentResponse + data.toString('ascii');
-		if( ! ( Arduino.currentResponse.indexOf("\r") == -1 ) ) {
+		
+		if( ! ( Arduino.currentResponse.indexOf("\r\n") == -1 ) ) {
+			
 			endData( Arduino.currentResponse );
 		}
 	} );
