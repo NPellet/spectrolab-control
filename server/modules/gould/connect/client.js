@@ -29,29 +29,71 @@ define( [ 'client/js/module'], function( defaultModule ) {
 
 		"connected": function( text ) {
 
-			var connect = this.connect;
-			connect.prop( 'value', 'Disconnect' );
-			connect.addClass('connected');
+			this.connected();
 		},
 
 		"disconnected": function( text ) {
 
-			var connect = this.connect;
-			connect.prop( 'value', 'Connect' );
-			connect.removeClass('connected');
+			this.disconnected();
+		},
+
+		"connecting": function() {
+
+			this.connecting();
+		},
+
+		"error": function() {
+
+			this.error();
 		}
 	};
+
+	module.prototype.connected = function() {
+
+		this.connect.prop( 'value', 'Disconnect' );
+		this.connect.removeClass('red').addClass('green');
+
+		this.reset.addClass('green');
+		this.reset.attr('disabled', false );
+	}
+
+
+	module.prototype.disconnected = function() {
+
+		this.connect.prop( 'value', 'Connect' );
+		this.connect.removeClass('red').removeClass('green');
+
+		this.reset.removeClass('green');
+		this.reset.attr('disabled', false );
+	}
+
+
+	module.prototype.connecting = function() {
+
+		this.connect.prop( 'value', 'Connecting...' );
+		this.connect.removeClass('red').removeClass('green');
+	}
+
+
+	module.prototype.error = function() {
+
+		this.connect.prop( 'value', 'Connection error' );
+		this.connect.addClass('red').removeClass('green');
+	}
+
 
 	module.prototype.setStatus = function( status ) {
 		
 		var connect = this.connect;
 		
 		if( status.connected ) {
-			connect.prop( 'value', 'Disconnect' );
-			connect.addClass('connected');
+			this.connected();
+		} else if( status.connecting ) {
+			this.connecting();
+		} else if( status.error ) {
+			this.error();
 		} else {
-			connect.prop( 'value', 'Connect' );
-			connect.removeClass('connected');
+			this.disconnected();
 		}
 	}
 
