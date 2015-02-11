@@ -58,8 +58,10 @@ define( [ 'client/js/io' ], function( io )  {
 		}
 
 		this._locked = true;
-		this.dom.prepend( this.overlay );
+		this._dom.prepend( this.overlay );
 
+		var dom = this._dom;
+		
 		this.overlay.css( {
 
 			top: dom.position().top,

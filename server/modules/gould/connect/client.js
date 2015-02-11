@@ -58,6 +58,7 @@ define( [ 'client/js/module'], function( defaultModule ) {
 	}
 
 
+
 	module.prototype.disconnected = function() {
 
 		this.connect.prop( 'value', 'Connect' );

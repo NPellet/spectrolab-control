@@ -3,6 +3,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 
 	var connected = false;
 	var ws;
+	var ipAddress;
 
 	function setEvents( ws ) {
 		// Stream is ready
@@ -51,7 +52,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 					module._setStatus( data.value );
 
 				} else {
-console.log( data );
+
 					module._receive( data.instruction, data.value );
 				}
 			}
@@ -88,9 +89,13 @@ console.log( data );
 		},
 
 		connect: function() {
-
-			ws = new WebSocket('ws://127.0.0.1:8080');
+console.log("Connecting to: " + 'ws://' + ( ipAddress || '127.0.0.1' ) + ':8080' );
+			ws = new WebSocket('ws://' + ( ipAddress || '127.0.0.1' ) + ':8080');
 			setEvents( ws );
+		},
+
+		setIp: function( ip ) {
+			ipAddress = ip;
 		}
 	};
 

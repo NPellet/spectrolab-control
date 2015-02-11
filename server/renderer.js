@@ -8,7 +8,8 @@ var wrapper = require("./wrapper"),
 	liquid = require("liquid-node"),
 	lengine = new liquid.Engine,
 	Promise = require('bluebird'),
-	path = require('path');
+	path = require('path'),
+	os = require('os');
 
 var	renderer = {},
 	wrappers = {},
@@ -16,6 +17,22 @@ var	renderer = {},
 	modulesId = {},
 	modules = [],
 	stylesheets = [];
+
+var getIp = function() {
+	
+	var interfaces = os.networkInterfaces();
+	var addresses = [];
+	for (var k in interfaces) {
+	    for (var k2 in interfaces[k]) {
+	        var address = interfaces[k][k2];
+	        if (address.family === 'IPv4' && !address.internal) {
+	            addresses.push(address.address);
+	        }
+	    }
+	}
+
+	return addresses[ 0 ];
+}
 
 renderer.addWrapper = function( name ) {
 
@@ -32,9 +49,7 @@ renderer.addStylesheet = function( file ) {
 
 renderer.render = function( ) {
 
-
 	stream.setModules( modulesId );
-
 
 	var html = [];
 	for( var i in wrappers ) {
@@ -61,7 +76,8 @@ renderer.render = function( ) {
 		return lengine.parseAndRender( fs.readFileSync( './server/html/page.tpl'), {
 
 			wrappers: arguments[ 0 ],
-			stylesheets: stylesheets
+			stylesheets: stylesheets,
+			ip: getIp()
 		} );
 
 	}).then( function( html ) {

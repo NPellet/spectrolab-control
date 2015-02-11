@@ -69,7 +69,7 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 	streamOn: {
 
 		'connect': function( ) {
-	
+	console.log('REQUEST FOR CONNECTION');
 			var module = this;
 			module.streamOut( "pending", true );
 			module.emit("connecting");

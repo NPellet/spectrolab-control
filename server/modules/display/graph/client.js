@@ -44,10 +44,10 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 				break;
 			}
 		} else {
-console.log( data );
+
 			// Create a serie
 			var serie = g
-				.newSerie( data.name, data.options )
+				.newSerie( data.name, data.options, type )
 				.autoAxis()
 				.setData( data.data );
 
