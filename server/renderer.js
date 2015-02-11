@@ -3,6 +3,7 @@
 // Note: This is a singleton instance
 
 var wrapper = require("./wrapper"),
+	stream = require("./stream"),
 	fs = require('fs'),
 	liquid = require("liquid-node"),
 	lengine = new liquid.Engine,
@@ -12,6 +13,7 @@ var wrapper = require("./wrapper"),
 var	renderer = {},
 	wrappers = {},
 	modulesName = {},
+	modulesId = {},
 	modules = [],
 	stylesheets = [];
 
@@ -30,21 +32,16 @@ renderer.addStylesheet = function( file ) {
 
 renderer.render = function( ) {
 
-	var js;
+
+	stream.setModules( modulesId );
+
+
 	var html = [];
 	for( var i in wrappers ) {
 		html.push( wrappers[ i ].render() )
 	}
 
 	// At this point all the modules should have loaded
-
-	// Let's get the client javascript ready
-	Promise.all( modules.map( function( module ) {
-		return module.renderJS();
-	}) ).then( function( a ) {
-		js = "$(document).ready( function() { " + Array.prototype.join.call( a, '' ) + " });";
-	});
-
 	// And now the css
 
 
@@ -71,6 +68,7 @@ renderer.render = function( ) {
 
 		// TEMP
 		var http = require('http');
+		var prefix = '../';
 		http.createServer(function (req, res) {
 
 /*
@@ -86,15 +84,6 @@ renderer.render = function( ) {
 		    }
 */
 
-			if( req.url == "/_modules.js" ) {
-
-				res.writeHead(200, {'Content-Type': 'text/javascript'});
-		        res.write( js );
-		        res.end();
-		        return;
-			}
-
-
 			if( req.url == "/_modules.css" ) {
 
 				res.writeHead(200, {'Content-Type': 'text/css'});
@@ -107,7 +96,20 @@ renderer.render = function( ) {
 
 		    if(req.url.indexOf('.js') != -1){ //req.url has the pathname, check if it conatins '.js'
 
-		      fs.readFile( path.resolve( __dirname, "." + req.url ), function (err, data) {
+		      if( req.url.indexOf('getmodule-') > -1 ) {
+
+console.log( path.resolve( __dirname, req.url.replace('getmodule-', '').replace('.js', '') + '/client.js' ) );
+			      fs.readFile( path.resolve( __dirname, "./modules/" + req.url.replace('getmodule-', '').replace('.js', '') + '/client.js' ), function (err, data) {
+			        if (err) console.log(err);
+			        res.writeHead(200, {'Content-Type': 'text/javascript'});
+			        res.write(data);
+			        res.end();
+			      });
+		      		return;
+		      }
+
+
+		      fs.readFile( path.resolve( "." + req.url ), function (err, data) {
 		        if (err) console.log(err);
 		        res.writeHead(200, {'Content-Type': 'text/javascript'});
 		        res.write(data);
@@ -118,8 +120,10 @@ renderer.render = function( ) {
 		    }
 
 		    if(req.url.indexOf('.css') != -1){ //req.url has the pathname, check if it conatins '.css'
+console.log( prefix + __dirname, "." + req.url );
 
-		      fs.readFile( path.resolve( __dirname, "." + req.url ), function (err, data) {
+
+		      fs.readFile( path.resolve( "." + req.url ), function (err, data) {
 		        if (err) console.log(err);
 		        res.writeHead(200, {'Content-Type': 'text/css'});
 		        res.write(data);
@@ -147,6 +151,7 @@ renderer.addModule = function( moduleName, module ) {
 	}
 	modules.push( module ); // Array
 	modulesName[ moduleName ] = module; // Object indexed by name
+	modulesId[ module.getId() ] = module;
 	return;
 }
 

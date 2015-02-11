@@ -4,6 +4,7 @@ var moduleProto = require('../../../module'),
 
 var GouldConnect = function() {
 	this.title = "Gould Connection";
+	this.status = {};
 };
 
 GouldConnect.prototype = new moduleProto();
@@ -19,6 +20,8 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.streamOut( "connected" );
 			module.emit("connected");
 
+			module.status.connected = true;
+
 			module.unlock();
 		} );
 
@@ -27,6 +30,8 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.unlock();
 			module.streamOut( "disconnected", true );
 			module.emit("disconnected");
+
+			module.status.connected = false;
 		});
 
 		this.gould.on( "connectionerror", function() {
@@ -84,7 +89,12 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.streamOut( "pending", true );
 			module.gould.disconnect();
 		}
-	}
+	},
+
+
+	getStatus: function() {
+		return this.status;
+	},
 
 });
 

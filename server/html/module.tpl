@@ -1,4 +1,4 @@
-<div class="module {% if locked %} locked{% endif %} {{ class }}" id="module-{{ id }}">
+<div class="module {{ class }}" data-path="{{ path }}" data-moduleid="{{ id }}">
 
 {% if title %}
 	<div class="title">{{ title }}</div>

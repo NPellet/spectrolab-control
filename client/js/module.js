@@ -1,15 +1,7 @@
 
-define( [ 'io' ], function( io )  {
+define( [ 'client/js/io' ], function( io )  {
 
-	var Module = function( ) {
-
-		var self = this;
-
-
-		this._isReadyPromise = new Promise( function( resolve, reject ) {
-			self._isReady = resolve;
-		});
-	}
+	var Module = function( ) { }
 	
 	Module.prototype.init = function() {
 		this._locked = false;
@@ -25,8 +17,16 @@ define( [ 'io' ], function( io )  {
 		this._id = id;
 	}
 
+	Module.prototype.getId = function() {
+		return this._id;
+	}
+
 	Module.prototype.setDom = function( dom ) {
 		this._dom = dom;
+	}
+
+	Module.prototype.getDom = function( dom ) {
+		return this._dom;
 	}
 
 
@@ -36,7 +36,7 @@ define( [ 'io' ], function( io )  {
 
 	Module.prototype.out = function( instruction, value ) {
 
-		io.write( this.id, instruction, value );
+		io.write( this._id, instruction, value );
 	}
 
 
@@ -44,6 +44,11 @@ define( [ 'io' ], function( io )  {
 		if( this.setStatus ) {
 			this.setStatus( status );
 		}
+	}
+
+	Module.prototype.getStatus = function( ) {
+		
+		this.out( "getStatus", true );
 	}
 
 	Module.prototype._lock = function() {
@@ -73,6 +78,12 @@ define( [ 'io' ], function( io )  {
 		this.overlay.remove();
 	}
 
-	return Module;
+	Module.prototype._receive = function( instruction, value ) {
 
+		if( this.__proto__.in[ instruction ] ) {
+			this.__proto__.in[ instruction ].call( this, value );
+		}
+	}
+
+	return Module;
 });

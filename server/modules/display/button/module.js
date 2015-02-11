@@ -32,10 +32,9 @@ ButtonDisplay.prototype = extend( ButtonDisplay.prototype, {
 
 	getStatus: function() {
 
-			return {
-				buttonValue: this.text
-			}
-
+		return {
+			text: this.text
+		}
 	}
 	
 

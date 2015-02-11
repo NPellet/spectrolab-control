@@ -1,46 +1,17 @@
-function uniqueId() {
-	// http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-	    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-	    return v.toString(16);
-	});
-}
 
+requirejs.config({
 
-// http://forum.jquery.com/topic/serializeobject
-function serializeObjectWithFloats( form, floats ) {
-	var o = {};
-	var a = form.serializeArray();
-	$.each(a, function() {
-		
-		if( floats.indexOf( this.name ) > -1 ) {
-			this.value = parseFloat( this.value );
-		}
-		if (o[this.name]) {
-			if (!o[this.name].push) {
-				o[this.name] = [o[this.name]];
-			}
-			o[this.name].push(this.value);
-		} else {
-			o[this.name] = this.value;
-		}
-	});
-	return o;
-};
-
-
-
-$(document).ready(function() {
-
-	$(".module.locked").each( function( i, dom ) { lockModule( $( dom ) ); });
-
-	var promises = Module.allModules.map( function( module ) {
-		return module.getReadyPromise();
-	})
-
-	Promise.all( promises ).then( function() {
-
-		window.io.writeGlobal( "modulesReady" );
-
-	})
+	baseUrl: '../../',
+	paths: {
+		'jquery': 'client/js/lib/jquery.min',
+		'jsgraph': 'client/js/lib/jsgraph.min'
+	}
 });
+
+require( [ 'jquery', 'client/js/modulefactory', 'client/js/io' ] , function( $, ModuleFactory, IO ) {
+
+
+	ModuleFactory.parseDom( document );
+	IO.connect();
+
+} );

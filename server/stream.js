@@ -5,18 +5,19 @@ var WebSocketServer = require('ws').Server;
 
 var modulesEventEmittter = new EventEmitter();
 var allModules = [];
+var connections = [];
 
 var wss = new WebSocketServer( { port: 8080 } ); // Default port
 
 // Server handles incoming wss connections
 wss.on('connection', function( ws ) {
 
-	// Add connection to the array
-	connections.push( ws );
+  // Add connection to the array
+  connections.push( ws );
 
   // New websocket instance.
   ws.on( "message", function( message ) {
-
+  		console.log( message );
 		// Parse the JSON
 		var jsonParsed = JSON.parse( message );
 
@@ -31,7 +32,7 @@ wss.on('connection', function( ws ) {
 		if( jsonParsed.moduleid ) {
 
 			if( jsonParsed.instruction == "getStatus" ) { // Module is requesting current status
-
+console.log('get Status');
 				var output = prepareOutput( allModules[ jsonParsed.moduleid ], "setStatus", allModules[ jsonParsed.moduleid ].getStatus() )
 				this.send( output );
 
@@ -44,11 +45,11 @@ wss.on('connection', function( ws ) {
 
 	} );
 
-  ws.on( "close", function( ) {
+  	ws.on( "close", function( ) {
 
 		// Remove connections from stack
 		connections.splice( connections.indexOf( this ), 1 );
-		makePromise();
+		
 	});
 
 });
@@ -72,13 +73,13 @@ module.exports = {
 
 	moduleOut: function( module, instruction, value ) {
 
-			var output = prepareOutput( module, instruction, value );
+		var output = prepareOutput( module, instruction, value );
 
-			connections.map( function( connection ) {
+		connections.map( function( connection ) {
 
-				connection.send( output );
-			} );
-		});
+			connection.send( output );
+		} );
+
 	},
 
 	moduleIn: function( moduleid, instruction, callback ) { // Register module callbacks

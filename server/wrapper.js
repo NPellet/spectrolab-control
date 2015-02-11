@@ -35,6 +35,8 @@ Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions ) 
 
 	module.init( moduleType, moduleName );
 	module.setFolder( path.resolve('./server/modules/', moduleType ) );
+	
+	module.setRelativePath( moduleType );
 
 	this.modules.push( module );
 	this.renderer.addModule( moduleName, module );

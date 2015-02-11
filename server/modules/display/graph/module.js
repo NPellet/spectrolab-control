@@ -4,8 +4,9 @@ var moduleProto = require('../../../module'),
 
 var GraphDisplay = function( graphOptions ) {
 
-	this.streamOut("makeGraph", graphOptions );
+	this.out("makeGraph", graphOptions );
 	this.series = {};
+	this.status = {};
 };
 
 function waveToData( data ) {
@@ -34,7 +35,10 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		var s = { name: name, data: data, options: options };
 		this.series[ name ] = s;
 
-		this.streamOut( "newSerie", s );
+		this.status.series = this.status.scatterSeries || {};
+		this.status.series[ name ] = s;
+
+		this.out( "newSerie", s );
 		return this;
 	},
 
@@ -44,66 +48,78 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		var s = { name: name, data: data, options: options, errors: errors };
 		this.series[ name ] = s;
 
-		
-		this.streamOut( "newScatterSerie", s );
+		this.status.scatterSeries = this.status.scatterSeries || {};
+		this.status.scatterSeries[ name ] = s;
+
+		this.out( "newScatterSerie", s );
 		return this;
 	},
 
 	setXLogScale: function( bln ) {
-		this.streamOut( "setXLogScale", { bln: bln } );
+		this.status.xLogScale = bln;
+		this.out( "setXLogScale", { bln: bln } );
 		return this;
 	},
 
 	setYLogScale: function( bln ) {
-		this.streamOut( "setYLogScale", { bln: bln } );
+		this.status.yLogScale = bln;
+		this.out( "setYLogScale", { bln: bln } );
 		return this;
 	},
 
 	forceXMin: function( val ) {
-		this.streamOut( "forceXMin", val );
+		this.status.forceXMin = val;
+		this.out( "forceXMin", val );
 		return this;	
 	},
 
 	forceXMax: function( val ) {
-		this.streamOut( "forceXMax", val );
+		this.status.forceXMax = val;
+		this.out( "forceXMax", val );
 		return this;	
 	},
 
 	forceYMin: function( val ) {
-		this.streamOut( "forceYMin", val );
+		this.status.forceYMin = val;
+		this.out( "forceYMin", val );
 		return this;	
 	},
 
 	forceYMax: function( val ) {
-		this.streamOut( "forceYMax", val );
+		this.status.forceYMax = val;
+		this.out( "forceYMax", val );
 		return this;	
 	},
 
 	autoscale: function() {
-		this.streamOut( "autoscale" );
+		this.out( "autoscale" );
 		return this;
 	},
 
 	clear: function(  ) {
 
-		this.streamOut( "clear" );
+		this.out( "clear" );
 		return this;
 	},
 
 	setXAxisLabel: function( label ) {
 
-		this.streamOut( "setXAxisLabel", label );
+		this.out( "setXAxisLabel", label );
 		return this;
 	},
 
 	setYAxisLabel: function( label ) {
 
-		this.streamOut( "setYAxisLabel", label );
+		this.out( "setYAxisLabel", label );
 		return this;
 	},
 
 	setHeight: function( h ) {
-		this.streamOut( "setHeight", h );
+		this.out( "setHeight", h );
+	},
+
+	redraw: function() {
+		this.out("redraw");
 	},
 
 	assign: function( module, message ) {
@@ -121,6 +137,11 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 			break;
 		}
 
+	},
+
+
+	getStatus: function() {
+		return this.status;
 	},
 
 	streamOn: {

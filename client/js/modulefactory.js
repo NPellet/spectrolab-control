@@ -1,6 +1,6 @@
 
 // Module Factory
-define( [ 'jQuery' ], function( $ ) {
+define( [ 'jquery' ], function( $ ) {
 
   var modules = {};
 
@@ -15,16 +15,19 @@ define( [ 'jQuery' ], function( $ ) {
 
     parseDom: function( global ) {
 
+      var requiring = 0;
+
       $( global )
       .find( '.module' )
-      .each( function( module ) {
+      .each( function( ) {
 
-        var id = module.attr('data-moduleid');
-        var dom = module;
+        var dom = $( this ),
+          id = dom.attr('data-moduleid'),
+          path = dom.attr( 'data-path' );
 
-        var moduleType = module.attr( 'data-address' );
+        requiring++;
 
-        require( 'getmodule-' + moduleType, function( ModuleConstructor ) {
+        require( [ 'getmodule-' + path ], function( ModuleConstructor ) {
 
             var module = new ModuleConstructor();
             module.init();
@@ -32,11 +35,31 @@ define( [ 'jQuery' ], function( $ ) {
             module.setDom( dom );
             modules[ id ] = module;
 
+            requiring--;
+            if( requiring == 0) {
+
+              exports.allModules( function( module ) {
+                module.onDomReady();
+              } );
+
+            }
+
         } );
 
       } );
+      
+    },
 
+    allModules: function( callback ) {
+
+      for( var i in modules ) {
+        callback( modules[ i ] );
+        modules[ i ].getStatus();
+      }
+      
     }
   };
+
+  return exports;
 
 } );

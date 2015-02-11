@@ -1,24 +1,13 @@
 
-define( [ 'moduleFactory' ], function( moduleFactory ) {
+define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 
 	var connected = false;
+	var ws;
 
-		var ws = new WebSocket('ws://127.0.0.1:8080');
-
-function setEvents( ws ) {
-
-
-	
-}
+	function setEvents( ws ) {
 		// Stream is ready
 		ws.onopen = function( event ) {
 
-			//.writeGlobal( "_streamOpen", 1 );
-
-			moduleFactory.allModules( function( module ) {
-
-				module.getStatus();
-			});
 
 			connected = true;
 
@@ -47,33 +36,28 @@ function setEvents( ws ) {
 			if( data.moduleid ) {
 
 				var module = moduleFactory.getModule( data.moduleid );
+				var dom = $( "#module-" + data.moduleid );
 
+				if( data.instruction == "lock" ) {
 
-				if( data.instruction == 'lock' || data.instruction == 'unlock' ) { // Locking the module
+					module._lock();
 
-					var dom = $( "#module-" + data.moduleid );
+				} else if( data.instruction == "unlock" ) { // Unlocking module
 
-					if( data.instruction == "lock" ) {
+					module._unlock();
 
-						module.lock();
+				} else if( data.instruction == "setStatus" ) {
 
-					} else if( data.instruction == "unlock" ) { // Unlocking module
+					module._setStatus( data.value );
 
-						module.unlock();
-
-					} else if( data.instruction == "setStatus" ) {
-
-						module.setStatus( data.value );
-
-					} else {
-
-						module.receive( data.instruction, data.message );
-					}
+				} else {
+console.log( data );
+					module._receive( data.instruction, data.value );
 				}
-
 			}
 		}
-
+	}
+		
 	var send = function( message ) {
 
 		if( ! connected ) {
@@ -93,14 +77,6 @@ function setEvents( ws ) {
 
 		_callbacks: {},
 
-		moduleMessage: function( moduleId, instruction, callback ) {
-
-			var callbacks = global.io._callbacks
-			callbacks[ moduleId ] = callbacks[ moduleId ] || [];
-			callbacks[ moduleId ][ instruction ] = callbacks[ moduleId ][ instruction ] || [];
-			callbacks[ moduleId ][ instruction ].push( callback );
-		},
-
 		write: function( moduleId, instruction, value ) {
 
 			sendJSON( { moduleid: moduleId, instruction: instruction, value: value } );
@@ -111,8 +87,10 @@ function setEvents( ws ) {
 			sendJSON( { global: true, message: message } );
 		},
 
-		openConnection: function() {
+		connect: function() {
 
+			ws = new WebSocket('ws://127.0.0.1:8080');
+			setEvents( ws );
 		}
 	};
 
