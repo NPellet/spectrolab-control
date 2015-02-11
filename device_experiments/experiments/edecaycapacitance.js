@@ -25,7 +25,7 @@ experiment.prototype = {
 
 	setLEDPin: function() {
 
-	},	
+	},
 
 	focusOn: function( id ) {
 		this.focus = id;
@@ -46,28 +46,30 @@ experiment.prototype = {
 			var waveVoc = [];
 			var waveCapacitance = [];
 
-			var timeDelays = [];
-			var minTimeBase = [];
-			var timeBases = [];
-			var availableTimeBases = [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4, 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
-			var timeBase = 2000e-6;
+			var recordedWaves = [];
 
-			var nbPoints = 35;
+			var timeBases = [ 20e-6, 200e-6 ];
+			var yScales = [ 5e-3, 2e-3 ];
 
-			var b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ); 
-			var a = 10e-6 / Math.pow( 10, ( b * 0 ) );
+			var timeBase;
+
+			// Calculate delays
+			var nbPoints = 35,
+				b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
+				a = 10e-6 / Math.pow( 10, ( b * 0 ) ),
+				timeDelays = [];
 
 			for( var i = 0; i < nbPoints; i += 1 ) {
 				timeDelays.push( a * Math.pow( 10, b * i ) );
-				timeBases.push( timeBase );
-				minTimeBase.push( availableTimeBases[ 0 ] );
 			}
 
 
+			// Oscilloscope functions
+
+			var preTrigger = 10;
 
 			self.oscilloscope.disableAveraging();
-			
-			
+
 			self.oscilloscope.enable50Ohms( 2 );
 			self.oscilloscope.disable50Ohms( 3 );
 
@@ -88,7 +90,7 @@ experiment.prototype = {
 			self.oscilloscope.setTriggerToChannel( "A", 4 ); // Set trigger on switch channel
 			self.oscilloscope.setTriggerCoupling( "A", "AC" ); // Trigger coupling should be AC
 			self.oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
-			self.oscilloscope.setPreTrigger( "A", 10 ); // Set pre-trigger, 10%
+			self.oscilloscope.setPreTrigger( "A", preTrigger ); // Set pre-trigger, 10%
 
 			self.oscilloscope.setChannelPosition( 2, 2.5 );
 			self.oscilloscope.setChannelPosition( 3, -2 );
@@ -96,20 +98,17 @@ experiment.prototype = {
 			self.keithley.command("reset()"); // Reset keithley
 			self.keithley.command("*CLS"); // Reset keithley
 			self.keithley.command("*RST"); // Reset keithley
-			
+
 
 			self.oscilloscope.setTriggerLevel( "A", 0.7 ); // Set trigger to 0.7V
 
 
 			self.oscilloscope.ready.then( function() {
-				
+
 				function *pulse( totalDelays, totalPulseNb ) {
-					
+
 					var j = 0;
 					var k = 0;
-
-					var allvoltages = [];
-					var allcapacitances = [];
 
 					while( true ) {
 
@@ -136,129 +135,91 @@ experiment.prototype = {
 
 
 						j++;
+						/*
+							Integration concept
+							- Two time scales to catch slow and fast component
+							- Two timescales fixed
+							- Charges is the sum of the two
+							- Weighting time bases ?
+						*/
 
-						self.oscilloscope.setTimeBase( timeBases[ i ] ); // 200us timeBase
+						recordedWaves = [];
 
-
-						console.log("Pulsing with time delay: " + timeDelays[ i ] + "; Iterator number : " + j );
-
-						self.keithley.pulseAndSwitchDiogio( {
-							
-							diodePin: self.parameters.ledPin,
-							switchPin: self.parameters.switchPin,
-							pulseWidth: self.parameters.pulseTime,
-							numberOfPulses: 1,
-							delayBetweenPulses: self.parameters.delay,
-							delaySwitch: timeDelays[ i ]
-
-						} ).then( function( value ) {
-
-							console.log('Pulse has ended');
-							self.oscilloscope.getWaves().then( function( allWaves ) {
-
-								// Zeroing voltage wave
-								var voltageWave = allWaves[ "3" ];
-								voltageWave.subtract( voltageWave.average( 400, 499 ) );
-
-								// Zeroing current wave
-								var currentWave = allWaves[ "2" ];
-								currentWave.multiply( -1 );
-								currentWave.divide( 50 );
-								currentWave.subtract( currentWave.average( 0, 40 ) );
-
-
-								var level = voltageWave.findLevel(0.02, {
-									edge: 'descending',
-									box: 1,
-									rouding: 'before',
-									rangeP: [ 40, 60 ]
-								});								
-
-								var level = voltageWave.get( level - 3 );
-
-								if( level ) {
-
-
-									var totalIntegration = currentWave.integrateP( 50, 499 );
-									var partialIntegration = currentWave.integrateP( 400, 499 );
-									var partialIntegration2 = currentWave.integrateP( 150, 499 );
-
-
-									var noise = currentWave.subset( 0, 49 );
-									var stdNoise = noise.stdDev();
-
-console.log( "Last 50 points: " + ( partialIntegration / totalIntegration * 100 ) + "%. Threshold: " + 5 + "%; Average: " + currentWave.average( 400, 499 ) + "; Threshold: " + ( 3e-4 / 50 ) );
-console.log(' Noise level: ' + stdNoise + "; Signal level: " + currentWave.average( 200, 499 ) );
-
-									if( partialIntegration / totalIntegration * 100 > 5 && currentWave.average( 400, 499 ) > ( 3e-4 / 50 ) ) { // If the last 10% of the signal represents more than 5% of the total integration => rejection
-										// Rejection of the timebase
-										timeBases[ i ] = availableTimeBases[ availableTimeBases.indexOf( timeBases[ i ] ) + 1 ];
-										minTimeBase[ i ] = timeBases[ i ];
-										p.next();
-										return;
-
-									} else if( currentWave.average( 200, 499 ) < stdNoise * 2  ) { // Usually more noise through the transistor => *2
-										console.log('SMALLER');
-									//partialIntegration2 / totalIntegration * 100 < 5 && currentWave.average( 150, 499 ) < ( 3e-4 / 50 ) ) { // We can keep the measurement, but decrease the time res
-
-										if( availableTimeBases.indexOf( timeBases[ i ] ) > 0 && availableTimeBases.indexOf( timeBases[ i ] ) > availableTimeBases.indexOf( minTimeBase[ i ] ) ) {
-											timeBases[ i ] = availableTimeBases[ availableTimeBases.indexOf( timeBases[ i ] ) - 1 ];
-											p.next();
-											return;
-										}
-
-									}
-
-console.log( timeBases );
-
-									wavePulse[ i ] = wavePulse[ i ] || [];
-									waveVoltage[ i ] = waveVoltage[ i ] || [];
-									waveCurrent[ i ] = waveCurrent[ i ] || [];
-									waveSwitch[ i ] = waveSwitch[ i ] || [];
-
-									waveCharges[ i ] = waveCharges[ i ] || new Waveform();
-									waveVoc[ i ] = waveVoc[ i ] || new Waveform();
-									waveCapacitance[ i ] = waveCapacitance[ i ] || new Waveform();
-
-									var charges = waveCharges[ i ];
-									var voc = waveVoc[ i ];
-
-
-
-									voc.push( level );
-									
-									
-
-
-									charges.push( currentWave.integrateP( 50, 499 ) );
-
-									allWaves[ "2" ] = currentWave;
-
-									wavePulse[ i ].push( allWaves[ "1" ] );
-									waveCurrent[ i ].push( allWaves[ "2" ] );
-									waveVoltage[ i ].push( allWaves[ "3" ] );
-									waveSwitch[ i ].push( allWaves[ "4" ] );
-
-									waveCapacitance[ i ].push( charges.get( charges.getDataLength()  - 1 ) / level );
-
-									if( self.parameters.progress ) {
-										self.parameters.progress( allWaves, timeDelays[ i ], wavePulse[ i ].length - 1, waveCharges, waveVoc, timeDelays, waveCapacitance );
-									}
-
-
-									console.log('Delay: ' + timeDelays[ i ] + '; Charges: ' + - currentWave.integrateP( 50, 499 ) + "; Voc: " + level )
-
-								}
-							
-
-
+						for( var n = 0; n < timeBases.length; n += 1 ) {
+							timeBase = timeBases[ n ];
+							self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
+								recordedWaves.push( w );
+								console.log( recordedWaves );
 								p.next();
 							});
-						});						
+console.log( recordedWaves );
+							yield;
+						}
+console.log( recordedWaves );
+						// Look on the first voltage wave
+						var level = recordedWaves[ 0 ][ "3" ].findLevel(0.02, {
+							edge: 'descending',
+							box: 1,
+							rouding: 'before',
+							rangeP: [ 40, 60 ]
+						});
+
+
+						// We need to find some voltage !
+						if( level ) {
+
+							// Do the array exist ?
+							wavePulse[ i ] = wavePulse[ i ] || [];
+							waveVoltage[ i ] = waveVoltage[ i ] || [];
+							waveCurrent[ i ] = waveCurrent[ i ] || [];
+							waveSwitch[ i ] = waveSwitch[ i ] || [];
+
+							// Do the waveform exists
+							waveCharges[ i ] = waveCharges[ i ] || new Waveform();
+							waveVoc[ i ] = waveVoc[ i ] || new Waveform();
+							waveCapacitance[ i ] = waveCapacitance[ i ] || new Waveform();
+
+
+
+							var voc = recordedWaves[ 0 ][ "3" ].get( level - 2 );
+							var m = 0;
+							var charges = 0;
+
+							recordedWaves.map( function( w ) {
+
+								// Total width: timeBaseSlow * 10 over n points
+								// Exemple: 2000e-6 * 10 / 500 = 0.00004 s / pt
+								// ( 20e-6 * 10 ) / 0.0004 = 5 pts to exclude
+
+								var ptStart;
+								ptStart = preTrigger / 100 * 500;
+
+								if( m > 0 ) {
+									ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m - 1 ]
+								}
+
+								charges += w[ "2" ].integrateP( ptStart, 499 );
+								m++;
+							});
+
+							waveVoc[ i ].push( voc );
+							waveCharges[ i ].push( charges );
+							waveCapacitance[ i ].push( charges / voc );
+
+							/*wavePulse[ i ].push( recordedWaves[ "1" ] );
+							waveCurrent[ i ].push( allWaves[ "2" ] );
+							waveVoltage[ i ].push( allWaves[ "3" ] );
+							waveSwitch[ i ].push( allWaves[ "4" ] );
+*/
+							if( self.parameters.progress ) {
+								self.parameters.progress( timeDelays[ i ], wavePulse[ i ].length - 1, waveCharges, waveVoc, timeDelays, waveCapacitance );
+							}
+						}
 
 						// Safeguard
-						if( j < 10000 ) {
-							yield;
+						if( j > 10000 ) {
+							break;
+						//	yield;
 						}
 
 					}
@@ -267,10 +228,50 @@ console.log( timeBases );
 				}
 
 				var p = pulse( timeDelays.length, 8 );
-				p.next( );	
+				p.next( );
+
+
+
+			}); // End oscilloscope ready
+
+		}); // End returned promise
+
+	},
+
+	pulse: function( timeBase, yScale, delaySwitch ) {
+
+		var self = this;
+		self.oscilloscope.setTimeBase( timeBase );
+		self.oscilloscope.setVoltScale( 2, yScale ); // 2mV over channel 2
+
+		return self.keithley.pulseAndSwitchDiogio( {
+
+			diodePin: self.parameters.ledPin,
+			switchPin: self.parameters.switchPin,
+			pulseWidth: self.parameters.pulseTime,
+			numberOfPulses: 1,
+			delayBetweenPulses: self.parameters.delay,
+			delaySwitch: delaySwitch
+
+		} ).then( function( value ) {
+
+			return self.oscilloscope.getWaves().then( function( allWaves ) {
+
+				// Zeroing voltage wave
+				var voltageWave = allWaves[ "3" ];
+				voltageWave.subtract( voltageWave.average( 400, 499 ) );
+
+				// Zeroing current wave
+				var currentWave = allWaves[ "2" ];
+				currentWave.multiply( -1 );
+				currentWave.divide( 50 );
+				currentWave.subtract( currentWave.average( 0, 40 ) );
+
+				return allWaves;
 			});
-		
 		});
+
+
 	}
 }
 

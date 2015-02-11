@@ -202,8 +202,8 @@ renderer.getModule("start").on('clicked', function() {
 		oscilloscope: g,
 		keithley: k,
 
-		progress: function( waves, delay, iterator, charges, voc, timeDelays, capacitances ) {
-
+		progress: function( delay, iterator, charges, voc, timeDelays, capacitances ) {
+/*
 			vdecay.clear();
 			vdecay.newSerie("vdecay", waves[ 3 ], { lineColor: 'red'})
 			vdecay.autoscale();
@@ -211,10 +211,10 @@ renderer.getModule("start").on('clicked', function() {
 			jdecay.clear();
 			jdecay.newSerie("jdecay", waves[ 2 ], { lineColor: 'blue' } );
 			jdecay.autoscale();
-			
+*/			
 			reprocess( charges, voc, timeDelays, capacitances );
 
-
+/*
 
 
 			var itx = new ITXBuilder();
@@ -236,6 +236,8 @@ renderer.getModule("start").on('clicked', function() {
 				fileExtension: 'itx',
 				dir: './capacitance/'
 			} );
+
+	*/
 		}
 
 
