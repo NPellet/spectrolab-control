@@ -6,10 +6,15 @@ var GraphDisplay = function() {};
 
 GraphDisplay.prototype = extend( {}, moduleProto, {
 
-	
+	/* Available types: neutral warning error ok process */
 	update: function( message, type ) {
+		this.status.message = { message: message, type: type, date: Date.now() };
+		this.streamOut( "status", this.status.message );
+	},
 
-		this.streamOut( "status", { message: message, type: type, date: Date.now() } );
+
+	getStatus: function() {
+		return this.status;
 	}
 
 } );

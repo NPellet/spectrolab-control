@@ -1,20 +1,26 @@
+define( [ 'client/js/module'], function( defaultModule ) {
 
 
-( function( ) {
-	
 	function pad( val ) {
 		return ( String( val ).length == 1 ) ? '0' + val : val;
 	}
 
-	var dom = $("#statusbar-{{ module.id }}");
+	var module = function() {}
 
-	module.onMessage("status", function( value ) {
+	module.prototype = new defaultModule();
+
+	module.prototype.onDomReady = function() { }
+
+	module.prototype.setStatusMessage = function( value ) {
+
+		var dom = this.getDom().children('.statusbar');
 
 		if( typeof value == "string" ) {
+
 			value = {
 				message: value,
 				type: 'neutral'
-			}
+			};
 		}
 
 		var html = value.message;
@@ -25,11 +31,23 @@
 		}
 
 		dom.html( html );
-
 		dom.removeClass('message-neutral message-warning message-error message-ok message-process');
 		dom.addClass('message-' + value.type );
-	} );
+	}
 
-	module.ready();
+	module.prototype.in = {
 
-}) ( );
+		"status": function( value ) {
+
+			this.setStatusMessage( value );
+		}
+	};
+
+	module.prototype.setStatus = function( status ) {
+
+		this.setStatus( status.message );
+	}
+
+	return module;
+
+} );

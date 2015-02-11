@@ -1,1 +1,1 @@
-<div id="statusbar-{{ module.id }}"></div>
+<div class="statusbar"></div>

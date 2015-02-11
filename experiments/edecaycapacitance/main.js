@@ -1,14 +1,15 @@
 
 
 var renderer = require( "./renderer" );
-var stream = require( "../../../server/stream" );
-var Gould = require( "../../../controllers/gould-oscilloscope/200/controller" );
-var Keithley = require( "../../../controllers/keithley-smu/default/controller" );
-var config = require( "../../../server/config" );
-var Device = require( "../../../device_experiments/device" );
-var ITXBuilder = require("../../../server/databuilder/itx").ITXBuilder,
-	fileSaver = require("../../../server/filesaver");	
-var Waveform = require('../../../server/waveform');
+var stream = require( "../../server/stream" );
+var Gould = require( "../../controllers/gould-oscilloscope/200/controller" );
+var Keithley = require( "../../controllers/keithley-smu/default/controller" );
+var config = require( "../../server/config" );
+var Device = require( "../../device_experiments/device" );
+var ITXBuilder = require("../../server/databuilder/itx").ITXBuilder,
+	fileSaver = require("../../server/filesaver");
+
+var Waveform = require('../../server/waveform');
 
 var g = new Gould( config.instruments.gouldOscilloscope );
 var k = new Keithley( config.instruments.keithley );
@@ -18,7 +19,7 @@ var experiment;
 renderer
 	.getModule("gouldConnect")
 	.assignGould( g );
-	
+
 renderer
 	.getModule("keithleyConnect")
 	.assignKeithley( k );
@@ -73,14 +74,14 @@ renderer.getModule("focus").on("clicked", function() {
 		focusId = false;
 		renderer.getModule("focus").setText("Stop focus" );
 	}
-	
+
 });
 
 function reprocess( charges, vocs, delays, capacitances ) {
 
 	var i = 0;
-	
-	
+
+
 
 	var dataCharges = [], dataChargesSDev = [];
 
@@ -95,7 +96,7 @@ function reprocess( charges, vocs, delays, capacitances ) {
 	wTimeDelays.setData( delays );
 
 	charges.map( function( charge ) {
-		
+
 		var i = charges.indexOf( charge );
 
 		dataCharges.push( [ delays[ i ], charge.median() ] );
@@ -109,7 +110,7 @@ function reprocess( charges, vocs, delays, capacitances ) {
 
 	renderer.getModule("chargesvstime").clear();
 	renderer.getModule("chargesvstime").setXLogScale( true );
-	
+
 	renderer.getModule("chargesvstime").newScatterSerie("chargesvstime", dataCharges, {}, dataChargesSDev );
 	renderer.getModule("chargesvstime").autoscale();
 
@@ -123,7 +124,7 @@ function reprocess( charges, vocs, delays, capacitances ) {
 		dataVocSDev.push( [ [ voc.stdDev() ] ] );
 
 		wVocs.push( voc.median() );
-		wVocsS.push( voc.stdDev() );		
+		wVocsS.push( voc.stdDev() );
 	});
 
 	var dataCapa = [], dataCapaSDev = [];
@@ -133,7 +134,7 @@ function reprocess( charges, vocs, delays, capacitances ) {
 	capacitances.map( function( c ) {
 
 		var i = capacitances.indexOf( c );
-		
+
 		dataCapa.push( [ delays[ i ], c.median() ] );
 		dataCapaSDev.push( [ [ c.stdDev() ] ] );
 
@@ -198,11 +199,11 @@ function reprocess( charges, vocs, delays, capacitances ) {
 renderer.getModule("start").on('clicked', function() {
 
 	experiment = Device.method( "eDecayCapacitance", {
-		
+
 		oscilloscope: g,
 		keithley: k,
 
-		progress: function( delay, iterator, charges, voc, timeDelays, capacitances ) {
+		progress: function( pulseNb, lastPulseDelay, allDelays, charges, voc, capacitances ) {
 /*
 			vdecay.clear();
 			vdecay.newSerie("vdecay", waves[ 3 ], { lineColor: 'red'})
@@ -211,9 +212,10 @@ renderer.getModule("start").on('clicked', function() {
 			jdecay.clear();
 			jdecay.newSerie("jdecay", waves[ 2 ], { lineColor: 'blue' } );
 			jdecay.autoscale();
-*/			
+*/
 			reprocess( charges, voc, timeDelays, capacitances );
 
+			status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 /*
 
 

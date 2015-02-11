@@ -58,7 +58,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 			}
 		}
 	}
-		
+
 	var send = function( message ) {
 
 		if( ! connected ) {
@@ -89,7 +89,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 		},
 
 		connect: function() {
-console.log("Connecting to: " + 'ws://' + ( ipAddress || '127.0.0.1' ) + ':8080' );
+
 			ws = new WebSocket('ws://' + ( ipAddress || '127.0.0.1' ) + ':8080');
 			setEvents( ws );
 		},

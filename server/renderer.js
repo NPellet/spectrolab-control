@@ -12,14 +12,14 @@ var wrapper = require("./wrapper"),
 	os = require('os');
 
 var	renderer = {},
-	wrappers = {},
+	wrappers = [],
 	modulesName = {},
 	modulesId = {},
 	modules = [],
 	stylesheets = [];
 
 var getIp = function() {
-	
+
 	var interfaces = os.networkInterfaces();
 	var addresses = [];
 	for (var k in interfaces) {
@@ -34,13 +34,10 @@ var getIp = function() {
 	return addresses[ 0 ];
 }
 
-renderer.addWrapper = function( name ) {
+renderer.addWrapper = function(  ) {
 
-	if( wrappers[ name ] ) {
-		throw "A wrapper with the same name (" + name + ") already exists";
-	}
-
-	return wrappers[ name ] = new wrapper( this );
+	var wrapper = new wrapper( this );
+	wrappers.push( wrapper );
 }
 
 renderer.addStylesheet = function( file ) {
@@ -52,9 +49,10 @@ renderer.render = function( ) {
 	stream.setModules( modulesId );
 
 	var html = [];
-	for( var i in wrappers ) {
-		html.push( wrappers[ i ].render() )
-	}
+
+	wrappers.map( function( wrapper ) {
+		html.push( wrapper.render() )
+	})
 
 	// At this point all the modules should have loaded
 	// And now the css
@@ -67,9 +65,6 @@ renderer.render = function( ) {
 
 		css = Array.prototype.join.call( a, '' );
 	});
-
-
-
 
 	Promise.all( html ).then( function() {
 

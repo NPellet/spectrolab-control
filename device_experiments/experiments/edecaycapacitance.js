@@ -152,10 +152,10 @@ experiment.prototype = {
 								console.log( recordedWaves );
 								p.next();
 							});
-console.log( recordedWaves );
+
 							yield;
 						}
-console.log( recordedWaves );
+
 						// Look on the first voltage wave
 						var level = recordedWaves[ 0 ][ "3" ].findLevel(0.02, {
 							edge: 'descending',
@@ -212,7 +212,7 @@ console.log( recordedWaves );
 							waveSwitch[ i ].push( allWaves[ "4" ] );
 */
 							if( self.parameters.progress ) {
-								self.parameters.progress( timeDelays[ i ], wavePulse[ i ].length - 1, waveCharges, waveVoc, timeDelays, waveCapacitance );
+								self.parameters.progress( j, timeDelays[ i ], timeDelays, waveCharges, waveVoc, waveCapacitance );
 							}
 						}
 
