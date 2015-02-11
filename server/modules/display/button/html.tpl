@@ -1,1 +1,1 @@
-<input type="button" id="btn-{{ module.id }}" value="{{ module.buttonValue }}" />
+<input type="button" class="button" value="{{ module.buttonValue }}" />

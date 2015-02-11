@@ -3,17 +3,12 @@
 <head>
 
 
-<link rel="stylesheet" href="./public/css/style.css" />
-<script src="./public/js/jquery.min.js"></script>
-<script src="./public/js/jsgraph.min.js"></script>
-<script src="./public/js/io.js"></script>
-<script src="./public/js/module.js"></script>
-<script src="./public/js/store.js"></script>
-<script src="./public/js/lock.js"></script>
-<script src="./public/js/main.js"></script>
+<link rel="stylesheet" href="client/css/style.css" />
+
+<script data-main="client/js/main" src="client/js/lib/requirejs/require.js" type="text/javascript"></script>
+
 
 <!-- Outputs all the modules saved in nodejs memory -->
-<script src="_modules.js"></script>
 <link rel="stylesheet" href="_modules.css" />
 
 
