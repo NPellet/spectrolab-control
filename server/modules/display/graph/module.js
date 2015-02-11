@@ -14,9 +14,13 @@ function waveToData( data ) {
 	if( data.getData ) {
 		var data2 = [];
 		var dataY = data.getData();
+		console.log( data );
+		var dataX = data.getXWave().getData();
 
 		for( var i = 0; i < dataY.length; i ++ ) {
-			data2.push( data.getXScaling().x0 + data.getXScaling().xDelta * i );
+
+
+			data2.push( dataX[ i ] );
 			data2.push( dataY[ i ] );
 		}
 
@@ -116,6 +120,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 
 	setHeight: function( h ) {
 		this.out( "setHeight", h );
+		return this;	
 	},
 
 	redraw: function() {

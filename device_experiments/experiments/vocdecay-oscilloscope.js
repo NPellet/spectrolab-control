@@ -28,10 +28,22 @@ experiment.prototype = {
 
 			var recordedWaves = [];
 			var vocDecay = new Waveform();
+			vocDecay.setXWave();
+
+			var timeBases = [
+				10e-6,
+				100e-6,
+				1000e-6,
+				10000e-6,
+				100000e-6
+			];
 
 			// Oscilloscope functions
 
+
 			var preTrigger = 10;
+
+			var baseLine;
 
 			self.oscilloscope.disableAveraging();
 
@@ -42,16 +54,20 @@ experiment.prototype = {
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
 
 			self.oscilloscope.setVoltScale( 3, 200e-3 ); // 200mV over channel 3
+			self.oscilloscope.setVoltScale( 1, 1 ); // 200mV over channel 3
 
 			self.oscilloscope.setCoupling( 1, "DC");
 			self.oscilloscope.setCoupling( 2, "GND");
 			self.oscilloscope.setCoupling( 3, "DC");
 			self.oscilloscope.setCoupling( 4, "GND");
 
+			
+			self.oscilloscope.setTriggerLevel( "A", 1 ); // Set trigger to 0.7V
 			self.oscilloscope.setTriggerToChannel( "A", 1 ); // Set trigger on light control
-			self.oscilloscope.setTriggerCoupling( "A", "AC" ); // Trigger coupling should be AC
+			self.oscilloscope.setTriggerCoupling( "A", "DC" ); // Trigger coupling should be AC
 			self.oscilloscope.setTriggerSlope("A", "DOWN"); // Trigger on bit going up
 			self.oscilloscope.setPreTrigger( "A", preTrigger ); // Set pre-trigger, 10%
+			self.oscilloscope.setTriggerLevel( "A", 1 ); // Set trigger to 0.7V
 
 			self.oscilloscope.setChannelPosition( 2, 2.5 );
 			self.oscilloscope.setChannelPosition( 3, -2 );
@@ -60,25 +76,50 @@ experiment.prototype = {
 			self.keithley.command("*CLS"); // Reset keithley
 			self.keithley.command("*RST"); // Reset keithley
 
-			self.oscilloscope.setTriggerLevel( "A", 1 ); // Set trigger to 0.7V
+			
 
 
 			self.oscilloscope.ready.then( function() {
 
-				function *pulse( totalDelays, totalPulseNb ) {
+				function *pulse( ) {
 
 					recordedWaves = [];
 
+
+					self.oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
+					self.oscilloscope.setPreTrigger( "A", 50 ); // Set pre-trigger, 10%
+					
+					self.oscilloscope.ready.then( function() {
+
+						setTimeout( function() {
+
+							self.pulse( 0.1 ).then( function( w ) {
+								baseLine = w.average( 0, 100 );
+								p.next();
+							});	
+
+						}, 1000)
+						
+					});
+					
+					yield;
+
+
+					self.oscilloscope.setTriggerSlope("A", "DOWN"); // Trigger on bit going up
+					self.oscilloscope.setPreTrigger( "A", preTrigger ); // Set pre-trigger, 10%
+			
 					for( var n = 0; n < timeBases.length; n += 1 ) {
 						timeBase = timeBases[ n ];
-						self.pulse( timeBase, timeDelays[ i ] ).then( function( w ) {
+						self.pulse( timeBase ).then( function( w ) {
 							recordedWaves.push( w );
-							console.log( recordedWaves );
 							p.next();
 						});
 
 						yield;
 					}
+
+					var m = 0;
+					var lastVal = 0;
 
 					recordedWaves.map( function( w ) {
 
@@ -89,20 +130,28 @@ experiment.prototype = {
 						var ptStart;
 						ptStart = preTrigger / 100 * 500;
 
+
 						if( m > 0 ) {
-							ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m - 1 ]
+							ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m ];
 						}
 
-						var sub = w.subset( ptStart, 499 )
+						var sub = w.subset( Math.floor( ptStart ), 500 )
+						sub.shiftX( - sub.getXFromIndex( 0 ) );
+						sub.shiftX( lastVal );
+
+						lastVal = timeBases[ m ] * 9;
 						vocDecay.push( sub );
 						m++;
 
 					} );
 
+					vocDecay.shiftX( timeBases[ 0 ] * 10 / 500 );
+					vocDecay.subtract( baseLine );
+
 					resolver( vocDecay );
 				}
 
-				var p = pulse( timeDelays.length, 8 );
+				var p = pulse();
 				p.next( );
 
 			}); // End oscilloscope ready
@@ -116,7 +165,7 @@ experiment.prototype = {
 		var self = this;
 		self.oscilloscope.setTimeBase( timeBase );
 
-		return self.keithley.pulse( {
+		return self.keithley.longPulse( {
 
 			diodePin: self.parameters.ledPin,
 			pulseWidth: self.parameters.pulseTime,

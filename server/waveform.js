@@ -62,7 +62,7 @@ Waveform.prototype = {
 			this.data = this.data.concat( value.getData( ) );
 
 			if( this.xScaling ) {
-				this.xScaling.wave.push( value.getXWave() );
+				this.xScaling.wave.push( value.getXWave().getData() );
 			}
 
 		} else {
@@ -98,6 +98,10 @@ Waveform.prototype = {
 	},
 
 	setXWave: function( w ) {
+
+		if( ! w ) {
+			w = new Waveform();
+		}
 
 		if( ! w instanceof Waveform ) {
 			throw "X wave must be a waveform"
@@ -288,7 +292,7 @@ Waveform.prototype = {
 
 				case 'delta':
 					var start = this.getXFromIndex( p0 );
-					w.setXScalingDelta( start, this.xScaling.xDelta );
+					w.setXScaling( start, this.xScaling.xDelta );
 				break;
 
 				case 'wave':
@@ -306,17 +310,32 @@ Waveform.prototype = {
 
 		switch( this.getXScalingMode() ) {
 
-				case 'delta':
-					var w = new Waveform();
-					for( var i = 0; i < this.getDataLength(); i += 1 ) {
-						w.push( this.xScaling.start + i * this.xScaling.delta );
-					}
-					return w;
-				break;
+			case 'delta':
+				var w = new Waveform();
+				for( var i = 0; i < this.getDataLength(); i += 1 ) {
+					w.push( this.xScaling.x0 + i * this.xScaling.xDelta );
+				}
+				return w;
+			break;
 
-				case 'wave':
-					return this.xScaling.wave;
-				break;
+			case 'wave':
+				return this.xScaling.wave;
+			break;
+		}
+	},
+
+	shiftX: function( shift ) {
+
+
+		switch( this.getXScalingMode() ) {
+
+			case 'delta':
+				this.xScaling.x0 += shift;
+			break;
+
+			case 'wave':
+				this.xScaling.wave.subtract( - shift );
+			break;
 		}
 	},
 

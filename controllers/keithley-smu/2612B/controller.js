@@ -276,6 +276,7 @@ var methods = {
 				delay: 5
 			},
 
+
 			method: 'longPulse',
 			parameters: function( options ) {
 

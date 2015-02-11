@@ -52,7 +52,7 @@ var w = renderer
 	.setSize( 60, 160 )
 	.setPosition( 80, 10 );
 
-w.addModule("display/graph", "vocvstime", graphOptions ).setTitle("Voc vs time").setHeight( 400 );
+w.addModule("display/graph", "vocvstime", graphOptions ).setTitle("Voc vs time").setHeight( 400 ).setXLogScale( true );
 
 
 module.exports = renderer;

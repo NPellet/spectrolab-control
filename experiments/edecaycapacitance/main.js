@@ -24,6 +24,7 @@ renderer
 	.getModule("keithleyConnect")
 	.assignKeithley( k );
 
+var status = renderer.getModule("status");
 
 var moduleLocking = [ "start", "gouldConnect", "keithleyConnect" ]
 var moduleGraphs = [ "chargesvstime", "vocvstime", "C-V", "C-t"];
@@ -204,6 +205,7 @@ renderer.getModule("start").on('clicked', function() {
 		keithley: k,
 
 		progress: function( pulseNb, lastPulseDelay, allDelays, charges, voc, capacitances ) {
+
 /*
 			vdecay.clear();
 			vdecay.newSerie("vdecay", waves[ 3 ], { lineColor: 'red'})
@@ -213,7 +215,7 @@ renderer.getModule("start").on('clicked', function() {
 			jdecay.newSerie("jdecay", waves[ 2 ], { lineColor: 'blue' } );
 			jdecay.autoscale();
 */
-			reprocess( charges, voc, timeDelays, capacitances );
+			reprocess( charges, voc, allDelays, capacitances );
 
 			status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 /*

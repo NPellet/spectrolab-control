@@ -56,11 +56,11 @@ g.on("disconnected", function() {
 
 renderer.getModule("start").on('clicked', function() {
 
-	experiment = Device.method( "eDecayCapacitance", {
+	experiment = Device.method( "vocdecay-oscilloscope", {
 			oscilloscope: g,
-			keithley: k,
+			keithley: k
 		}
-	} );
+	);
 
 	experiment.run().then( function( vocDecayWave ) {
 		renderer.getModule('vocvstime').newSerie("vocvstime", vocDecayWave );

@@ -149,7 +149,6 @@ experiment.prototype = {
 							timeBase = timeBases[ n ];
 							self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
 								recordedWaves.push( w );
-								console.log( recordedWaves );
 								p.next();
 							});
 
