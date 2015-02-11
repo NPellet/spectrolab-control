@@ -29,6 +29,11 @@ renderer
 	.getModule("keithleyConnect")
 	.assignKeithley( k );
 
+
+renderer
+	.getModule('arduinoConnect')
+	.assignArduino( a );
+
 var status = renderer.getModule("status");
 
 var moduleLocking = [ "start", "gouldConnect", "keithleyConnect" ]
@@ -88,9 +93,27 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 	var i = 0;
 	var colors = ['red', 'blue', 'green', 'orange', 'grey', 'black'];
 
+	renderer.getModule("vocvstime").clear();
+	renderer.getModule("C-t").clear();
+	renderer.getModule("C-V").clear();
+	renderer.getModule("C-t").setXLogScale( true );
+	renderer.getModule("vocvstime").setXLogScale( true );
+
+	renderer.getModule("chargesvstime").clear();
+	renderer.getModule("chargesvstime").setXLogScale( true );
+
+	var itx = new ITXBuilder();
+
 	for( var l = 0; l < vocsGlobal.length; l += 1 ) {
 
-		var c = colors[ l ]
+		var style = {
+			shape: 'circle',
+	        r: 2,
+	        fill: colors[ l ],
+	        stroke: colors[ l ]
+    	};
+
+		
 		var vocs = vocsGlobal[ l ];
 		var charges = vocsGlobal[ l ];
 		var capacitances = capacitancesGlobal[ l ];
@@ -121,10 +144,8 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 			i++;
 		});
 
-		renderer.getModule("chargesvstime").clear();
-		renderer.getModule("chargesvstime").setXLogScale( true );
-
-		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, { stroke: c, fill: c } );
+		
+		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
 		renderer.getModule("chargesvstime").autoscale();
 
 
@@ -161,24 +182,22 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 		});
 
 
-		renderer.getModule("vocvstime").clear();
-		renderer.getModule("vocvstime").setXLogScale( true );
-		renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, { stroke: c, fill: c } );
+		
+
+
+		renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, style );
 		renderer.getModule("vocvstime").autoscale();
 
 
-		renderer.getModule("C-t").clear();
-		renderer.getModule("C-t").setXLogScale( true );
-		renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { lineColor: c }, dataCapaSDev, { stroke: c, fill: c }  );
+		renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { }, dataCapaSDev, style );
 		renderer.getModule("C-t").autoscale();
 
 
-		renderer.getModule("C-V").clear();
-		renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { lineColor: c }, dataCVSdev, { stroke: c, fill: c }  );
+		
+		renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
 		renderer.getModule("C-V").autoscale();
 
-		var itx = new ITXBuilder();
-
+		
 		var itxw = itx.newWave( "voc_" + l );
 		itxw.setWaveform( wVocs );
 
@@ -220,7 +239,7 @@ renderer.getModule("start").on('clicked', function() {
 
 		oscilloscope: g,
 		keithley: k,
-		arduino: a
+		arduino: a,
 
 		progress: function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances ) {
 

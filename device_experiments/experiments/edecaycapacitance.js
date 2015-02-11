@@ -23,7 +23,7 @@ experiment.prototype = {
 		this.parameters.delay = 2;
 		this.focus = false;
 
-		this.parameters.lightIntensities = [ 0, 5, 8 ];
+		this.parameters.lightIntensities = [ 3, 5, 0, 8 ];
 	},
 
 	setLEDPin: function() {
@@ -110,12 +110,15 @@ experiment.prototype = {
 
 				function *pulse( totalDelays, totalPulseNb ) {
 
-					var j = 0;
 					var k = 0;
 
-					for( var l = 0; l < self.params.lightIntensities.length; l += 1 ) {
+					for( var l = 0; l < self.parameters.lightIntensities.length; l += 1 ) {
 
-						self.arduino.setWhiteLightLevel( self.lightIntensities[ l ] );
+				//		var l = Math.floor( Math.random() * ( self.parameters.lightIntensities.length ) );
+
+						var j = 0;
+					
+						self.arduino.setWhiteLightLevel( self.parameters.lightIntensities[ l ] );
 
 						waveCharges[ l ] = [];
 						waveVoc[ l ] = [];
@@ -205,7 +208,7 @@ experiment.prototype = {
 									ptStart = preTrigger / 100 * 500;
 
 									if( m > 0 ) {
-										ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m - 1 ]
+										ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m ]
 									}
 
 									charges += w[ "2" ].integrateP( ptStart, 499 );
@@ -222,7 +225,7 @@ experiment.prototype = {
 								waveSwitch[ i ].push( allWaves[ "4" ] );
 	*/
 								if( self.parameters.progress ) {
-									self.parameters.progress( j, timeDelays[ i ], self.params.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance );
+									self.parameters.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance );
 								}
 							}
 
