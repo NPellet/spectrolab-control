@@ -32,6 +32,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 	module.prototype.newSerie = function( data, type ) {
 
+		var module = this;
 		var g = this.checkGraph();
 		if( serie = g.getSerie( data.name ) ) {
 			serie.setData( data.data );

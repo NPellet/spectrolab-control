@@ -45,9 +45,12 @@ experiment.prototype = {
 			var waveCurrent = [];
 			var waveSwitch = [];
 
-			var waveCharges = [];
+			
 			var waveVoc = [];
 			var waveCapacitance = [];
+			var waveCharges = [];
+			var waveCapacitance2 = [];
+			var waveCharges2 = [];
 
 			var recordedWaves = [];
 
@@ -120,10 +123,14 @@ experiment.prototype = {
 					
 						self.arduino.setWhiteLightLevel( self.parameters.lightIntensities[ l ] );
 
-						waveCharges[ l ] = [];
 						waveVoc[ l ] = [];
-						waveCapacitance[ l ] = [];
 
+						waveCapacitance[ l ] = [];
+						waveCharges[ l ] = [];	
+
+						waveCapacitance2[ l ] = [];
+						waveCharges2[ l ] = [];	
+						
 						while( true ) {
 
 							if( self.focus === false ) {
@@ -188,15 +195,19 @@ experiment.prototype = {
 								waveSwitch[ i ] = waveSwitch[ i ] || [];
 */
 								// Do the waveform exists
-								waveCharges[ l ][ i ] = waveCharges[ l ][ i ] || new Waveform();
 								waveVoc[ l ][ i ] = waveVoc[ l ][ i ] || new Waveform();
+								waveCharges[ l ][ i ] = waveCharges[ l ][ i ] || new Waveform();
 								waveCapacitance[ l ][ i ] = waveCapacitance[ l ][ i ] || new Waveform();
+
+								waveCharges2[ l ][ i ] = waveCharges2[ l ][ i ] || new Waveform();
+								waveCapacitance2[ l ][ i ] = waveCapacitance2[ l ][ i ] || new Waveform();
 
 
 
 								var voc = recordedWaves[ 0 ][ "3" ].get( level - 2 );
 								var m = 0;
 								var charges = 0;
+								var fastestCharges;
 
 								recordedWaves.map( function( w ) {
 
@@ -209,6 +220,8 @@ experiment.prototype = {
 
 									if( m > 0 ) {
 										ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m ]
+									} else {
+										fastestCharges = w[ "2" ].integrateP( ptStart, 499 );
 									}
 
 									charges += w[ "2" ].integrateP( ptStart, 499 );
@@ -219,13 +232,16 @@ experiment.prototype = {
 								waveCharges[ l ][ i ].push( charges );
 								waveCapacitance[ l ][ i ].push( charges / voc );
 
+								waveCharges2[ l ][ i ].push( fastestCharges );
+								waveCapacitance2[ l ][ i ].push( fastestCharges / voc );
+
 								/*wavePulse[ i ].push( recordedWaves[ "1" ] );
 								waveCurrent[ i ].push( allWaves[ "2" ] );
 								waveVoltage[ i ].push( allWaves[ "3" ] );
 								waveSwitch[ i ].push( allWaves[ "4" ] );
 	*/
 								if( self.parameters.progress ) {
-									self.parameters.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance );
+									self.parameters.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance, waveCharges2, waveCapacitance2 );
 								}
 							}
 

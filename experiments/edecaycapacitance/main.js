@@ -88,10 +88,11 @@ renderer.getModule("focus").on("clicked", function() {
 
 });
 
-function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
+function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
 
 	var i = 0;
-	var colors = ['red', 'blue', 'green', 'orange', 'grey', 'black'];
+	var colors = ['#a61111', '#2d2d94', '#479116', '#722f8b', '#a36228'];
+	var colors2 = ['#cf6565', '#6565cf', '#a2c48b', '#b58bc4', '#ce9f75'];
 
 	renderer.getModule("vocvstime").clear();
 	renderer.getModule("C-t").clear();
@@ -113,19 +114,39 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 	        stroke: colors[ l ]
     	};
 
+		var style2 = {
+			shape: 'circle',
+	        r: 2,
+	        fill: colors2[ l ],
+	        stroke: colors2[ l ]
+    	};
+
 		
 		var vocs = vocsGlobal[ l ];
-		var charges = vocsGlobal[ l ];
+		var charges = chargesGlobal[ l ];
 		var capacitances = capacitancesGlobal[ l ];
+
+		var chargesF = chargesFGlobal[ l ];
+		var capacitanceF = capacitancesFGlobal[ l ];
+		
 
 
 		var dataCharges = [], dataChargesSDev = [];
+		var dataChargesF = [], dataChargesSDevF = [];
 
 		var wTimeDelays = new Waveform();
 		var wCapa = new Waveform();
 		var wCapaS = new Waveform();
+		
+		var wCapaF = new Waveform();
+		var wCapaSF = new Waveform();
+
 		var wCharges = new Waveform();
 		var wChargesS = new Waveform();
+
+		var wChargesF = new Waveform();
+		var wChargesSF = new Waveform();
+
 		var wVocs = new Waveform();
 		var wVocsS = new Waveform();
 
@@ -135,17 +156,27 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 
 			var i = charges.indexOf( charge );
 
+
+console.log( i, charges, chargesF, charges[ i ], chargesF[ i ] );
+
+
 			dataCharges.push( [ delays[ i ], charge.median() ] );
 			dataChargesSDev.push( [ [ charge.stdDev() ] ] );
+
+
+			dataChargesF.push( [ delays[ i ], chargesF[ i ].median() ] );
+			dataChargesSDevF.push( [ [ chargesF[ i ].stdDev() ] ] );
 
 			wCharges.push( charge.median() );
 			wChargesS.push( charge.stdDev() );
 
-			i++;
+			wChargesF.push( chargesF[ i ].median() );
+			wChargesSF.push( chargesF[ i ].stdDev() );
 		});
 
 		
 		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
+		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
 		renderer.getModule("chargesvstime").autoscale();
 
 
@@ -164,6 +195,10 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 		var dataCapa = [], dataCapaSDev = [];
 		var dataCV = [], dataCVSdev = [];
 
+		var dataCapaF = [], dataCapaSDevF = [];
+		var dataCVF = [], dataCVSdevF = [];
+
+
 		i = 0;
 		capacitances.map( function( c ) {
 
@@ -175,9 +210,18 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 			dataCV.push( [ vocs[ i ].median(), c.median() ] );
 			dataCVSdev.push( [ [ c.stdDev() ] ] );
 
+			dataCapaF.push( [ delays[ i ], capacitanceF[ i ].median() ] );
+			dataCapaSDevF.push( [ [ capacitanceF[ i ].stdDev() ] ] );
+
+			dataCVF.push( [ vocs[ i ].median(), capacitanceF[ i ].median() ] );
+			dataCVSdevF.push( [ [ capacitanceF[ i ].stdDev() ] ] );
+
 
 			wCapa.push( c.median() );
 			wCapaS.push( c.stdDev() );
+
+			wCapaF.push( capacitanceF[ i ].median() );
+			wCapaSF.push( capacitanceF[ i ].stdDev() );
 
 		});
 
@@ -190,11 +234,13 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 
 
 		renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { }, dataCapaSDev, style );
+		renderer.getModule("C-t").newScatterSerie("CT_" + l + "_F", dataCapaF, { }, dataCapaSDevF, style2 );
 		renderer.getModule("C-t").autoscale();
 
 
 		
 		renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
+		renderer.getModule("C-V").newScatterSerie("CV_" + l + "_F", dataCVF, { }, dataCVSdevF, style2 );
 		renderer.getModule("C-V").autoscale();
 
 		
@@ -210,11 +256,25 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 		var itxw = itx.newWave( "charges_sdev_" + l );
 		itxw.setWaveform( wChargesS );
 
+
+		var itxw = itx.newWave( "charges_f_" + l );
+		itxw.setWaveform( wChargesF );
+
+		var itxw = itx.newWave( "charges_sdev_f_" + l );
+		itxw.setWaveform( wChargesSF );
+
+
 		var itxw = itx.newWave( "capacitance_" + l );
 		itxw.setWaveform( wCapa );
 
 		var itxw = itx.newWave( "capacitance_sdev_" + l );
 		itxw.setWaveform( wCapaS );
+
+		var itxw = itx.newWave( "capacitance_f_" + l );
+		itxw.setWaveform( wCapaF );
+
+		var itxw = itx.newWave( "capacitance_sdev_f_" + l );
+		itxw.setWaveform( wCapaSF );
 
 
 	}
@@ -241,7 +301,7 @@ renderer.getModule("start").on('clicked', function() {
 		keithley: k,
 		arduino: a,
 
-		progress: function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances ) {
+		progress: function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
 
 /*
 			vdecay.clear();
@@ -252,7 +312,7 @@ renderer.getModule("start").on('clicked', function() {
 			jdecay.newSerie("jdecay", waves[ 2 ], { lineColor: 'blue' } );
 			jdecay.autoscale();
 */
-			reprocess( charges, voc, capacitances, allDelays );
+			reprocess( charges, voc, capacitances, allDelays, chargesFastest, capacitanceFastest );
 
 			status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 /*
