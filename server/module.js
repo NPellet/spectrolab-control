@@ -17,13 +17,14 @@ var modulePrototype = function() {};
 //modulePrototype.prototype = new ();
 
 modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototype.prototype, {
-	
+
 	init: function( type, name ) {
 
 		var module = this;
 		this.locks = {};
 		this.type = type;
 		this.name = name;
+		this.status = {};
 		
 		this.assignId();
 
@@ -35,7 +36,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 			} ) ( module.streamOn[ i ] );
 		}
-	
+
 	},
 
 
@@ -52,8 +53,8 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 	},
 
 	streamIn: function() {},
-	
-	streamOn: {},	
+
+	streamOn: {},
 
 	streamOut: function( instruction, value ) {
 
@@ -89,7 +90,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 		return lengine.parseAndRender( fs.readFileSync( path.resolve( this.getFolder(), 'html.tpl') ), moduleTplInfos ).then( function( html ) {
 
-			return lengine.parseAndRender( fs.readFileSync( './server/html/module.tpl' ), { 
+			return lengine.parseAndRender( fs.readFileSync( './server/html/module.tpl' ), {
 
 				content: html,
 				locked: module._locked,
@@ -141,7 +142,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.locks[ lockElement ] = true;
 
 		if( this.isLocked() ) {
-			this.out( 'lock', true );	
+			this.out( 'lock', true );
 		}
 
 		return this;
@@ -152,7 +153,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.locks[ lockElement ] = false;
 
 		if( ! this.isLocked() ) {
-			this.out( 'unlock', true );	
+			this.out( 'unlock', true );
 		}
 
 		return this;
