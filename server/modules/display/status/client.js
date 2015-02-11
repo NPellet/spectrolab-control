@@ -15,6 +15,10 @@ define( [ 'client/js/module'], function( defaultModule ) {
 
 		var dom = this.getDom().children('.statusbar');
 
+		if( ! value ) {
+			return;
+		}
+		
 		if( typeof value == "string" ) {
 
 			value = {
