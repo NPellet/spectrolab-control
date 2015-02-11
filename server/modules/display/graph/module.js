@@ -45,10 +45,10 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		return this;
 	},
 
-	newScatterSerie: function( name, data, options, errors ) {
+	newScatterSerie: function( name, data, options, errors, style ) {
 
 		data = waveToData( data );
-		var s = { name: name, data: data, options: options, errors: errors };
+		var s = { name: name, data: data, options: options, errors: errors, style: style };
 		this.series[ name ] = s;
 
 		this.status.scatterSeries = this.status.scatterSeries || {};
@@ -73,25 +73,25 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 	forceXMin: function( val ) {
 		this.status.forceXMin = val;
 		this.out( "forceXMin", val );
-		return this;	
+		return this;
 	},
 
 	forceXMax: function( val ) {
 		this.status.forceXMax = val;
 		this.out( "forceXMax", val );
-		return this;	
+		return this;
 	},
 
 	forceYMin: function( val ) {
 		this.status.forceYMin = val;
 		this.out( "forceYMin", val );
-		return this;	
+		return this;
 	},
 
 	forceYMax: function( val ) {
 		this.status.forceYMax = val;
 		this.out( "forceYMax", val );
-		return this;	
+		return this;
 	},
 
 	autoscale: function() {
@@ -119,7 +119,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 
 	setHeight: function( h ) {
 		this.out( "setHeight", h );
-		return this;	
+		return this;
 	},
 
 	redraw: function() {
@@ -137,7 +137,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 					module.assignGraph( id );
 
 				});
-			
+
 			break;
 		}
 
@@ -151,7 +151,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 	streamOn: {
 
 		'graphstored': function( v, i ) {
-	
+
 			this._graphClientStoreId = v;
 			this.emit( "graphStored", this._graphClientStoreId );
 

@@ -7,7 +7,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 	module.prototype = new defaultModule();
 
 	module.prototype.onDomReady = function() {
-			
+
 	}
 
 	module.prototype.checkGraph = function() {
@@ -41,9 +41,10 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 				case 'scatter':
 					serie.setDataError( data.errors );
+					serie.setStyle( data.style );
 				break;
 			}
-			
+
 		} else {
 
 			// Create a serie
@@ -57,6 +58,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 				case 'scatter':
 					serie.setDataError( data.errors );
 					serie.setErrorStyle( [ 'bar'] );
+					serie.setStyle( data.style );
 
 					serie.on( "mouseover", function( id ) {
 						module.streamOut("mouseOverPoint", { serieName: data.name, pointId: id } );
@@ -82,7 +84,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 		"autoscale": function() {
 
 			var g = this.checkGraph();
-			
+
 			g.autoscaleAxes();
 			g.redraw();
 			g.drawSeries();
@@ -220,7 +222,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 			for( var i in series ) {
 				self.newSerie( series[ i ], 'line' );
 			}
-			
+
 		}
 
 

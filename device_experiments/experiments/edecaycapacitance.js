@@ -7,20 +7,23 @@ experiment.prototype = {
 
 	init: function( parameters ) {
 
-		if( ! parameters.oscilloscope || ! parameters.keithley ) {
-			throw "An oscilloscope and a keithley SMU are required";
+		if( ! parameters.oscilloscope || ! parameters.keithley || ! parameters.arduino ) {
+			throw "An oscilloscope and a keithley SMU and an Arduino with analog output are required";
 		}
 
 		this.parameters = parameters;
 
 		this.oscilloscope = parameters.oscilloscope;
 		this.keithley = parameters.keithley;
+		this.arduino = parameters.arduino;
 
 		this.parameters.ledPin = 4;
 		this.parameters.switchPin = 5;
 		this.parameters.pulseTime = 2;
 		this.parameters.delay = 2;
 		this.focus = false;
+
+		this.parameters.lightIntensities = [ 0, 5, 8 ];
 	},
 
 	setLEDPin: function() {
@@ -110,120 +113,130 @@ experiment.prototype = {
 					var j = 0;
 					var k = 0;
 
-					while( true ) {
+					for( var l = 0; l < self.params.lightIntensities.length; l += 1 ) {
 
-						if( self.focus === false ) {
+						self.arduino.setWhiteLightLevel( self.lightIntensities[ l ] );
 
-							// Randomize delay
-							var i = Math.floor( Math.random() * ( timeDelays.length ) );
+						waveCharges[ l ] = [];
+						waveVoc[ l ] = [];
+						waveCapacitance[ l ] = [];
+
+						while( true ) {
+
+							if( self.focus === false ) {
+
+								// Randomize delay
+								var i = Math.floor( Math.random() * ( timeDelays.length ) );
+
+								// Safeguard
+								if( k < 10000 ) {
+
+									// If standard deviation is lower than 20% of the mean and there has been 8 shots, we're good
+									if( waveCharges[ l ][ i ] &&  waveCharges[ l ][ i ].getDataLength() > 256 && waveCharges[ l ][ i ].stdDev() < waveCharges[ l ][ i ].mean() * 0.2 ) {
+										k++;
+										continue;
+									}
+								}
+
+								k = 0;
+
+							} else {
+								var i = self.focus;
+							}
+
+
+							j++;
+							/*
+								Integration concept
+								- Two time scales to catch slow and fast component
+								- Two timescales fixed
+								- Charges is the sum of the two
+								- Weighting time bases ?
+							*/
+
+							recordedWaves = [];
+
+							for( var n = 0; n < timeBases.length; n += 1 ) {
+								timeBase = timeBases[ n ];
+								self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
+									recordedWaves.push( w );
+									p.next();
+								});
+
+								yield;
+							}
+
+							// Look on the first voltage wave
+							var level = recordedWaves[ 0 ][ "3" ].findLevel(0.02, {
+								edge: 'descending',
+								box: 1,
+								rouding: 'before',
+								rangeP: [ 40, 60 ]
+							});
+
+
+							// We need to find some voltage !
+							if( level ) {
+
+								// Do the array exist ?
+								/*wavePulse[ i ] = wavePulse[ i ] || [];
+								waveVoltage[ i ] = waveVoltage[ i ] || [];
+								waveCurrent[ i ] = waveCurrent[ i ] || [];
+								waveSwitch[ i ] = waveSwitch[ i ] || [];
+*/
+								// Do the waveform exists
+								waveCharges[ l ][ i ] = waveCharges[ l ][ i ] || new Waveform();
+								waveVoc[ l ][ i ] = waveVoc[ l ][ i ] || new Waveform();
+								waveCapacitance[ l ][ i ] = waveCapacitance[ l ][ i ] || new Waveform();
+
+
+
+								var voc = recordedWaves[ 0 ][ "3" ].get( level - 2 );
+								var m = 0;
+								var charges = 0;
+
+								recordedWaves.map( function( w ) {
+
+									// Total width: timeBaseSlow * 10 over n points
+									// Exemple: 2000e-6 * 10 / 500 = 0.00004 s / pt
+									// ( 20e-6 * 10 ) / 0.0004 = 5 pts to exclude
+
+									var ptStart;
+									ptStart = preTrigger / 100 * 500;
+
+									if( m > 0 ) {
+										ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m - 1 ]
+									}
+
+									charges += w[ "2" ].integrateP( ptStart, 499 );
+									m++;
+								});
+
+								waveVoc[ l ][ i ].push( voc );
+								waveCharges[ l ][ i ].push( charges );
+								waveCapacitance[ l ][ i ].push( charges / voc );
+
+								/*wavePulse[ i ].push( recordedWaves[ "1" ] );
+								waveCurrent[ i ].push( allWaves[ "2" ] );
+								waveVoltage[ i ].push( allWaves[ "3" ] );
+								waveSwitch[ i ].push( allWaves[ "4" ] );
+	*/
+								if( self.parameters.progress ) {
+									self.parameters.progress( j, timeDelays[ i ], self.params.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance );
+								}
+							}
 
 							// Safeguard
-							if( k < 10000 ) {
-
-								// If standard deviation is lower than 20% of the mean and there has been 8 shots, we're good
-								if( waveCharges[ i ] &&  waveCharges[ i ].getDataLength() > 256 && waveCharges[ i ].stdDev() < waveCharges[ i ].mean() * 0.2 ) {
-									k++;
-									continue;
-								}
+							if( j > 400 ) {
+								break;
+							//	yield;
 							}
 
-							k = 0;
-
-						} else {
-							var i = self.focus;
-						}
-
-
-						j++;
-						/*
-							Integration concept
-							- Two time scales to catch slow and fast component
-							- Two timescales fixed
-							- Charges is the sum of the two
-							- Weighting time bases ?
-						*/
-
-						recordedWaves = [];
-
-						for( var n = 0; n < timeBases.length; n += 1 ) {
-							timeBase = timeBases[ n ];
-							self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
-								recordedWaves.push( w );
-								p.next();
-							});
-
-							yield;
-						}
-
-						// Look on the first voltage wave
-						var level = recordedWaves[ 0 ][ "3" ].findLevel(0.02, {
-							edge: 'descending',
-							box: 1,
-							rouding: 'before',
-							rangeP: [ 40, 60 ]
-						});
-
-
-						// We need to find some voltage !
-						if( level ) {
-
-							// Do the array exist ?
-							wavePulse[ i ] = wavePulse[ i ] || [];
-							waveVoltage[ i ] = waveVoltage[ i ] || [];
-							waveCurrent[ i ] = waveCurrent[ i ] || [];
-							waveSwitch[ i ] = waveSwitch[ i ] || [];
-
-							// Do the waveform exists
-							waveCharges[ i ] = waveCharges[ i ] || new Waveform();
-							waveVoc[ i ] = waveVoc[ i ] || new Waveform();
-							waveCapacitance[ i ] = waveCapacitance[ i ] || new Waveform();
-
-
-
-							var voc = recordedWaves[ 0 ][ "3" ].get( level - 2 );
-							var m = 0;
-							var charges = 0;
-
-							recordedWaves.map( function( w ) {
-
-								// Total width: timeBaseSlow * 10 over n points
-								// Exemple: 2000e-6 * 10 / 500 = 0.00004 s / pt
-								// ( 20e-6 * 10 ) / 0.0004 = 5 pts to exclude
-
-								var ptStart;
-								ptStart = preTrigger / 100 * 500;
-
-								if( m > 0 ) {
-									ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m - 1 ]
-								}
-
-								charges += w[ "2" ].integrateP( ptStart, 499 );
-								m++;
-							});
-
-							waveVoc[ i ].push( voc );
-							waveCharges[ i ].push( charges );
-							waveCapacitance[ i ].push( charges / voc );
-
-							/*wavePulse[ i ].push( recordedWaves[ "1" ] );
-							waveCurrent[ i ].push( allWaves[ "2" ] );
-							waveVoltage[ i ].push( allWaves[ "3" ] );
-							waveSwitch[ i ].push( allWaves[ "4" ] );
-*/
-							if( self.parameters.progress ) {
-								self.parameters.progress( j, timeDelays[ i ], timeDelays, waveCharges, waveVoc, waveCapacitance );
-							}
-						}
-
-						// Safeguard
-						if( j > 10000 ) {
-							break;
-						//	yield;
 						}
 
 					}
 
-					resolver( [ waveSwitch, waveCurrent, waveVoltage ] );
+					resolver( [ waveCurrent, waveVoltage ] );
 				}
 
 				var p = pulse( timeDelays.length, 8 );

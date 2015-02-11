@@ -4,6 +4,9 @@ var renderer = require( "./renderer" );
 var stream = require( "../../server/stream" );
 var Gould = require( "../../controllers/gould-oscilloscope/200/controller" );
 var Keithley = require( "../../controllers/keithley-smu/default/controller" );
+var Arduino = require( "../../controllers/arduino/default/controller" );
+
+
 var config = require( "../../server/config" );
 var Device = require( "../../device_experiments/device" );
 var ITXBuilder = require("../../server/databuilder/itx").ITXBuilder,
@@ -13,6 +16,8 @@ var Waveform = require('../../server/waveform');
 
 var g = new Gould( config.instruments.gouldOscilloscope );
 var k = new Keithley( config.instruments.keithley );
+var a = new Arduino( config.instruments.arduino );
+
 
 var experiment;
 
@@ -78,115 +83,126 @@ renderer.getModule("focus").on("clicked", function() {
 
 });
 
-function reprocess( charges, vocs, delays, capacitances ) {
+function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 
 	var i = 0;
+	var colors = ['red', 'blue', 'green', 'orange', 'grey', 'black'];
+
+	for( var l = 0; l < vocsGlobal.length; l += 1 ) {
+
+		var c = colors[ l ]
+		var vocs = vocsGlobal[ l ];
+		var charges = vocsGlobal[ l ];
+		var capacitances = capacitancesGlobal[ l ];
 
 
+		var dataCharges = [], dataChargesSDev = [];
 
-	var dataCharges = [], dataChargesSDev = [];
+		var wTimeDelays = new Waveform();
+		var wCapa = new Waveform();
+		var wCapaS = new Waveform();
+		var wCharges = new Waveform();
+		var wChargesS = new Waveform();
+		var wVocs = new Waveform();
+		var wVocsS = new Waveform();
 
-	var wTimeDelays = new Waveform();
-	var wCapa = new Waveform();
-	var wCapaS = new Waveform();
-	var wCharges = new Waveform();
-	var wChargesS = new Waveform();
-	var wVocs = new Waveform();
-	var wVocsS = new Waveform();
+		wTimeDelays.setData( delays );
 
-	wTimeDelays.setData( delays );
+		charges.map( function( charge ) {
 
-	charges.map( function( charge ) {
+			var i = charges.indexOf( charge );
 
-		var i = charges.indexOf( charge );
+			dataCharges.push( [ delays[ i ], charge.median() ] );
+			dataChargesSDev.push( [ [ charge.stdDev() ] ] );
 
-		dataCharges.push( [ delays[ i ], charge.median() ] );
-		dataChargesSDev.push( [ [ charge.stdDev() ] ] );
+			wCharges.push( charge.median() );
+			wChargesS.push( charge.stdDev() );
 
-		wCharges.push( charge.median() );
-		wChargesS.push( charge.stdDev() );
+			i++;
+		});
 
-		i++;
-	});
+		renderer.getModule("chargesvstime").clear();
+		renderer.getModule("chargesvstime").setXLogScale( true );
 
-	renderer.getModule("chargesvstime").clear();
-	renderer.getModule("chargesvstime").setXLogScale( true );
-
-	renderer.getModule("chargesvstime").newScatterSerie("chargesvstime", dataCharges, {}, dataChargesSDev );
-	renderer.getModule("chargesvstime").autoscale();
-
-
-	var dataVoc = [], dataVocSDev = [];
-	vocs.map( function( voc ) {
-
-		var i = vocs.indexOf( voc );
-
-		dataVoc.push( [ delays[ i ], voc.median() ] );
-		dataVocSDev.push( [ [ voc.stdDev() ] ] );
-
-		wVocs.push( voc.median() );
-		wVocsS.push( voc.stdDev() );
-	});
-
-	var dataCapa = [], dataCapaSDev = [];
-	var dataCV = [], dataCVSdev = [];
-
-	i = 0;
-	capacitances.map( function( c ) {
-
-		var i = capacitances.indexOf( c );
-
-		dataCapa.push( [ delays[ i ], c.median() ] );
-		dataCapaSDev.push( [ [ c.stdDev() ] ] );
-
-		dataCV.push( [ vocs[ i ].median(), c.median() ] );
-		dataCVSdev.push( [ [ c.stdDev() ] ] );
+		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, { stroke: c, fill: c } );
+		renderer.getModule("chargesvstime").autoscale();
 
 
-		wCapa.push( c.median() );
-		wCapaS.push( c.stdDev() );
+		var dataVoc = [], dataVocSDev = [];
+		vocs.map( function( voc ) {
 
-	});
+			var i = vocs.indexOf( voc );
+
+			dataVoc.push( [ delays[ i ], voc.median() ] );
+			dataVocSDev.push( [ [ voc.stdDev() ] ] );
+
+			wVocs.push( voc.median() );
+			wVocsS.push( voc.stdDev() );
+		});
+
+		var dataCapa = [], dataCapaSDev = [];
+		var dataCV = [], dataCVSdev = [];
+
+		i = 0;
+		capacitances.map( function( c ) {
+
+			var i = capacitances.indexOf( c );
+
+			dataCapa.push( [ delays[ i ], c.median() ] );
+			dataCapaSDev.push( [ [ c.stdDev() ] ] );
+
+			dataCV.push( [ vocs[ i ].median(), c.median() ] );
+			dataCVSdev.push( [ [ c.stdDev() ] ] );
 
 
-	renderer.getModule("vocvstime").clear();
-	renderer.getModule("vocvstime").setXLogScale( true );
-	renderer.getModule("vocvstime").newScatterSerie("vocvstime", dataVoc, {}, dataVocSDev );
-	renderer.getModule("vocvstime").autoscale();
+			wCapa.push( c.median() );
+			wCapaS.push( c.stdDev() );
+
+		});
 
 
-	renderer.getModule("C-t").clear();
-	renderer.getModule("C-t").setXLogScale( true );
-	renderer.getModule("C-t").newScatterSerie("CT", dataCapa, {}, dataCapaSDev );
-	renderer.getModule("C-t").autoscale();
+		renderer.getModule("vocvstime").clear();
+		renderer.getModule("vocvstime").setXLogScale( true );
+		renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, { stroke: c, fill: c } );
+		renderer.getModule("vocvstime").autoscale();
 
 
-	renderer.getModule("C-V").clear();
-	renderer.getModule("C-V").newScatterSerie("CV", dataCV, {}, dataCVSdev );
-	renderer.getModule("C-V").autoscale();
+		renderer.getModule("C-t").clear();
+		renderer.getModule("C-t").setXLogScale( true );
+		renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { lineColor: c }, dataCapaSDev, { stroke: c, fill: c }  );
+		renderer.getModule("C-t").autoscale();
 
-	var itx = new ITXBuilder();
 
-	var itxw = itx.newWave( "voc" );
-	itxw.setWaveform( wVocs );
+		renderer.getModule("C-V").clear();
+		renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { lineColor: c }, dataCVSdev, { stroke: c, fill: c }  );
+		renderer.getModule("C-V").autoscale();
 
-	var itxw = itx.newWave( "voc_sdev" );
-	itxw.setWaveform( wVocsS );
+		var itx = new ITXBuilder();
 
-	var itxw = itx.newWave( "charges" );
-	itxw.setWaveform( wCharges );
+		var itxw = itx.newWave( "voc_" + l );
+		itxw.setWaveform( wVocs );
 
-	var itxw = itx.newWave( "charges_sdev" );
-	itxw.setWaveform( wChargesS );
+		var itxw = itx.newWave( "voc_sdev_" + l );
+		itxw.setWaveform( wVocsS );
 
-	var itxw = itx.newWave( "capacitance" );
-	itxw.setWaveform( wCapa );
+		var itxw = itx.newWave( "charges_" + l );
+		itxw.setWaveform( wCharges );
 
-	var itxw = itx.newWave( "capacitance_sdev" );
-	itxw.setWaveform( wCapaS );
+		var itxw = itx.newWave( "charges_sdev_" + l );
+		itxw.setWaveform( wChargesS );
+
+		var itxw = itx.newWave( "capacitance_" + l );
+		itxw.setWaveform( wCapa );
+
+		var itxw = itx.newWave( "capacitance_sdev_" + l );
+		itxw.setWaveform( wCapaS );
+
+
+	}
 
 	var itxw = itx.newWave( "times" );
 	itxw.setWaveform( wTimeDelays );
+
 
 	var fileName = fileSaver.save( {
 		contents: itx.getFile(),
@@ -194,6 +210,7 @@ function reprocess( charges, vocs, delays, capacitances ) {
 		fileExtension: 'itx',
 		dir: './capacitance/'
 	} );
+
 }
 
 
@@ -203,8 +220,9 @@ renderer.getModule("start").on('clicked', function() {
 
 		oscilloscope: g,
 		keithley: k,
+		arduino: a
 
-		progress: function( pulseNb, lastPulseDelay, allDelays, charges, voc, capacitances ) {
+		progress: function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances ) {
 
 /*
 			vdecay.clear();
@@ -215,7 +233,7 @@ renderer.getModule("start").on('clicked', function() {
 			jdecay.newSerie("jdecay", waves[ 2 ], { lineColor: 'blue' } );
 			jdecay.autoscale();
 */
-			reprocess( charges, voc, allDelays, capacitances );
+			reprocess( charges, voc, capacitances, allDelays );
 
 			status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 /*
