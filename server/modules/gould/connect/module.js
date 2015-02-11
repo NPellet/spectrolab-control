@@ -15,12 +15,25 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 		var module = this;
 		
 		this.gould = gould;
+
+		this.gould.on("connecting", function() {
+
+			module.streamOut("connecting");
+			module.emit("connecting");
+
+			module.status.connected = false;
+			module.status.connecting = true;
+			module.status.error = false;
+		} );
+
 		this.gould.on("connected", function() {
 
 			module.streamOut( "connected" );
 			module.emit("connected");
 
 			module.status.connected = true;
+			module.status.connecting = false;
+			module.status.error = false;
 
 			module.unlock();
 		} );
@@ -32,13 +45,21 @@ GouldConnect.prototype = extend( GouldConnect.prototype, {
 			module.emit("disconnected");
 
 			module.status.connected = false;
+			module.status.error = false;
+			module.status.connecting = false;
 		});
 
 		this.gould.on( "connectionerror", function() {
 
 			module.unlock();
 			module.emit("connectionerror");
-		})
+
+			module.status.connected = false;
+			module.status.error = true;
+			module.status.connecting = false;
+
+			module.streamOut("error");
+		});
 
 
 		return this;
