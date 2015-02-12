@@ -1,4 +1,4 @@
-var config = { 
+var config = {
 
 	instruments: {
 		keithley: {
@@ -24,7 +24,16 @@ var config = {
 				"arduinoAnalogValue": [ 2172,2076,2022,1970,1933,1896,1862,1832,1794,1768,1736,1712,1698,0 ],
 				"arduinoAnalogPin": 0
 			}
+		},
+
+
+		functionGenerator: {
+
+			host: '192.168.0.100',
+			port: '810'
 		}
+
+
 	},
 
 
