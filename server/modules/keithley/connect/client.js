@@ -6,17 +6,17 @@ define( [ 'client/js/module'], function( defaultModule ) {
 	module.prototype = new defaultModule();
 
 	module.prototype.onDomReady = function() {
-			
+
 		var self = this;
 		this.button = this.getDom().find('.button');
-		
+
 		var connect = $( "#connect-" + this.getId() );
-	
+
 		this.connect = connect;
-		
+
 		connect.on( 'click', function() {
 			self.out( "connect" );
-		} ); 
+		} );
 	}
 
 	module.prototype.in = {
@@ -25,32 +25,30 @@ define( [ 'client/js/module'], function( defaultModule ) {
 
 			var connect = this.connect;
 			connect.prop( 'value', 'Disconnect' );
-			connect.addClass('connected');
+			connect.addClass('green');
 		},
 
 		"disconnected": function( text ) {
 
 			var connect = this.connect;
 			connect.prop( 'value', 'Connect' );
-			connect.removeClass('connected');
+			connect.removeClass('green');
 		}
 	};
 
 	module.prototype.setStatus = function( status ) {
-		
+
 		var connect = this.connect;
-		
+
 		if( status.connected ) {
 			connect.prop( 'value', 'Disconnect' );
-			connect.addClass('connected');
+			connect.addClass('green');
 		} else {
 			connect.prop( 'value', 'Connect' );
-			connect.removeClass('connected');
+			connect.removeClass('green');
 		}
 	}
 
 	return module;
 
 } );
-
-

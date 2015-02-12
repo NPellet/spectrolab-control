@@ -1,7 +1,7 @@
 
 "use strict";
 
-var net = require('net'),
+var
 	extend = require('extend'),
 	fs = require('fs'),
 	events = require("events"),
@@ -9,181 +9,183 @@ var net = require('net'),
 	promise = require("bluebird"),
 	Waveform = require("../../../server/waveform");
 
+var pythonShell = require("python-shell"); // Used to communicate through VXI11 with the Tektronix AFG
+
 var TektronixAFG = function( params ) {
 	this.params = params;
 	this.connected = false;
 	this.queue = [];
+
+
+	var self = this;
+	function *runCommands( queue ) {
+
+		while( true ) {
+
+				while( queue.length == 0 ) {
+
+					self.emit("queueEmpty");
+					yield;
+				}
+
+				var running = true;
+
+				var element = queue.shift();
+				query( self.shellInstance, element.command ).then( function( data ) {
+
+					element.promiseResolve();
+
+				}/*, function( error ) {
+					console.log('sdf');
+					element.promiseReject();
+
+				} */).finally( function() {
+console.log( self.queue );
+					running = false;
+					self.commandRunner.next();
+
+				});
+
+				yield;
+
+				// Does nothing if next is called and the process is running already
+				while( running ) {
+					yield;
+				}
+		}
+	}
+
+
+	this.commandRunner = runCommands( this.queue );
+	this.runCommands();
 };
+
 
 TektronixAFG.prototype = new events.EventEmitter;
 
-TektronixAFG.prototype.connect = function( callback ) {
+TektronixAFG.prototype.connect = function(  ) {
 
-	var module = this;
+		var module = this;
 
-	return new Promise( function( resolver, rejecter ) {
+		return new Promise( function( resolver, rejecter ) {
 
-		// Avoid multiple connection
-		if( module.connected ) {
-
-			console.log('Already connected. Remove all TektronixAFG listeners');
-			module.socket.removeAllListeners( 'data' );
-
-
-			if( callback ) {
+			// Avoid multiple connection
+			if( module.connected ) {
 				callback();
+				return;
 			}
 
-			resolver();
-			return;
-		}
+			console.log( "Trying to connect to host " + module.params.host + " via VXI11" );
 
-		if( module.connecting ) {
+			// Launches a python instance which will communicate in VXI11 with the scope
+			module.shellInstance = new pythonShell( 'io.py', {
+				scriptPath: path.resolve( 'server/util/vxi11/' ),
+				args: [ module.params.host ], // Pass the IP address
+				mode: "text" // Text mode
+			} );
 
-			module.queue.push( resolver );
-			return;
-		}
+		/*	module.shellInstance.on("message", function( data ) {
+				console.log( data );
+			})
+*/
 
-		try {
+			// At this point we are already connected. No asynchronous behaviour with python
+			module.connected = true;
 
-			console.log( module.params );
-			// Connect by raw TCP sockets
-			var self = module,
-				socket = net.createConnection( {
-					port: module.params.port,
-					host: module.params.host,
-					allowHalfOpen: true
-				});
+			setTimeout( function() {
 
-			module.connecting = true;
-			module.socket = socket;
-			module.setEvents();
+				module.command( "*IDN?" ).then(function( response ) {
 
+					console.log( response );
+				})
 
-			resolver();
+				resolver( module );
 
-		} catch( error ) {
-
-			module.emit("connectionerror");
-			rejecter();
-		}
-
-	} );
-};
+		} , 1000 );
 
 
-
-TektronixAFG.prototype._callMethod = function( method, options ) {
-
-	var module = this;
-
-	return this.connect().then( function() {
-
-		return new Promise( function( resolver, rejecter ) {
-
-			options = extend( true, {}, method.defaults, options );
-
-			if( typeof options == "function" ) {
-				callback = options;
-				options = {};
-			}
-
-			function end( data ) {
-console.log( data );
-				if( method.processing ) {
-					data = method.processing( data, options );
-				}
-
-				resolver( data );
-			}
-
-			function listen( prevData ) {
-
-				module.socket.once( 'data', function( data ) {
-					console.log( "Chunk: " + data.toString('ascii'));
-					data = prevData + data.toString('ascii');
-					if( data.indexOf("\n") == -1 ) {
-						listen( data );
-					} else {
-						end( data );
-					}
-				} );
-			}
-
-			listen("");
-			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
-		});
-	});
-
-}
-
-TektronixAFG.prototype.command = function( command ) {
-
-	var module = this;
-
-	return this.connect().then( function() {
-
-		return new Promise( function( resolver, rejecter ) {
-console.log( command );
-			module.socket.write( command + "\r\n", function() {
-
-				resolver();
-			});
-		});
-	});
-}
-
-TektronixAFG.prototype.flushErrors = function() {
-
-	this.command("errorqueue.clear();");
-}
-
-TektronixAFG.prototype.checkConnection = function() {
-
-	if( ! this.socket && this.connected ) {
-
-		throw "Socket is not alive";
-	}
-}
-
-
-TektronixAFG.prototype.setEvents = function() {
-
-	this.checkConnection();
-
-	var self = this;
-
-	this.socket.on('connect', function() {
-
-		self.connected = true;
-		self.connecting = false;
-
-		console.log('Remove all TektronixAFG listeners');
-		self.socket.removeAllListeners( 'data' );
-
-		self.emit("connected");
-
-
-		self.socket.on( 'data', function( data ) {
-			console.log( "Chunk: " + data.toString('ascii'));
 		} );
 
-		self.command("*IDN?");
+	}
 
+	TektronixAFG.prototype.runCommands = function() {
+		this.commandRunner.next();
+	}
 
-		self.queue.map( function( resolver ) {
-			resolver();
+	TektronixAFG.prototype.command = function( command ) {
+
+		var self = this;
+
+		return new Promise( function( resolver, rejecter ) {
+
+			self.queue.push( {
+
+				command: command,
+				promiseResolve: resolver,
+				promiseReject: rejecter
+			} );
+
+			self.runCommands();
 		});
+	}
 
-		self.queue = [];
-	});
+	TektronixAFG.prototype.commands = function( commands ) {
+		var self = this;
+		commands.map( function( cmd ) {
+			self.command(cmd);
+		} );
+	}
 
-	this.socket.on('end', function() {
-		console.log('TektronixAFG is being disconnected');
-		module.socket.removeAllListeners( 'data' );
-		self.emit("disconnected");
-	});
 
+function query( shellInstance, query ) {
+
+			var queries = shellInstance.queries;
+			var ask = query.indexOf('?') > -1;
+
+			return new Promise( function( resolver, rejecter ) {
+				console.log( "Query:" + query );
+				if( ask ) {
+
+					function listen( prevData ) {
+console.log('listening');
+						shellInstance.once( 'message', function( data ) {
+							console.log("Chunk:" + data);
+
+							data = prevData + data.toString('ascii');
+
+						/*	if( data.indexOf("\n") == -1 ) {
+								console.log('NThr');
+								listen( data );
+							} else {*/
+console.log('Thr', data);
+								//if( data.indexOf( query	 ) == 0 ) { // The response is exactly what has been requested
+									resolver( data );
+								//} else {
+								//	console.log( 'Rejection');
+								//	rejecter("The oscilloscope response was unexpected. Message : " + data);
+								//}
+							//}
+
+						} );
+					}
+
+					listen("");
+
+					shellInstance.send( query );
+
+				} else {
+
+					shellInstance.send( query );
+					resolver();
+				}
+
+			} ).then( function( data ) {
+				if( data ) {
+					return data.replace("\n", "");
+				}
+			} );
 }
+
+
 
 module.exports = TektronixAFG;
