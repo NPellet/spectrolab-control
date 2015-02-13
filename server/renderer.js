@@ -60,7 +60,7 @@ renderer.render = function( ) {
 
 
 	Promise.all( modules.map( function( module ) {
-		console.log( module.name );
+
 		return module.renderCSS();
 	}) ).then( function( a ) {
 
