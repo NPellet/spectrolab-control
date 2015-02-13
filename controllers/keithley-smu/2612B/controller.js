@@ -300,7 +300,7 @@ var Keithley = function( params ) {
 Keithley.prototype = new events.EventEmitter;
 
 Keithley.prototype.connect = function( callback ) {
-
+console.log('Connecting to K');
 	var module = this;
 
 	return new Promise( function( resolver, rejecter ) {

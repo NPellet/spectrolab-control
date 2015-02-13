@@ -274,9 +274,9 @@ function processQueue( Arduino ) {
 
 	return Arduino.connect().then( function( serialPort ) {
 
-console.log( queueElement[ 0 ] );
+
 		serialPort.write( queueElement[ 0 ] + "\n", function( err, results ) {
-			console.log( err, results );
+
 			if( err ) {
 				console.warn( err );
 			}
@@ -420,8 +420,6 @@ function setEvents( Arduino, resolver ) {
 	function endData( data ) {
 
 		if( Arduino.currentCallResolver ) {
-			console.log("______Response:" + Arduino.currentResponse );	
-			console.log(encodeURIComponent( Arduino.currentResponse ));
 			Arduino.currentCallResolver( Arduino.currentResponse );
 			
 			serialPort.drain( function() {
@@ -443,7 +441,7 @@ function setEvents( Arduino, resolver ) {
 	}
 
 	serialPort.on( 'data', function( data ) {
-		console.log("_____Chunk: " + data );
+		
 		Arduino.currentResponse = Arduino.currentResponse + data.toString('ascii');
 		
 		if( ! ( Arduino.currentResponse.indexOf("\r\n") == -1 ) ) {
