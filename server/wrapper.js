@@ -15,6 +15,15 @@ var Wrapper = function( renderer ) {
 	this.width = 1;
 };
 
+Wrapper.prototype.setName = function( name ) {
+	this.name = name;
+	return this;
+}
+
+Wrapper.prototype.getName = function( name ) {
+	return this.name;
+}
+
 Wrapper.prototype.setTitle = function( title ) {
 	this.title = title;
 	return this;
@@ -25,6 +34,18 @@ Wrapper.prototype.setPosition = function( left, top ) {
 	this.top = top || 0;
 	return this;
 }
+
+Wrapper.prototype.setLeft = function( left ) {
+	this.left = left || 0;
+	return this;
+}
+
+
+Wrapper.prototype.setTop = function( top ) {
+	this.top = top || 0;
+	return this;
+}
+
 
 Wrapper.prototype.setSize = function( w, h ) {
 	this.width = w || 10;
@@ -37,9 +58,12 @@ Wrapper.prototype.setWidth = function( w ) {
 	return this;
 }
 
-Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions ) {
+Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions, moduleConstructor ) {
 
-	var moduleConstructor = require( path.resolve( './server/modules/', moduleType, 'module.js' ) ).Constructor;
+	if( ! moduleConstructor ) {
+		var moduleConstructor = require( path.resolve( './server/modules/', moduleType, 'module.js' ) ).Constructor;
+	}
+
 	var module = new moduleConstructor( moduleOptions );
 
 	module.init( moduleType, moduleName );

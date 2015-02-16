@@ -1,17 +1,20 @@
 var config = {
 
 	instruments: {
-		keithley: {
-			host: '169.254.0.1',
+
+
+		"keithley-smu": {
+			host: '192.168.0.101',
 			port: '5025'
 		},
 
-		gouldOscilloscope: {
+		"gould-oscilloscope": {
 			baudrate: 19200,
-			host: '/dev/tty.USA19H142P1.1'
+			host: '/dev/tty.USA19H147P1.1'
+
 		},
 
-		arduino: {
+		"arduino": {
 			baudrate: 115200,
 
 			whiteLightLED: {
@@ -26,14 +29,11 @@ var config = {
 			}
 		},
 
+		"tektronix-functiongenerator": {
 
-		functionGenerator: {
-
-			host: '192.168.0.101'
+			host: '192.168.0.100'
 		}
-
-
-	},
+	}
 
 
 };

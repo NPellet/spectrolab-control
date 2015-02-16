@@ -18,6 +18,8 @@ var	renderer = {},
 	modules = [],
 	stylesheets = [];
 
+var connectModules = [];
+
 var getIp = function() {
 
 	var interfaces = os.networkInterfaces();
@@ -41,6 +43,18 @@ renderer.addWrapper = function(  ) {
 	return w;
 }
 
+renderer.getWrapper = function( wrapperName ) {
+
+		for( var i = 0, l = wrappers.length; i < l ; i ++ ) {
+
+			if( wrappers[ i ].getName() == wrapperName ) {
+				return wrappers[ i ];
+			}
+
+		}
+
+}
+
 renderer.addStylesheet = function( file ) {
 	stylesheets.push( file );
 }
@@ -50,6 +64,7 @@ renderer.render = function( ) {
 	stream.setModules( modulesId );
 
 	var html = [];
+	var css = "";
 
 	wrappers.map( function( wrapper ) {
 		html.push( wrapper.render() )
@@ -59,10 +74,13 @@ renderer.render = function( ) {
 	// And now the css
 
 
-	Promise.all( modules.map( function( module ) {
+	Promise.all(
 
-		return module.renderCSS();
-	}) ).then( function( a ) {
+		modules.map( function( module ) {
+			return module.renderCSS();
+		})
+
+	).then( function( a ) {
 
 		css = Array.prototype.join.call( a, '' );
 	});
@@ -83,25 +101,14 @@ renderer.render = function( ) {
 		var prefix = '../';
 		http.createServer(function (req, res) {
 
-/*
-		    if(req.url.indexOf('.html') != -1){ //req.url has the pathname, check if it conatins '.html'
 
-		      fs.readFile(__dirname + '/public/chatclient.html', function (err, data) {
-		        if (err) console.log(err);
-		        res.writeHead(200, {'Content-Type': 'text/html'});
-		        res.write(data);
-		        res.end();
-		      });
-
-		    }
-*/
 
 			if( req.url == "/_modules.css" ) {
 
 				res.writeHead(200, {'Content-Type': 'text/css'});
-		        res.write( css );
-		        res.end();
-		        return;
+				res.write( css );
+				res.end();
+				return;
 			}
 
 
@@ -165,6 +172,43 @@ renderer.addModule = function( moduleName, module ) {
 	return;
 }
 
+renderer.setModulesJSON = function( allModules ) {
+
+	for( var i in allModules ) {
+
+		if( allModules[ i ].wrapper && renderer.getWrapper( allModules[ i ].wrapper ) ) {
+
+			renderer.getWrapper( allModules[ i ].wrapper ).addModule( allModules[ i ].path, i );
+
+		} else {
+			console.warn("Module " + i + " has no valid wrapper \"" + allModules[ i ].wrapper + "\"");
+		}
+
+	}
+
+}
+
+renderer.setWrappersJSON = function( allWrappers ) {
+	for( var i in allWrappers ) {
+		renderer
+			.addWrapper()
+			.setName( i )
+			.setTop( allWrappers[ i ].top )
+			.setLeft( allWrappers[ i ].left )
+			.setWidth( allWrappers[ i ].width )
+	}
+}
+
+renderer.setInstrumentsToWrapper = function( instruments, wrapperName ) {
+
+	var wrapper = renderer.getWrapper( wrapperName || "control" );
+
+	for( var i in instruments ) {
+		var module = wrapper.addModule( instruments[ i ].moduleName, i, {}, instruments[ i ].moduleConstructor );
+		module.assignInstrument( instruments[ i ].instrument );
+	}
+}
+
 renderer.getModuleByName = function( moduleName ) {
 
 	if( ! modulesName[ moduleName ] ) {
@@ -179,7 +223,7 @@ renderer.getModules = function() {
 }
 
 renderer.assign = function( target, source, message ) {
-	this.getModuleByName( target ).assign( this.getModuleByName( source ), message );
+	renderer.getModuleByName( target ).assign( renderer.getModuleByName( source ), message );
 }
 
 renderer.lockModules = function( modules, message ) {
@@ -206,6 +250,12 @@ renderer.unlockModules = function( modules, message ) {
 	modules.map( function( module ) {
 		self.getModuleByName( module ).unlock( message );
 	})
+}
+
+renderer.addInstrumentsConnect = function( instruments ) {
+
+
+
 }
 
 renderer.getModule = renderer.getModuleByName;

@@ -1,3 +1,4 @@
+var fs = require('fs');
 
 var public = {}
 
@@ -9,5 +10,44 @@ public.uniqueId = function() {
 	});
 
 }
+
+public.importInstruments = function( config ) {
+
+	if( typeof config != "object" ) {
+		throw "Import instruments needs to load the config"
+	}
+
+	var toReturn = [];
+
+	Array.prototype.shift.call( arguments );
+
+	if( arguments.length == 0 ) {
+		arguments = [];
+		var files = fs.readdirSync(__dirname + "/../controllers/");
+		for( var i = 0; i < files.length; i ++ ) {
+
+			if( fs.lstatSync( __dirname + "/../controllers/" + files[ i ] ).isDirectory() && files[ i ].substr( 0, 1 ) != "_" ) {
+				arguments.push( files[ i ] );
+			}
+
+ 		}
+
+	}
+
+	for( var i = 0, l = arguments.length; i < l ; i ++ ) {
+
+		var instr = require('../controllers/' + arguments[ i ] + '/default/controller' );
+		var module = require('./modules/instruments/' + arguments[ i ] + '/connect/module' );
+
+		toReturn[ arguments[ i ] ] = {};
+
+		toReturn[ arguments[ i ] ].instrument = new instr( config.instruments[ arguments[ i ] ] );
+		toReturn[ arguments[ i ] ].moduleName = 'instruments/' + arguments[ i ] + '/connect';
+		toReturn[ arguments[ i ] ].moduleConstructor = module.Constructor;
+	}
+
+	return toReturn;
+}
+
 
 module.exports = public;

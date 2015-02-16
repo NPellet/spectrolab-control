@@ -25,14 +25,14 @@ define( [ 'client/js/module'], function( defaultModule ) {
 
 			var connect = this.connect;
 			connect.prop( 'value', 'Disconnect' );
-			connect.addClass('connected');
+			connect.addClass('green');
 		},
 
 		"disconnected": function( text ) {
 
 			var connect = this.connect;
 			connect.prop( 'value', 'Connect' );
-			connect.removeClass('connected');
+			connect.removeClass('green');
 		}
 	};
 

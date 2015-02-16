@@ -1,5 +1,5 @@
 
-var moduleProto = require('../../../module'),
+var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var KeithleyConnect = function() {
@@ -12,7 +12,7 @@ KeithleyConnect.prototype = new moduleProto();
 KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 
 
-	assignKeithley: function( keithley ) {
+	assignInstrument: function( keithley ) {
 
 		var module = this;
 
@@ -69,12 +69,19 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 	streamOn: {
 
 		'connect': function( ) {
-	
+
 			var module = this;
 			module.streamOut( "pending", true );
 			module.emit("connecting");
 			module.lock();
-			module.keithley.connect();
+			module.keithley.connect().catch( function( error ) {
+
+				console.error("Error while connecting to keithley. Error : ");
+				console.error( error );
+
+
+				module.emit("connectionerror");
+			});
 		},
 
 		'disconnected': function() {
@@ -83,7 +90,13 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 			module.lock();
 			module.emit("disconnecting");
 			module.streamOut( "pending", true );
-			module.keithley.disconnect();
+			module.keithley.disconnect().catch( function( error ) {
+
+				console.error("Error while disconnecting from keithley. Error : ");
+				console.error( error );
+
+				module.emit("connectionerror");
+			});
 		}
 	},
 

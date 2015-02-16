@@ -22,7 +22,7 @@ var Gould = function( params ) {
 Gould.prototype = new events.EventEmitter;
 
 Gould.prototype.connect = function( ) {
-	
+
 	var module = this;
 
 	return new Promise( function( resolver, rejecter ) {
@@ -49,18 +49,18 @@ Gould.prototype.connect = function( ) {
   				rtscts: true
 			});
 
-			module.serialPort = serialPort;	
+			module.serialPort = serialPort;
 
 		} catch ( error ) {
 			console.log( error );
 			throw "Error while connecting to the gould";
 
-			module.emit("connectionerror");		
+			module.emit("connectionerror");
 			rejecter();
 		}
-		
+
 		setEvents( module, resolver );
-		
+
 	} );
 };
 
@@ -80,7 +80,7 @@ Gould.prototype.close = function() {
 Gould.prototype.checkConnection = function() {
 
 	if( ! this.serialPort && this.connected ) {
-	
+
 		throw "Socket is not alive";
 	}
 }
@@ -188,7 +188,7 @@ Gould.prototype.setTriggerCoupling = function( trigger, coupling ) {
 Gould.prototype.setTimeBase = function( timeBase ) {
 
 	var availableTimeBases = [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4, 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
-	
+
 	if( availableTimeBases.indexOf( timeBase ) == -1 ) {
 		throw "Cannot set timebase \"" + timeBase + "\". Not in allowed list";
 		return;
@@ -205,7 +205,7 @@ Gould.prototype.setChannelPosition = function( channel, position ) {
 
 Gould.prototype.getTimeBase = function() {
 	return callSerial( this, ":ACQ:TBASE?").then( function( val ) {
-		
+
 		return parseFloat( val.split(" ").pop() );
 	});
 }
@@ -217,7 +217,7 @@ Gould.prototype.setAveraging = function( nb ) {
 }
 
 Gould.prototype.disableAveraging = function( ) {
-	return callSerial( this, ":ACQ:AVG:EN OFF" );	
+	return callSerial( this, ":ACQ:AVG:EN OFF" );
 }
 
 Gould.prototype.setCoupling = function( channel, coupling ) {
@@ -260,7 +260,7 @@ Gould.prototype.setCouplings = function( couplings ) {
 		command += ":" + channel + ":COUP " + coupling + ";"
 
 	} );
-	
+
 	return callSerial( this, command );
 }
 
@@ -338,7 +338,7 @@ Gould.prototype.sequence = function() {
 			} else {
 				promise = gould[ args[ i ] ]();
 			}
-	
+
 			promise.then( function( val ) {
 				results.push( val );
 				next();
@@ -373,12 +373,12 @@ Gould.prototype.serialSequence = function() {
 
 			i += 1;
 
-			promise = callSerial( gould, args[ i ] );	
+			promise = callSerial( gould, args[ i ] );
 			promise.then( function( val ) {
 
 				results.push( val );
 				next();
-			
+
 			}, function() {
 				throw "Failure to execute : \"" + args[ i ] + "\"";
 				rejecter();
@@ -397,23 +397,23 @@ Gould.prototype.reset = function() {
 	return new Promise( function( resolver, rejecter ) {
 
 		self.emit("busy");
-		self.serialSequence( 
+		self.serialSequence(
 			"*RST;*CLS;"//,
-			
-			
+
+
 			//"*IDN?"
 		);
 
 		setTimeout( function() {
 
-			self.serialSequence( 
+			self.serialSequence(
 				":RS423:HA RTS;"
 			);
 
 
 			setTimeout( function() {
 
-				self.serialSequence( 
+				self.serialSequence(
 					":BL ONE;",
 					":DISP:TR1M:STA 1;",
 					":DISP:TR2M:STA 1;",
@@ -453,8 +453,8 @@ function callSerial( gould, method ) {
 	}) );
 
 	gould.queue.push( queueElement );
-	
-	
+
+
  	checkQueue( gould );
 
  	return queueElement[ 3 ];
@@ -467,7 +467,7 @@ function checkQueue( gould ) {
 	}
 
 	if( gould.queue.length > 0 ) {
-		
+
 		gould.ready = new Promise( function( resolver ) {
 			gould.readyResolve = resolver;
 		});
@@ -489,7 +489,7 @@ function processQueue( gould ) {
 	var queueElement = gould.queue.shift();
 
 	return gould.connect().then( function( serialPort ) {
-		
+
 
 		serialPort.write( queueElement[ 0 ] + "\n", function( err, results ) {
 			if( err ) {
@@ -501,14 +501,14 @@ function processQueue( gould ) {
 			console.log('Serial port timeout. Closing connection');
 
 			gould.close().then( function() {
-			
+
 				console.log('Connection closed. Re-opening connection');
 				gould.connect().then( function() {
 					console.log('Connection reopened');
 					gould.queue.unshift( queueElement );
-					processQueue( gould );	
+					processQueue( gould );
 				});
-				
+
 			});
 
 		}, 10000 );
@@ -517,7 +517,7 @@ function processQueue( gould ) {
 
 			gould.currentCallResolver = queueElement[ 1 ];
 			gould.currentCallRejecter = queueElement[ 2 ];
-			
+
 
 		} else {
 
@@ -525,7 +525,7 @@ function processQueue( gould ) {
 			serialPort.drain( function() {
 
 				serialPort.flush( function() {
-					
+
 					if( timeout ) {
 						clearTimeout( timeout );
 						timeout = false;
@@ -533,7 +533,7 @@ function processQueue( gould ) {
 					queueElement[ 1 ]();
 					processQueue( gould );
 
-				});	
+				});
 			});
 
 
@@ -626,21 +626,21 @@ function setEvents( gould, resolver ) {
 		self.emit("disconnected");
 	});
 
-	serialPort.on('error', function() {
-
+	serialPort.on('error', function( error ) {
+console.log( error );
 		self.emit("error");
 	});
 
 
 	function endData( data ) {
-		
+
 		if( gould.currentCallResolver ) {
 
 			gould.currentCallResolver( gould.currentResponse );
 			serialPort.drain( function() {
 
 				serialPort.flush( function() {
-					
+
 
 					if( timeout ) {
 						clearTimeout( timeout );
@@ -648,13 +648,13 @@ function setEvents( gould, resolver ) {
 					}
 
 					processQueue( gould );
-				});	
+				});
 			});
 
 
 		}
 	}
-	
+
 	serialPort.on( 'data', function( data ) {
 		gould.currentResponse = gould.currentResponse + data.toString('ascii');
 		if( ! ( gould.currentResponse.indexOf("\r") == -1 ) ) {

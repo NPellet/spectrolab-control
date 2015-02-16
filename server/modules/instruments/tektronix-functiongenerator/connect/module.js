@@ -1,5 +1,5 @@
 
-var moduleProto = require('../../../module'),
+var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var AFGConnect = function() {
@@ -12,7 +12,7 @@ AFGConnect.prototype = new moduleProto();
 AFGConnect.prototype = extend( AFGConnect.prototype, {
 
 
-	assignAFG: function( afg ) {
+	assignInstrument: function( afg ) {
 
 		var module = this;
 

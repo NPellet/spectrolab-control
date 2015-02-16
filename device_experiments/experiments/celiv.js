@@ -1,6 +1,6 @@
 /**
  *	Photo-CELIV experiment file
- *	Experimental procedure	
+ *	Experimental procedure
  *	Device is illuminated at Voc for a indeterminate time (200us or so). Time of illumination is not important.
  *	At time t = 0, light is turned off. Device is connected at high impedance on the scope. Voc decay is monitored.
  *	At various times t = t1, t2, ... we switch the device to Jsc and apply a reverse bias linearly increasing pulse of voltage
@@ -32,7 +32,7 @@ experiment.prototype = {
 		this.arduino = parameters.arduino;
 		this.afg = parameters.afg;
 
-		this.parameters.lightLevels = this.parameters.lightLevels || [ 0 ];
+		this.parameters.lightLevels = 1;
 		this.parameters.pulseLengths = this.parameters.pulseLengths || [ 20e-9 ];
 
 
@@ -59,26 +59,27 @@ experiment.prototype = {
 		this.afg.setPulseLeadingTime( 1, 9e-9 );
 		this.afg.setPulseTrailingTime( 1, 9e-9 );
 
+		this.arduino.setWhiteLightLevel( this.parameters.lightLevel );
 
-		self.oscilloscope.enableAveraging();
-		self.oscilloscope.setAverage( this.parameters.averaging );
+		this.oscilloscope.enableAveraging();
+		this.oscilloscope.setAverage( this.parameters.averaging );
 
-		self.oscilloscope.disable50Ohms( 3 );
+		this.oscilloscope.disable50Ohms( 3 );
 
-		self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-		self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
+		this.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+		this.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
 
-		self.oscilloscope.setVoltScale( 3, 200e-3 ); // 200mV over channel 3
+		this.oscilloscope.setVoltScale( 3, 200e-3 ); // 200mV over channel 3
 
-		self.oscilloscope.setTriggerCoupling( "A", "AC" ); // Trigger coupling should be AC
-		self.oscilloscope.setCoupling( 3, "DC");
+		this.oscilloscope.setTriggerCoupling( "A", "AC" ); // Trigger coupling should be AC
+		this.oscilloscope.setCoupling( 3, "DC");
 
-		self.oscilloscope.setTriggerToChannel( "A", 1 ); // Set trigger on pulse channel
-		self.oscilloscope.setTriggerCoupling( "A", "DC" ); // Trigger coupling should be AC
-		self.oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
-		self.oscilloscope.setPreTrigger( "A", 10 ); // Set pre-trigger, 10%
+		this.oscilloscope.setTriggerToChannel( "A", 1 ); // Set trigger on pulse channel
+		this.oscilloscope.setTriggerCoupling( "A", "DC" ); // Trigger coupling should be AC
+		this.oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
+		this.oscilloscope.setPreTrigger( "A", 10 ); // Set pre-trigger, 10%
 
-		self.oscilloscope.setChannelPosition( 3, -2 );
+		this.oscilloscope.setChannelPosition( 3, -2 );
 
 
 		function *CELIVPulse() {
@@ -93,7 +94,7 @@ experiment.prototype = {
 
 			// Main driving time is the keithley
 			this.keithley.longPulse( {
-				
+
 				LEDPin: 4, // White LED
 				nbPulses: 64
 
@@ -121,7 +122,6 @@ experiment.prototype = {
 
 
 		return new Promise( function( resolver, rejecter ) {
-
 
 			// Turn the channel 1 on
 			self.afg.turnChannelOn( 1 );

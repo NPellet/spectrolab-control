@@ -106,6 +106,8 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 	renderCSS: function() {
 
 		var self = this;
+
+
 		var fPath = './server/modules/' + this.type + '/style.scss';
 //console.log( './server/modules/' + this.type + '/style.scss', fs.existsSync( fPath ) );
 		if( fs.existsSync( fPath )) {
@@ -114,12 +116,17 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 				sass.render({
 			    	data: ".module." + self.getClass() + " { " + fs.readFileSync( fPath ) + " } ",
-			    	success: res
+			    	success: res,
+						error: function( err ) {
+							console.log( arguments );
+							console.error("Error on line " + err.line + " in file " + err.file + ". Message: " + err.message );
+							res();
+						}
 				});
 			});
 		}
 
-		return "";
+		return " ";
 	},
 
 	getFolder: function() {
@@ -185,7 +192,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 	},
 
 	getClass: function() {
-		return this.type.replace("/", "-");
+		return this.type.replace(/\//g, "-");
 	}
 });
 

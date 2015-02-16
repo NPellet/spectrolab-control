@@ -12,7 +12,7 @@ AFGCommand.prototype = new moduleProto();
 AFGCommand.prototype = extend( AFGCommand.prototype, {
 
 
-	assignAFG: function( afg ) {
+	assignInstrument: function( afg ) {
 
 		var module = this;
 		this.afg = afg;
@@ -28,7 +28,7 @@ AFGCommand.prototype = extend( AFGCommand.prototype, {
 			this.status.response = "";
 
 			this.afg.command( query ).then( function( data ) {
-				
+
 				module.status.response = data;
 				module.streamOut("response", data );
 

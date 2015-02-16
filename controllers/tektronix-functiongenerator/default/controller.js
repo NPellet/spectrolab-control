@@ -31,9 +31,9 @@ var TektronixAFG = function( params ) {
 				var running = true;
 
 				var element = queue.shift();
-				console.log( element );
+
 				query( self.shellInstance, element.command ).then( function( data ) {
-					console.log( data );
+
 					element.promiseResolve( data );
 
 				}/*, function( error ) {
@@ -93,17 +93,15 @@ TektronixAFG.prototype.connect = function(  ) {
 			// At this point we are already connected. No asynchronous behaviour with python
 			module.connected = true;
 
-			setTimeout( function() {
+			module.shellInstance.once( 'message', function( data ) {
 
-				module.command( "*IDN?" ).then(function( response ) {
+					if( data == "IO:connected" ) {
+						resolver( module );
+						module.emit("connected");
+					}
 
-					console.log( response );
-				})
 
-				resolver( module );
-
-		} , 1000 );
-
+			});
 
 		} );
 
@@ -157,7 +155,7 @@ function query( shellInstance, query ) {
 								console.log('NThr');
 								listen( data );
 							} else {*/
-console.log('Received: ' + data );
+
 								//if( data.indexOf( query	 ) == 0 ) { // The response is exactly what has been requested
 									resolver( data );
 								//} else {

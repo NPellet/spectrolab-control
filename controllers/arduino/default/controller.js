@@ -75,7 +75,7 @@ Arduino.prototype.connect = function( ) {
 					console.log(port.manufacturer);
 				});
 			});
-x
+/*x
 return;
 
 			var serialPort = new SerialPort( module.params.host, {
@@ -87,7 +87,7 @@ return;
 			});
 
 			module.serialPort = serialPort;
-
+*/
 		} catch ( error ) {
 			console.log( error );
 			throw "Error while connecting to the Arduino";
@@ -251,10 +251,7 @@ function processQueue( Arduino ) {
 
 
 		serialPort.write( queueElement[ 0 ] + "\n", function( err, results ) {
-<<<<<<< HEAD
 
-=======
->>>>>>> FETCH_HEAD
 			if( err ) {
 				console.warn( err );
 			}
@@ -398,10 +395,7 @@ function setEvents( Arduino, resolver ) {
 	function endData( data ) {
 
 		if( Arduino.currentCallResolver ) {
-<<<<<<< HEAD
-=======
 
->>>>>>> FETCH_HEAD
 			Arduino.currentCallResolver( Arduino.currentResponse );
 			serialPort.drain( function() {
 
@@ -422,10 +416,7 @@ function setEvents( Arduino, resolver ) {
 	}
 
 	serialPort.on( 'data', function( data ) {
-<<<<<<< HEAD
-		
-=======
->>>>>>> FETCH_HEAD
+
 		Arduino.currentResponse = Arduino.currentResponse + data.toString('ascii');
 		if( ! ( Arduino.currentResponse.indexOf("\r") == -1 ) ) {
 			endData( Arduino.currentResponse );

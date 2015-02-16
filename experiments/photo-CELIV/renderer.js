@@ -1,85 +1,53 @@
 
+var extend = require("extend");
 var renderer = require("../../server/renderer");
 
+extend( renderer );
 
-var graphOptions = {
+renderer.setWrappersJSON( {
 
-  dblclick: {
-    type: 'plugin',
-    plugin: 'graph.plugin.zoom',
-    options: {
-      mode: 'total'
+    control: {
+      special: "connect",
+      title: "Experiment control",
+      width: 3,
+      top: 1,
+      left: 0
+    },
+
+    status: {
+      top: 0,
+      left: 0,
+      width: "*"
+    },
+
+    celiv: {
+      title: "Last acquired CELIV",
+      left: 3,
+      top: 1,
+      width: 10 // 500px
     }
+
+} );
+
+
+renderer.setModulesJSON( {
+
+  status: {
+    wrapper: 'status',
+    path: 'display/status',
   },
 
-  plugins: {
-    'graph.plugin.zoom': {
-      zoomMode: 'x'
-    }
+  start: {
+    wrapper: 'control',
+    path: 'display/button'
   },
 
-  pluginAction: {
-    'graph.plugin.zoom': {
-      shift: false,
-      ctrl: false
-    }
+  celiv: {
+    wrapper: 'celiv',
+    path: 'display/graph'
   }
-};
 
-var w = renderer
-  .addWrapper()
-  .setTitle("Status bar")
-  .setPosition( 0, 0 );
+} );
 
-w.addModule("display/status", "status");
-
-
-
-var w = renderer
-  .addWrapper()
-  .setTitle("Experiment control")
-  .setWidth( 3 )
-  .setPosition( 0, 1 );
-
-w.addModule("gould/connect", "gouldConnect").setTitle( "Gould Status" );
-w.addModule("keithley/connect", "keithleyConnect").setTitle( "Keithley Status" );
-w.addModule("arduino/connect", "arduinoConnect").setTitle( "Arduino Status" );
-
-w.addModule("display/button", "start").setText( "Start capacitance measurement" ).setTitle("Measurement");
-w.addModule("display/button", "focus").setText( "Focus on point: " );
-
-var w = renderer
-	.addWrapper()
-  .setWidth( 8 )
-	.setPosition( 3, 1 );
-
-w.addModule("display/graph", "vdecay", graphOptions).setTitle("Voltage Decay");
-w.addModule("display/graph", "jdecay", graphOptions).setTitle("Current Decay");
-
-
-var w = renderer
-	.addWrapper()
-  .setWidth( 8 )
-	.setPosition( 11, 1 );
-
-w.addModule("display/graph", "vocvstime", graphOptions )
-  .setTitle("Voc vs time")
-  .setHeight( 400 )
-  .setXAxisLabel("Time (s)");
-
-w.addModule("display/graph", "chargesvstime", graphOptions )
-  .setTitle("Charges vs time")
-  .setHeight( 400 )
-  .setXAxisLabel("Time (s)");
-
-w.addModule("display/graph", "C-V", graphOptions )
-  .setTitle("C-V plot")
-  .setHeight( 400 )
-  .setXAxisLabel("Voltage (V)");
-
-w.addModule("display/graph", "C-t", graphOptions )
-  .setTitle("Capacitance vs time")
-  .setHeight( 400 )
-  .setXAxisLabel("Time (s)");
 
 module.exports = renderer;

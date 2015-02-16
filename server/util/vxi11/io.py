@@ -95,12 +95,12 @@ def main():
     if len(args) > 1:
         name = args[1]
 
-        print("trying to connect");
-        sys.stdout.flush();
-
-
     v = vxi11.Instrument(host, name)
     v.open()
+    
+    print("IO:connected");
+    sys.stdout.flush();
+
 
     #print("Enter command to send. Quit with 'q'. Read with '?'.")
 
