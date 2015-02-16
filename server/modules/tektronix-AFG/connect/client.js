@@ -6,17 +6,17 @@ define( [ 'client/js/module'], function( defaultModule ) {
 	module.prototype = new defaultModule();
 
 	module.prototype.onDomReady = function() {
-			
+
 		var self = this;
 		this.button = this.getDom().find('.button');
-		
+
 		var connect = $( "#connect-" + this.getId() );
-	
+
 		this.connect = connect;
-		
+
 		connect.on( 'click', function() {
 			self.out( "connect" );
-		} ); 
+		} );
 	}
 
 	module.prototype.in = {
@@ -37,9 +37,9 @@ define( [ 'client/js/module'], function( defaultModule ) {
 	};
 
 	module.prototype.setStatus = function( status ) {
-		
+
 		var connect = this.connect;
-		
+
 		if( status.connected ) {
 			connect.prop( 'value', 'Disconnect' );
 			connect.addClass('connected');
@@ -52,5 +52,3 @@ define( [ 'client/js/module'], function( defaultModule ) {
 	return module;
 
 } );
-
-

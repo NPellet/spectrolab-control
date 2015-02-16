@@ -13,17 +13,7 @@ var TektronixAFG = require('../../../controllers/tektronix-functiongenerator/AFG
 var afg = new TektronixAFG( config.instruments.functionGenerator );
 
 renderer.getModule('AFG Connect').assignAFG( afg );
+renderer.getModule('AFG Command').assignAFG( afg );
 
 
-afg.connect().then( function( afg ) {
-console.log('commands');
-	afg.commands([
-		'OUTPUT1:IMPEDANCE 50',
-		'OUTPUT2:IMPEDANCE 50',
-		'SOURce1:AM:DEPth MAXimum',
-		'OUTPUT1:STATE ON'
-	]);
-
-
-})
 renderer.render();
