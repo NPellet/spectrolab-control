@@ -17,10 +17,10 @@ var Waveform = require('../../server/waveform');
 
 var experiment = function() { };
 
-experiment.prototype = {
+experiment = {
 
 	init: function( parameters ) {
-
+		return;
 		if( ! parameters.oscilloscope || ! parameters.keithley || ! parameters.arduino || ! parameters.afg ) {
 			throw "An oscilloscope and a keithley SMU and an Arduino with analog output are required";
 		}
@@ -35,7 +35,47 @@ experiment.prototype = {
 		this.parameters.lightLevels = 1;
 		this.parameters.pulseLengths = this.parameters.pulseLengths || [ 20e-9 ];
 
+		this.paused = false;
 
+
+		function *CELIVPulse() {
+
+
+			this.afg.setPulseLeadingTime( 2, pulseLength );
+			this.afg.setPulseWidth( 1, pulseLength );
+
+			this.afg.setPulseDelay( 2, pulseDelay );
+			this.afg.setPulseDelay( 1, pulseDelay );
+
+
+			// Main driving time is the keithley
+			this.keithley.longPulse( {
+
+				LEDPin: 4, // White LED
+				nbPulses: 64
+
+			} ).then( function() {
+
+				self.oscilloscope.getWaves().then( function( waves ) {
+
+					experimentResults.push( {
+
+						pulseDelay: pulseDelay,
+						pulseLength: pulseLength,
+
+						vocDecay: waves[ "3" ],
+						celiv: waves[ "2" ]
+					} );
+
+					if( ! self.paused ) {
+						self.iterator.next();	
+					}
+					
+				} );
+			} );
+		}
+
+		self.iterator = CELIVPulse();
 	},
 
 	run: function() {
@@ -81,45 +121,7 @@ experiment.prototype = {
 
 		this.oscilloscope.setChannelPosition( 3, -2 );
 
-
-		function *CELIVPulse() {
-
-
-			this.afg.setPulseLeadingTime( 2, pulseLength );
-			this.afg.setPulseWidth( 1, pulseLength );
-
-			this.afg.setPulseDelay( 2, pulseDelay );
-			this.afg.setPulseDelay( 1, pulseDelay );
-
-
-			// Main driving time is the keithley
-			this.keithley.longPulse( {
-
-				LEDPin: 4, // White LED
-				nbPulses: 64
-
-			} ).then( function() {
-
-				self.oscilloscope.getWaves().then( function( waves ) {
-
-					experimentResults.push( {
-
-						pulseDelay: pulseDelay,
-						pulseLength: pulseLength,
-
-						vocDecay: waves[ "3" ],
-						celiv: waves[ "2" ]
-					} );
-
-					celiv.next();
-				} );
-			} );
-		}
-
-		// Start the iterator
-		var celiv = CELIVPulse();
-		celiv.next();
-
+		self.iterator.next();
 
 		return new Promise( function( resolver, rejecter ) {
 

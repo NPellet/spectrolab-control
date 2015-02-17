@@ -1,21 +1,17 @@
 
 var Waveform = require('../../server/waveform');
 
-var experiment = function() { };
 
-experiment.prototype = {
+var experiment = {
 
 	init: function( parameters ) {
 
-		if( ! parameters.oscilloscope || ! parameters.keithley || ! parameters.arduino ) {
-			throw "An oscilloscope and a keithley SMU and an Arduino with analog output are required";
-		}
 
 		this.parameters = parameters;
 
-		this.oscilloscope = parameters.oscilloscope;
-		this.keithley = parameters.keithley;
-		this.arduino = parameters.arduino;
+		this.oscilloscope = parameters.instruments["gould-oscilloscope"];
+		this.keithley = parameters.instruments["keithley-smu"];
+		this.arduino = parameters.instrumentsarduino;
 
 		this.parameters.ledPin = 4;
 		this.parameters.switchPin = 5;
@@ -26,9 +22,6 @@ experiment.prototype = {
 		this.parameters.lightIntensities = [ 3, 5, 0, 8 ];
 	},
 
-	setLEDPin: function() {
-
-	},
 
 	focusOn: function( id ) {
 		this.focus = id;
@@ -170,7 +163,10 @@ experiment.prototype = {
 								timeBase = timeBases[ n ];
 								self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
 									recordedWaves.push( w );
-									p.next();
+
+									if( ! self.paused ) {
+										p.next();
+									}
 								});
 
 								yield;
@@ -240,9 +236,8 @@ experiment.prototype = {
 								waveVoltage[ i ].push( allWaves[ "3" ] );
 								waveSwitch[ i ].push( allWaves[ "4" ] );
 	*/
-								if( self.parameters.progress ) {
-									self.parameters.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance, waveCharges2, waveCapacitance2 );
-								}
+								
+								self.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance, waveCharges2, waveCapacitance2 );
 							}
 
 							// Safeguard
@@ -259,8 +254,9 @@ experiment.prototype = {
 				}
 
 				var p = pulse( timeDelays.length, 8 );
-				p.next( );
 
+				p.next( );
+				self.iterator = p;
 
 
 			}); // End oscilloscope ready
@@ -305,5 +301,6 @@ experiment.prototype = {
 
 	}
 }
+
 
 module.exports = experiment;

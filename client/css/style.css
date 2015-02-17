@@ -3,7 +3,84 @@ body {
 	font-family: "Helvetica Neue", Helvetica, Arial;
 	font-size: 12px;
 	position: relative;
+	padding: 0px;
+	margin: 0px;
 }
+
+#header {
+	height: 40px;
+	font-size: 20px;
+	background-color: #f0f0f0;
+	color: #505050;
+	line-height: 40px;
+	width: 100%;
+	font-weight: normal;
+	padding-left: 10px;
+	padding-right: 10px;
+	box-sizing: border-box;
+	border-bottom: 1px solid #505050;
+	box-shadow: 0px 0px 3px rgba(100, 100, 100, 0.6 );
+}
+
+#header #experiment .experiment-name {
+	font-weight: bold;
+	color: #751c13;
+}
+
+#header #experiment {
+	margin-left: 20px;	
+}
+
+#header #device-name {
+	padding-right: 40px;
+}
+
+#header .left {
+	float: left;
+}
+
+#header .right {
+	float: right;
+}
+
+#header #device-name input {
+	background-color: transparent;
+	border: 0px solid;
+	border-bottom: 1px solid #c0c0c0;
+	padding: 0px;
+	margin: 0px;
+	font-size: 20px;
+	outline: none;
+}
+
+#header #experiment-run input {
+
+	border-radius: 2px;
+	height: 30px;
+	border: 1px solid;	
+	font-size: 20px;
+	cursor: pointer;
+}
+
+.input-green {
+	background-color: #cdf0b9;
+	border-color: #066537;
+	color: #066537;
+}
+
+
+.input-red {
+	background-color: #f0b9b9;
+	border-color: #650d0d;
+	color: #650d0d;
+}
+
+
+#header div {
+	display: table-cell;
+
+}
+
 
 .wrapper {
 	position: absolute;

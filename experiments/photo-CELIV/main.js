@@ -1,64 +1,24 @@
 
+var experiment = require('app/experiment');
 
-var renderer = require( "./renderer" );
-var stream = require( "../../server/stream" );
+experiment.renderer = require('./renderer');
+experiment.config = require('./config');
 
-var Util = require("../../server/util");
+experiment.renderer.experiment = experiment;
+experiment.loadInstruments();
 
-var config = require( "../../server/config" );
-var Device = require( "../../device_experiments/device" );
-var ITXBuilder = require("../../server/databuilder/itx").ITXBuilder,
-	fileSaver = require("../../server/filesaver");
+var celiv = experiment.getDeviceProcedure('celiv');
 
 var Waveform = require('../../server/waveform');
 
-
-var instruments = Util.importInstruments( config );
-renderer.setInstrumentsToWrapper( instruments );
-
-
-var experiment;
-
-var status = renderer.getModule("status");
-
-
-function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
+experiment.onStart = function() {
 
 
 }
 
-
-renderer.getModule("start").on('clicked', function() {
-
-	experiment = Device.method( "photo-CELIV", {
-
-		instruments: instruments,
-
-		progress: function(  ) {
+experiment.onPause = function() {
 
 
-			reprocess( charges, voc, capacitances, allDelays, chargesFastest, capacitanceFastest );
+}
 
-			status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
-
-		}
-
-
-	} );
-	experiment.run();
-/*
-	g.getWaves().then( function( waves ) {
-
-
-	} );*/
-} ).lock( "gould" ).lock( "keithley" );
-
-
-
-
-
-
-
-
-
-renderer.render();
+experiment.renderer.render();

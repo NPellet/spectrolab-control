@@ -1,8 +1,5 @@
 
-var extend = require("extend");
-var renderer = require("../../server/renderer");
-
-extend( renderer );
+var renderer = require("app/renderer");
 
 renderer.setWrappersJSON( {
 
@@ -35,11 +32,6 @@ renderer.setModulesJSON( {
   status: {
     wrapper: 'status',
     path: 'display/status',
-  },
-
-  start: {
-    wrapper: 'control',
-    path: 'display/button'
   },
 
   celiv: {

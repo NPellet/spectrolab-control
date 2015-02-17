@@ -19,6 +19,34 @@
 
 <body>
 
+<div id="header">
+
+	<div id="experiment" class="left">
+		<span>Experiment:</span>
+		<span class="experiment-name">
+			{{ experimentConfig.name }}
+		</span>
+	</div>
+		
+	<div class="right">
+		<div id="device-name">
+			<span class="label">
+				Device name :
+			</span>
+			<span class="name">
+				<input type="text" class="device-name" />
+			</span>
+		</div>
+
+		<div id="experiment-run">
+			<span class="go">
+				<input type="submit" value="Run Experiment" class="input-green" />
+			</span>
+		</div>
+	</div>
+</div>
+
+
 {% for wrapper in wrappers %}
 	{{ wrapper }}
 {% endfor %}

@@ -5,6 +5,17 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 	var ws;
 	var ipAddress;
 
+	var globalCallbacks = {};
+
+	function handleGlobal( data ) {
+
+		if( globalCallbacks[ data.instruction ] ) {
+			globalCallbacks[ data.instruction ].map( function( c ) {
+				c( data.value );
+			})
+		}
+	}
+
 	function setEvents( ws ) {
 		// Stream is ready
 		ws.onopen = function( event ) {
@@ -38,7 +49,7 @@ define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
 
 				var module = moduleFactory.getModule( data.moduleid );
 				var dom = $( "#module-" + data.moduleid );
-console.log( module, data.moduleid );
+
 				if( data.instruction == "lock" ) {
 
 					module._lock();
@@ -55,6 +66,9 @@ console.log( module, data.moduleid );
 
 					module._receive( data.instruction, data.value );
 				}
+			} else {
+
+				handleGlobal( data );
 			}
 		}
 	}
@@ -83,9 +97,9 @@ console.log( module, data.moduleid );
 			sendJSON( { moduleid: moduleId, instruction: instruction, value: value } );
 		},
 
-		writeGlobal: function( message ) {
+		writeGlobal: function( message, value ) {
 
-			sendJSON( { global: true, message: message } );
+			sendJSON( { global: true, instruction: message, value: value } );
 		},
 
 		connect: function() {
@@ -95,7 +109,14 @@ console.log( module, data.moduleid );
 		},
 
 		setIp: function( ip ) {
+
 			ipAddress = ip;
+		},
+
+		onGlobal: function( instruction, callback ) {
+
+			globalCallbacks[ instruction ] = globalCallbacks[ instruction ]  || [];
+			globalCallbacks[ instruction ].push( callback );
 		}
 	};
 

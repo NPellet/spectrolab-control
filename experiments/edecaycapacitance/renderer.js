@@ -1,83 +1,97 @@
 
-var renderer = require("../../server/renderer");
+var renderer = require("app/renderer");
 
 
-var graphOptions = {
 
-  dblclick: {
-    type: 'plugin',
-    plugin: 'graph.plugin.zoom',
-    options: {
-      mode: 'total'
+renderer.setWrappersJSON( {
+
+    control: {
+      special: "connect",
+      title: "Experiment control",
+      width: 3,
+      top: 1,
+      left: 0
+    },
+
+    status: {
+      top: 0,
+      left: 0,
+      width: "*"
+    },
+
+    lastPulse: {
+      title: "Last pulse",
+      left: 3,
+      top: 1,
+      width: 10 // 500px
+    },
+
+    summary: {
+      title: "Summary",
+      left: 13,
+      top: 1,
+      width: 10 // 500px
     }
+
+} );
+
+
+renderer.setModulesJSON( {
+
+  status: {
+    wrapper: 'status',
+    path: 'display/status',
   },
 
-  plugins: {
-    'graph.plugin.zoom': {
-      zoomMode: 'x'
-    }
+  lastVDecay: {
+    wrapper: 'lastPulse',
+    path: 'display/graph'
   },
 
-  pluginAction: {
-    'graph.plugin.zoom': {
-      shift: false,
-      ctrl: false
-    }
+  lastJDecay: {
+    wrapper: 'lastPulse',
+    path: 'display/graph'
+  },
+
+
+  vocvstime: {
+    wrapper: 'summary',
+    path: 'display/graph'
+  },
+
+  chargesvstime: {
+    wrapper: 'summary',
+    path: 'display/graph'
+  },
+
+  "C-V": {
+    wrapper: 'summary',
+    path: 'display/graph'
+  },
+
+  "C-t": {
+    wrapper: 'summary',
+    path: 'display/graph'
   }
-};
 
-var w = renderer
-  .addWrapper()
-  .setTitle("Status bar")
-  .setPosition( 0, 0 );
+} );
 
-w.addModule("display/status", "status");
-
-
-
-var w = renderer
-  .addWrapper()
-  .setTitle("Experiment control")
-  .setWidth( 3 )
-  .setPosition( 0, 1 );
-
-w.addModule("gould/connect", "gouldConnect").setTitle( "Gould Status" );
-w.addModule("keithley/connect", "keithleyConnect").setTitle( "Keithley Status" );
-w.addModule("arduino/connect", "arduinoConnect").setTitle( "Arduino Status" );
-
-w.addModule("display/button", "start").setText( "Start capacitance measurement" ).setTitle("Measurement");
-w.addModule("display/button", "focus").setText( "Focus on point: " );
-
-var w = renderer
-	.addWrapper()
-  .setWidth( 8 )
-	.setPosition( 3, 1 );
-
-w.addModule("display/graph", "vdecay", graphOptions).setTitle("Voltage Decay");
-w.addModule("display/graph", "jdecay", graphOptions).setTitle("Current Decay");
-
-
-var w = renderer
-	.addWrapper()
-  .setWidth( 8 )
-	.setPosition( 11, 1 );
-
-w.addModule("display/graph", "vocvstime", graphOptions )
+renderer.getModule("vocvstime")
   .setTitle("Voc vs time")
   .setHeight( 400 )
   .setXAxisLabel("Time (s)");
 
-w.addModule("display/graph", "chargesvstime", graphOptions )
+renderer.getModule("chargesvstime")
   .setTitle("Charges vs time")
   .setHeight( 400 )
   .setXAxisLabel("Time (s)");
 
-w.addModule("display/graph", "C-V", graphOptions )
+renderer.getModule("C-V")
   .setTitle("C-V plot")
   .setHeight( 400 )
   .setXAxisLabel("Voltage (V)");
 
-w.addModule("display/graph", "C-t", graphOptions )
+renderer.getModule("C-t")
   .setTitle("Capacitance vs time")
   .setHeight( 400 )
   .setXAxisLabel("Time (s)");

@@ -6,6 +6,7 @@ var WebSocketServer = require('ws').Server;
 var modulesEventEmittter = new EventEmitter();
 var allModules = [];
 var connections = [];
+var globalCallbacks = {};
 
 var wss = new WebSocketServer( { port: 8080 } ); // Default port
 
@@ -70,6 +71,16 @@ function prepareOutput( module, instruction, value ) {
 	} );
 }
 
+function handleGlobal( json ) {
+
+
+	if( globalCallbacks[ json.instruction ] ) {
+		globalCallbacks[ json.instruction ].map( function( c ) {
+			console.log( json.value );
+			c( json.value );
+		})
+	}
+}
 
 module.exports = {
 
@@ -90,6 +101,22 @@ module.exports = {
 
 	setModules: function( modules ) {
 		allModules = modules;
+	},
+
+	onGlobalMessage: function( instruction, callback ) {
+		globalCallbacks[ instruction ] = globalCallbacks[ instruction ] || [];
+		globalCallbacks[ instruction ].push( callback );
+	},
+
+	globalOut: function( instruction, value ) {
+
+		var output = JSON.stringify( { instruction: instruction, value: value } );
+
+		connections.map( function( connection ) {
+
+			connection.send( output );
+		} );
+
 	}
 
 };

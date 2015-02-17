@@ -1,72 +1,36 @@
 
 
-var renderer = require( "./renderer" );
-var stream = require( "../../server/stream" );
-var Gould = require( "../../controllers/gould-oscilloscope/200/controller" );
-var Keithley = require( "../../controllers/keithley-smu/default/controller" );
-var Arduino = require( "../../controllers/arduino/default/controller" );
+var experiment = require('app/experiment');
 
+experiment.renderer = require('./renderer');
+experiment.config = require('./config');
 
-var config = require( "../../server/config" );
-var Device = require( "../../device_experiments/device" );
-var ITXBuilder = require("../../server/databuilder/itx").ITXBuilder,
-	fileSaver = require("../../server/filesaver");
+experiment.renderer.experiment = experiment;
+experiment.loadInstruments();
+
+var proc = experiment.getDeviceProcedure('eDecayCapacitance');
 
 var Waveform = require('../../server/waveform');
 
-var g = new Gould( config.instruments.gouldOscilloscope );
-var k = new Keithley( config.instruments.keithley );
-var a = new Arduino( config.instruments.arduino );
+experiment.onStart = function() {
 
 
-var experiment;
+}
 
-renderer
-	.getModule("gouldConnect")
-	.assignGould( g );
+experiment.onPause = function() {
 
-renderer
-	.getModule("keithleyConnect")
-	.assignKeithley( k );
+}
 
+proc.on("progress", function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
 
-renderer
-	.getModule('arduinoConnect')
-	.assignArduino( a );
-
-var status = renderer.getModule("status");
-
-var moduleLocking = [ "start", "gouldConnect", "keithleyConnect" ]
-var moduleGraphs = [ "chargesvstime", "vocvstime", "C-V", "C-t"];
-
-g.on("busy", function() {
-	renderer.lockModules( moduleLocking, 'gouldBusy' );
-}).on("idle", function() {
-	renderer.unlockModules( moduleLocking, 'gouldBusy' );
-});
-
-k.on("busy", function() {
-	renderer.lockModules( moduleLocking, 'keithleyBusy' );
-}).on("idle", function() {
-	renderer.unlockModules( moduleLocking, 'keithleyBusy' );
-});
-
-k.on("disconnected", function() {
-	renderer.getModule("start").lock("keithley");
-}).on("connected", function() {
-	renderer.getModule("start").unlock("keithley");
-});
-
-g.on("disconnected", function() {
-	renderer.getModule("start").lock("gould");
-}).on("connected", function() {
-	renderer.getModule("start").unlock("gould");
+	reprocess( charges, voc, capacitances, allDelays, chargesFastest, capacitanceFastest );
+//	status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 });
 
 
-var vdecay = renderer.getModule("vdecay");
-var jdecay = renderer.getModule("jdecay");
+experiment.renderer.render();
 
+/*
 var focusId = false;
 
 moduleGraphs.map( function( g ) {
@@ -86,7 +50,7 @@ renderer.getModule("focus").on("clicked", function() {
 		renderer.getModule("focus").setText("Stop focus" );
 	}
 
-});
+});*/
 
 function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
 
@@ -94,16 +58,16 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 	var colors = ['#a61111', '#2d2d94', '#479116', '#722f8b', '#a36228'];
 	var colors2 = ['#cf6565', '#6565cf', '#a2c48b', '#b58bc4', '#ce9f75'];
 
-	renderer.getModule("vocvstime").clear();
-	renderer.getModule("C-t").clear();
-	renderer.getModule("C-V").clear();
-	renderer.getModule("C-t").setXLogScale( true );
-	renderer.getModule("vocvstime").setXLogScale( true );
+	experiment.renderer.getModule("vocvstime").clear();
+	experiment.renderer.getModule("C-t").clear();
+	experiment.renderer.getModule("C-V").clear();
+	experiment.renderer.getModule("C-t").setXLogScale( true );
+	experiment.renderer.getModule("vocvstime").setXLogScale( true );
 
-	renderer.getModule("chargesvstime").clear();
-	renderer.getModule("chargesvstime").setXLogScale( true );
+	experiment.renderer.getModule("chargesvstime").clear();
+	experiment.renderer.getModule("chargesvstime").setXLogScale( true );
 
-	var itx = new ITXBuilder();
+	var itx = new experiment.getITXBuilder();
 
 	for( var l = 0; l < vocsGlobal.length; l += 1 ) {
 
@@ -171,9 +135,9 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 		});
 
 
-		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
-		renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
-		renderer.getModule("chargesvstime").autoscale();
+		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
+		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
+		experiment.renderer.getModule("chargesvstime").autoscale();
 
 
 		var dataVoc = [], dataVocSDev = [];
@@ -222,22 +186,19 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 		});
 
 
+		experiment.renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, style );
+		experiment.renderer.getModule("vocvstime").autoscale();
+
+
+		experiment.renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { }, dataCapaSDev, style );
+		experiment.renderer.getModule("C-t").newScatterSerie("CT_" + l + "_F", dataCapaF, { }, dataCapaSDevF, style2 );
+		experiment.renderer.getModule("C-t").autoscale();
 
 
 
-		renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, style );
-		renderer.getModule("vocvstime").autoscale();
-
-
-		renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { }, dataCapaSDev, style );
-		renderer.getModule("C-t").newScatterSerie("CT_" + l + "_F", dataCapaF, { }, dataCapaSDevF, style2 );
-		renderer.getModule("C-t").autoscale();
-
-
-
-		renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
-		renderer.getModule("C-V").newScatterSerie("CV_" + l + "_F", dataCVF, { }, dataCVSdevF, style2 );
-		renderer.getModule("C-V").autoscale();
+		experiment.renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
+		experiment.renderer.getModule("C-V").newScatterSerie("CV_" + l + "_F", dataCVF, { }, dataCVSdevF, style2 );
+		experiment.renderer.getModule("C-V").autoscale();
 
 
 		var itxw = itx.newWave( "voc_" + l );
@@ -279,80 +240,10 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 	itxw.setWaveform( wTimeDelays );
 
 
-	var fileName = fileSaver.save( {
+	var fileName = experiment.getFileSaver().save( {
 		contents: itx.getFile(),
 		forceFileName: "capa.itx",
 		fileExtension: 'itx',
 		dir: './capacitance/'
 	} );
-
 }
-
-
-renderer.getModule("start").on('clicked', function() {
-
-	experiment = Device.method( "eDecayCapacitance", {
-
-		oscilloscope: g,
-		keithley: k,
-		arduino: a,
-
-		progress: function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
-
-/*
-			vdecay.clear();
-			vdecay.newSerie("vdecay", waves[ 3 ], { lineColor: 'red'})
-			vdecay.autoscale();
-
-			jdecay.clear();
-			jdecay.newSerie("jdecay", waves[ 2 ], { lineColor: 'blue' } );
-			jdecay.autoscale();
-*/
-			reprocess( charges, voc, capacitances, allDelays, chargesFastest, capacitanceFastest );
-
-			status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
-/*
-
-
-			var itx = new ITXBuilder();
-			var itxw = itx.newWave( "CHAN1" );
-			itxw.setWaveform( waves[ 1 ] );
-
-			var itxw = itx.newWave( "CHAN2" );
-			itxw.setWaveform( waves[ 2 ] );
-
-			var itxw = itx.newWave( "CHAN3" );
-			itxw.setWaveform( waves[ 3 ] );
-
-			var itxw = itx.newWave( "CHAN4" );
-			itxw.setWaveform( waves[ 4 ] );
-
-			var fileName = fileSaver.save( {
-				contents: itx.getFile(),
-				fileName: "decay-" + delay + "-" + iterator,
-				fileExtension: 'itx',
-				dir: './capacitance/'
-			} );
-
-	*/
-		}
-
-
-	} );
-	experiment.run();
-/*
-	g.getWaves().then( function( waves ) {
-
-
-	} );*/
-} ).lock( "gould" ).lock( "keithley" );
-
-
-
-
-
-
-
-
-
-renderer.render();
