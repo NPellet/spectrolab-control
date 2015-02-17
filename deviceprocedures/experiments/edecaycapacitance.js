@@ -7,30 +7,30 @@ var experiment = {
 	init: function( parameters ) {
 
 
-		this.parameters = parameters;
+		experiment.parameters = parameters;
 
-		this.oscilloscope = parameters.instruments["gould-oscilloscope"];
-		this.keithley = parameters.instruments["keithley-smu"];
-		this.arduino = parameters.instrumentsarduino;
+		experiment.oscilloscope = parameters.instruments["gould-oscilloscope"].instrument;
+		experiment.keithley = parameters.instruments["keithley-smu"].instrument;
+		experiment.arduino = parameters.instruments.arduino.instrument;
 
-		this.parameters.ledPin = 4;
-		this.parameters.switchPin = 5;
-		this.parameters.pulseTime = 2;
-		this.parameters.delay = 2;
-		this.focus = false;
+		experiment.parameters.ledPin = 4;
+		experiment.parameters.switchPin = 5;
+		experiment.parameters.pulseTime = 2;
+		experiment.parameters.delay = 2;
+		experiment.focus = false;
 
-		this.parameters.lightIntensities = [ 3, 5, 0, 8 ];
+		experiment.parameters.lightIntensities = [ 3, 5, 0, 8 ];
 	},
 
 
 	focusOn: function( id ) {
-		this.focus = id;
+		experiment.focus = id;
 	},
 
 
 	run: function() {
-
-		var self = this;
+		console.log("Running1");
+		var self = experiment;
 		return new Promise( function( resolver, rejecter ) {
 
 			var wavePulse = [];
@@ -38,7 +38,7 @@ var experiment = {
 			var waveCurrent = [];
 			var waveSwitch = [];
 
-			
+
 			var waveVoc = [];
 			var waveCapacitance = [];
 			var waveCharges = [];
@@ -47,8 +47,8 @@ var experiment = {
 
 			var recordedWaves = [];
 
-			var timeBases = [ 20e-6, 200e-6 ];
-			var yScales = [ 10e-3, 2e-3 ];
+			var timeBases = [ 500000e-6 ];
+			var yScales = [ 20e-3];
 
 			var timeBase;
 
@@ -62,6 +62,8 @@ var experiment = {
 				timeDelays.push( a * Math.pow( 10, b * i ) );
 			}
 
+
+timeDelays = [10e-6];
 
 			// Oscilloscope functions
 
@@ -91,8 +93,8 @@ var experiment = {
 			self.oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
 			self.oscilloscope.setPreTrigger( "A", preTrigger ); // Set pre-trigger, 10%
 
-			self.oscilloscope.setChannelPosition( 2, 2.5 );
-			self.oscilloscope.setChannelPosition( 3, -2 );
+			self.oscilloscope.setChannelPosition( 2, -2.5 );
+			self.oscilloscope.setChannelPosition( 3, 2 );
 
 			self.keithley.command("reset()"); // Reset keithley
 			self.keithley.command("*CLS"); // Reset keithley
@@ -101,7 +103,7 @@ var experiment = {
 
 			self.oscilloscope.setTriggerLevel( "A", 0.7 ); // Set trigger to 0.7V
 
-
+console.log("Running");
 			self.oscilloscope.ready.then( function() {
 
 				function *pulse( totalDelays, totalPulseNb ) {
@@ -113,17 +115,17 @@ var experiment = {
 				//		var l = Math.floor( Math.random() * ( self.parameters.lightIntensities.length ) );
 
 						var j = 0;
-					
+
 						self.arduino.setWhiteLightLevel( self.parameters.lightIntensities[ l ] );
 
 						waveVoc[ l ] = [];
 
 						waveCapacitance[ l ] = [];
-						waveCharges[ l ] = [];	
+						waveCharges[ l ] = [];
 
 						waveCapacitance2[ l ] = [];
-						waveCharges2[ l ] = [];	
-						
+						waveCharges2[ l ] = [];
+
 						while( true ) {
 
 							if( self.focus === false ) {
@@ -159,8 +161,12 @@ var experiment = {
 
 							recordedWaves = [];
 
+							console.log('Pulsing', timeBases);
+
 							for( var n = 0; n < timeBases.length; n += 1 ) {
 								timeBase = timeBases[ n ];
+
+
 								self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
 									recordedWaves.push( w );
 
@@ -236,7 +242,7 @@ var experiment = {
 								waveVoltage[ i ].push( allWaves[ "3" ] );
 								waveSwitch[ i ].push( allWaves[ "4" ] );
 	*/
-								
+		console.log('PROG');
 								self.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance, waveCharges2, waveCapacitance2 );
 							}
 
@@ -254,7 +260,6 @@ var experiment = {
 				}
 
 				var p = pulse( timeDelays.length, 8 );
-
 				p.next( );
 				self.iterator = p;
 
@@ -267,7 +272,7 @@ var experiment = {
 
 	pulse: function( timeBase, yScale, delaySwitch ) {
 
-		var self = this;
+		var self = experiment;
 		self.oscilloscope.setTimeBase( timeBase );
 		self.oscilloscope.setVoltScale( 2, yScale ); // 2mV over channel 2
 
@@ -286,11 +291,12 @@ var experiment = {
 
 				// Zeroing voltage wave
 				var voltageWave = allWaves[ "3" ];
+				voltageWave.multiply( - 1 );
 				voltageWave.subtract( voltageWave.average( 400, 499 ) );
 
 				// Zeroing current wave
 				var currentWave = allWaves[ "2" ];
-				currentWave.multiply( -1 );
+				currentWave.multiply( 1 );
 				currentWave.divide( 50 );
 				currentWave.subtract( currentWave.average( 0, 40 ) );
 

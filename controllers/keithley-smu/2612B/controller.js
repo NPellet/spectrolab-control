@@ -325,11 +325,11 @@ Keithley.prototype.connect = function( callback ) {
 			return;
 		}
 
-		console.log('Connecting to Keithley');
+
 
 		try {
 			// Connect by raw TCP sockets
-			console.log( module.params );
+		
 			var self = module,
 
 

@@ -53,7 +53,7 @@ renderer.getModule("focus").on("clicked", function() {
 });*/
 
 function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
-
+return;
 	var i = 0;
 	var colors = ['#a61111', '#2d2d94', '#479116', '#722f8b', '#a36228'];
 	var colors2 = ['#cf6565', '#6565cf', '#a2c48b', '#b58bc4', '#ce9f75'];
