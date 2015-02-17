@@ -32,19 +32,22 @@ var TektronixAFG = function( params ) {
 
 				var element = queue.shift();
 
-				query( self.shellInstance, element.command ).then( function( data ) {
+				self.connect().then( function() {
 
-					element.promiseResolve( data );
+						query( self, element.command ).then( function( data ) {
 
-				}/*, function( error ) {
-					console.log('sdf');
-					element.promiseReject();
+						element.promiseResolve( data );
 
-				} */).finally( function() {
+					}/*, function( error ) {
+						console.log('sdf');
+						element.promiseReject();
 
-					running = false;
-					self.commandRunner.next();
+					} */).finally( function() {
 
+						running = false;
+						self.commandRunner.next();
+
+					});
 				});
 
 				yield;
@@ -72,7 +75,8 @@ TektronixAFG.prototype.connect = function(  ) {
 
 			// Avoid multiple connection
 			if( module.connected ) {
-				callback();
+
+				resolver();
 				return;
 			}
 
@@ -103,11 +107,20 @@ TektronixAFG.prototype.connect = function(  ) {
 
 			});
 
+
+			module.shellInstance.on( 'message', function( data ) {
+				console.log("Receiving from AFG: " + data );
+
+			});
+
+
+
 		} );
 
 	}
 
 	TektronixAFG.prototype.runCommands = function() {
+
 		this.commandRunner.next();
 	}
 
@@ -136,58 +149,57 @@ TektronixAFG.prototype.connect = function(  ) {
 	}
 
 
-function query( shellInstance, query ) {
+function query( module, query ) {
 
-			var queries = shellInstance.queries;
-			var ask = query.indexOf('?') > -1;
+		var ask = query.indexOf('?') > -1;
 
-			return new Promise( function( resolver, rejecter ) {
-				console.log( "Query:" + query );
-				if( ask ) {
+		return new Promise( function( resolver, rejecter ) {
 
-					function listen( prevData ) {
+			if( ask ) {
 
-						shellInstance.once( 'message', function( data ) {
+				function listen( prevData ) {
 
-							data = prevData + data.toString('ascii');
+					module.shellInstance.once( 'message', function( data ) {
 
-						/*	if( data.indexOf("\n") == -1 ) {
-								console.log('NThr');
-								listen( data );
-							} else {*/
+						data = prevData + data.toString('ascii');
 
-								//if( data.indexOf( query	 ) == 0 ) { // The response is exactly what has been requested
-									resolver( data );
-								//} else {
-								//	console.log( 'Rejection');
-								//	rejecter("The oscilloscope response was unexpected. Message : " + data);
-								//}
+					/*	if( data.indexOf("\n") == -1 ) {
+							console.log('NThr');
+							listen( data );
+						} else {*/
+
+							//if( data.indexOf( query	 ) == 0 ) { // The response is exactly what has been requested
+								resolver( data );
+							//} else {
+							//	console.log( 'Rejection');
+							//	rejecter("The oscilloscope response was unexpected. Message : " + data);
 							//}
+						//}
 
-						} );
-					}
-
-					listen("");
-
-					shellInstance.send( query );
-
-				} else {
-
-					shellInstance.send( query );
-					resolver();
+					} );
 				}
 
-			} ).then( function( data ) {
-				if( data ) {
-					return data.replace("\n", "");
-				}
-			} );
+				listen("");
+
+				module.shellInstance.send( query );
+
+			} else {
+
+				module.shellInstance.send( query );
+				resolver();
+			}
+
+		} ).then( function( data ) {
+			if( data ) {
+				return data.replace("\n", "");
+			}
+		} );
 }
 
 
 TektronixAFG.prototype.setVoltageLowLimit = function( channel, voltage ) {
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	voltage = getVoltage( voltage );
 
 	this.command("SOURCE" + channel + ":VOLTAGE:LIMIT:LOW " + voltage );
@@ -196,7 +208,7 @@ TektronixAFG.prototype.setVoltageLowLimit = function( channel, voltage ) {
 
 TektronixAFG.prototype.setVoltageHighLimit = function( channel, voltage ) {
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	voltage = getVoltage( voltage );
 
 	this.command("SOURCE" + channel + ":VOLTAGE:LIMIT:HIGH " + voltage );
@@ -204,7 +216,7 @@ TektronixAFG.prototype.setVoltageHighLimit = function( channel, voltage ) {
 
 TektronixAFG.prototype.setVoltageAmplitude = function( channel, voltage ) {
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	voltage = getVoltage( voltage );
 
 	this.command("SOURCE" + channel + ":VOLTAGE:LEVEL:IMMEDIATE:AMPLITUDE " + voltage );
@@ -213,7 +225,7 @@ TektronixAFG.prototype.setVoltageAmplitude = function( channel, voltage ) {
 
 TektronixAFG.prototype.setVoltageLow = function( channel, voltage ) {
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	voltage = getVoltage( voltage );
 
 	this.command("SOURCE" + channel + ":VOLTAGE:LEVEL:IMMEDIATE:LOW " + voltage );
@@ -222,7 +234,7 @@ TektronixAFG.prototype.setVoltageLow = function( channel, voltage ) {
 
 TektronixAFG.prototype.setVoltageHigh = function( channel, voltage ) {
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	voltage = getVoltage( voltage );
 
 	this.command("SOURCE" + channel + ":VOLTAGE:LEVEL:IMMEDIATE:HIGH " + voltage );
@@ -232,7 +244,7 @@ TektronixAFG.prototype.setVoltageHigh = function( channel, voltage ) {
 
 TektronixAFG.prototype.setShape = function( channel, shape ) { // Delays the beginning of the pulse
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	shape = getShape( shape );
 
 	this.command("SOURCE" + channel + ":FUNCTION:SHAPE " + shape );
@@ -249,7 +261,7 @@ TektronixAFG.prototype.setPulsePeriod = function( channel, period ) {
 
 TektronixAFG.prototype.setPulseDutyCycle = function( channel, cycle ) { // Delays the beginning of the pulse
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	cycle = getPercent( cycle );
 
 	this.command("SOURCE" + channel + ":PULSE:DCYCLE " + time );
@@ -258,7 +270,7 @@ TektronixAFG.prototype.setPulseDutyCycle = function( channel, cycle ) { // Delay
 
 TektronixAFG.prototype.setPulseDelay = function( channel, time ) { // Delays the beginning of the pulse
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	time = getTime( time );
 
 	this.command("SOURCE" + channel + ":PULSE:DELAY " + time );
@@ -267,7 +279,7 @@ TektronixAFG.prototype.setPulseDelay = function( channel, time ) { // Delays the
 
 TektronixAFG.prototype.setPulseHold = function( channel, hold ) { // Asks to hold pulse width of pulse duty cycle
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	hold = getFromList( hold, [ "WIDTH", "DUTY" ] );
 
 	this.command("SOURCE" + channel + ":PULSE:HOLD " + time );
@@ -276,7 +288,7 @@ TektronixAFG.prototype.setPulseHold = function( channel, hold ) { // Asks to hol
 
 TektronixAFG.prototype.setPulseWidth = function( channel, time ) { // Only available in FUNCTION=PULSE
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	time = getTime( time );
 
 	this.command("SOURCE" + channel + ":PULSE:WIDTH " + time );
@@ -285,7 +297,7 @@ TektronixAFG.prototype.setPulseWidth = function( channel, time ) { // Only avail
 
 TektronixAFG.prototype.setPulseLeadingTime = function( channel, time ) { // Only available in FUNCTION=PULSE
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	time = getTime( time );
 
 	this.command("SOURCE" + channel + ":PULSE:TRANSITION:LEADING " + time );
@@ -294,7 +306,7 @@ TektronixAFG.prototype.setPulseLeadingTime = function( channel, time ) { // Only
 
 TektronixAFG.prototype.setPulseTrailingTime = function( channel, time ) { // Only available in FUNCTION=PULSE
 
-	channel = getChannel( voltage );
+	channel = getChannel( channel );
 	time = getTime( time );
 
 	this.command("SOURCE" + channel + ":PULSE:TRANSITION:TRAILING " + time );
@@ -305,7 +317,16 @@ TektronixAFG.prototype.setTriggerOut = function( channel, triggerType ) {
 	channel = getChannel( channel );
 	triggerType = getFromList( triggerType, [ "TRIGGER", "SYNC" ] );
 
-	this.command("SOURCE" + channel + ":BURST:MODE " + triggerType );
+	this.command("SOURCE" + channel + ":TRIGGER:MODE " + triggerType );
+}
+
+
+TektronixAFG.prototype.setBurstMode = function( channel, mode ) {
+
+	channel = getChannel( channel );
+	mode = getFromList( mode, [ [ "TRIGGERED", "TRIG" ] , [ "GAT", "GATED" ] ] );
+
+	this.command("SOURCE" + channel + ":BURST:MODE " + mode );
 }
 
 TektronixAFG.prototype.enableBurst = function( channel ) {
@@ -328,10 +349,10 @@ TektronixAFG.prototype.setBurstTriggerDelay = function( channel, delay ) {
 	this.command("SOURCE" + channel + ":BURST:TDELAY " + delay );
 }
 
-TektronixAFG.prototype.setBurstNCycles = function( channel, ncycle ) {
+TektronixAFG.prototype.setBurstNCycles = function( channel, ncycles ) {
 
 	channel = getChannel( channel );
-	ncycle = getNumber( ncycles );
+	ncycles = getNumber( ncycles );
 
 	this.command("SOURCE" + channel + ":BURST:NCYCLES " + ncycles );
 }
@@ -339,17 +360,45 @@ TektronixAFG.prototype.setBurstNCycles = function( channel, ncycle ) {
 TektronixAFG.prototype.turnChannelOn = function( channel ) {
 
 	channel = getChannel( channel );
-	this.command("SOURCE" + channel + ":STATE ON");
+	this.command("OUTPUT" + channel + ":STATE ON");
 }
+
+TektronixAFG.prototype.enableChannel = TektronixAFG.prototype.turnChannelOn;
 
 TektronixAFG.prototype.turnChannelOff = function( channel ) {
 
 	channel = getChannel( channel );
-	this.command("SOURCE" + channel + ":STATE OFF");
+	this.command("OUTPUT" + channel + ":STATE OFF");
 }
+
+TektronixAFG.prototype.disableChannel = TektronixAFG.prototype.turnChannelOn;
+
+TektronixAFG.prototype.trigger = function() { // Generates a trigger
+	this.command("*TRG");
+}
+
+TektronixAFG.prototype.setTriggerSlope = function( slope ) {
+	slope = getFromList( slope, [ ['POS', 'POSITIVE' ], [ 'NEG', 'NEGATIVE'] ] );
+	this.command("TRIGGER:SEQUENCE " + slope );
+}
+
+TektronixAFG.prototype.setTriggerInternal = function() {
+	this.command("TRIGGER:SEQUENCE:SOURCE INTERNAL");
+}
+
+TektronixAFG.prototype.setTriggerExternal = function() {
+	this.command("TRIGGER:SEQUENCE:SOURCE EXTERNAL");
+}
+
+TektronixAFG.prototype.ready = function() {
+	this.command( "*OPC" );
+	return this.command( "*OPC?" );
+}
+
 
 function getChannel( channel ) {
 	channel = parseInt( channel );
+
 	if( channel == 1 || channel == 2 ) {
 		return channel;
 	}
@@ -374,7 +423,9 @@ function getTime( time ) {
 function getVoltage( voltage ) {
 
 	voltage = parseFloat( voltage );
-	if( voltage > 10 || voltage < 10 ) {
+
+	if( voltage > 10 || voltage < -10 ) {
+
 		throw "Voltage invalid";
 	}
 
@@ -397,21 +448,25 @@ function getPercent( val ) {
 
 function getFromList( value, list ) {
 
+	var listElement;
 
-	list.map( function( listElement ) {
+	for( var i = 0, l = list.length; i < l ; i ++ ) {
+
+		listElement = list[ i ];
 
 		if( Array.isArray( listElement ) ) {
-			listElement.map( function( listSubElement ) {
-				if( listSubElement.toLowerCase() == value.toLowerCase() ) {
+
+			for( var j = 0; j < listElement.length; j ++ ) {
+
+				if( listElement[ j ].toLowerCase() == value.toLowerCase() ) {
 					return value;
 				}
-			})
-		}
+			}
 
-		if( listElement.toLowerCase() == value.toLowerCase() ) {
+		} else if( listElement.toLowerCase() == value.toLowerCase() ) {
 			return value;
 		}
-	});
+	}
 
 	throw "Could not find element in list";
 }

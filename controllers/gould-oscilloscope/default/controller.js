@@ -216,8 +216,15 @@ Gould.prototype.setAveraging = function( nb ) {
 	return callSerial( this, ":ACQ:AVG:EN ON;:ACQ:AVG:FACT " + nb );
 }
 
+Gould.prototype.setAverage = Gould.prototype.setAveraging; // Alias
+
 Gould.prototype.disableAveraging = function( ) {
 	return callSerial( this, ":ACQ:AVG:EN OFF" );
+}
+
+
+Gould.prototype.enableAveraging = function( ) {
+	return callSerial( this, ":ACQ:AVG:EN ON" );
 }
 
 Gould.prototype.setCoupling = function( channel, coupling ) {

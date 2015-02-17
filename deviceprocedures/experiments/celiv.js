@@ -20,17 +20,13 @@ var experiment = function() { };
 experiment = {
 
 	init: function( parameters ) {
-		return;
-		if( ! parameters.oscilloscope || ! parameters.keithley || ! parameters.arduino || ! parameters.afg ) {
-			throw "An oscilloscope and a keithley SMU and an Arduino with analog output are required";
-		}
 
 		this.parameters = parameters;
 
-		this.oscilloscope = parameters.oscilloscope;
-		this.keithley = parameters.keithley;
-		this.arduino = parameters.arduino;
-		this.afg = parameters.afg;
+		this.oscilloscope = parameters.instruments['gould-oscilloscope'].instrument;
+		this.keithley = parameters.instruments['keithley-smu'].instrument;
+		this.arduino = parameters.instruments.arduino.instrument;
+		this.afg = parameters.instruments['tektronix-functiongenerator'].instrument;
 
 		this.parameters.lightLevels = 1;
 		this.parameters.pulseLengths = this.parameters.pulseLengths || [ 20e-9 ];
@@ -68,9 +64,9 @@ experiment = {
 					} );
 
 					if( ! self.paused ) {
-						self.iterator.next();	
+						self.iterator.next();
 					}
-					
+
 				} );
 			} );
 		}
@@ -82,7 +78,8 @@ experiment = {
 
 		var self = this;
 		var pulsePeriod = 1e-3;
-
+		var pulseDelay = 1e-5;
+		var pulseLength = 100e-6;
 
 		this.afg.setTriggerOut( 1, "TRIGGER" );
 		this.afg.enableBurst( 1);
@@ -92,10 +89,18 @@ experiment = {
 		this.afg.setBurstNCycles( 1, 1);
 
 		this.afg.setShape( 1, 'pulse');
-		this.afg.setPulsePeriod( pulsePeriod ); // 1ms in total
+		this.afg.setShape( 2, 'pulse');
+
+		this.afg.setPulsePeriod( 1, pulsePeriod ); // 1ms in total
+		this.afg.setPulsePeriod( 2, pulsePeriod ); // 1ms in total
+
 		this.afg.setVoltageLow( 1, 0)
 		this.afg.setVoltageHigh( 1, 5);
-		this.afg.setPulseWidth(  1, this.parameters.pulseLengths[ 0 ] );
+
+		this.afg.setVoltageLow( 2, 0)
+		this.afg.setVoltageHigh( 2, 5);
+
+
 		this.afg.setPulseLeadingTime( 1, 9e-9 );
 		this.afg.setPulseTrailingTime( 1, 9e-9 );
 
@@ -123,23 +128,18 @@ experiment = {
 
 		self.iterator.next();
 
-		return new Promise( function( resolver, rejecter ) {
+		}
 
-			// Turn the channel 1 on
-			self.afg.turnChannelOn( 1 );
-
-			setTimeout( function() {
-				// Turn it off
-				self.afg.turnChannelOff( 1 );
-
-				self.oscilloscope.getWave( 3 ).then( function( wave ) {
-
-						resolver( wave );
-				});
-
-			}, ( pulsePeriod * self.parameters.averaging * 2 ) );
+		this.afg.ready().then( function() {
+			// Start the iterator
+			var celiv = CELIVPulse();
+			console.log(1);
+			celiv.next();
+			console.log(2);
 
 		});
+
+
 
 	}
 }

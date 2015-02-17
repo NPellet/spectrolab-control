@@ -17,7 +17,7 @@ public.importInstruments = function( config ) {
 		throw "Import instruments needs to load the config"
 	}
 
-	var toReturn = [];
+	var toReturn = {};
 
 	Array.prototype.shift.call( arguments );
 

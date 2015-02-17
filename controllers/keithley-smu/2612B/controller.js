@@ -48,7 +48,7 @@ var methods = {
 
 		processing: function( data ) {
 
-			console.log( data );
+
 			var current, voltage, dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			for( var i = 0; i < data.length; i += 2 ) {
@@ -279,12 +279,12 @@ var methods = {
 
 			method: 'longPulse',
 			parameters: function( options ) {
-
-				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ]
+console.log( [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ] );
+				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ];
 			},
 
 			processing: function( data, options ) {
-
+console.log( data );
 				return data;
 			}
 		}
@@ -300,7 +300,7 @@ var Keithley = function( params ) {
 Keithley.prototype = new events.EventEmitter;
 
 Keithley.prototype.connect = function( callback ) {
-	console.log('Connecting to Keithley');
+
 	var module = this;
 
 	return new Promise( function( resolver, rejecter ) {
@@ -308,7 +308,6 @@ Keithley.prototype.connect = function( callback ) {
 		// Avoid multiple connection
 		if( module.connected ) {
 
-			console.log('Already connected. Remove all Keithley listeners');
 			module.socket.removeAllListeners( 'data' );
 
 
@@ -326,9 +325,14 @@ Keithley.prototype.connect = function( callback ) {
 			return;
 		}
 
+		console.log('Connecting to Keithley');
+
 		try {
 			// Connect by raw TCP sockets
+			console.log( module.params );
 			var self = module,
+
+
 				socket = net.createConnection( {
 					port: module.params.port,
 					host: module.params.host,
@@ -337,9 +341,8 @@ Keithley.prototype.connect = function( callback ) {
 
 			module.connecting = true;
 			module.socket = socket;
-			module.setEvents();
-
-			resolver();
+			module.setEvents( );
+			module.queue.push( resolver );
 
 		} catch( error ) {
 
@@ -356,6 +359,7 @@ for( var i in methods ) {
 	( function( j ) {
 
 		Keithley.prototype[ j ] = function( options ) {
+			console.log( j );
 			return this._callMethod( methods[ j ], options );
 		}
 
@@ -369,7 +373,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 	var module = this;
 
 	return this.connect().then( function() {
-
+console.log("connected");
 		return new Promise( function( resolver, rejecter ) {
 
 			options = extend( true, {}, method.defaults, options );
@@ -401,6 +405,9 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			listen("");
+
+			console.log("writing in socket : " + method.method + "(" + method.parameters( options ).join() + ");\r\n" );
+
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
 	});
@@ -444,7 +451,7 @@ Keithley.prototype.setEvents = function() {
 	var self = this;
 
 	this.socket.on('connect', function() {
-
+		console.log("SOCKET CONNECTED");
 		self.uploadScripts();
 		self.connected = true;
 		self.connecting = false;

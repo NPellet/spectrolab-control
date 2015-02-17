@@ -19,7 +19,7 @@ function doConnect( arduino, resolver ) {
 		throw "No Arduino host was found";
 	}
 
-	try {	
+	try {
 
 		var serialPort = new SerialPort( arduino.params.host, {
 				baudrate: arduino.params.baudrate,
@@ -98,7 +98,7 @@ Arduino.prototype.connect = function( ) {
 			serialPort.list(function (err, ports) {
 
 				ports.forEach(function(port) {
-					
+
 					if( port.comName && port.comName.indexOf("/dev/cu.usbmodem") > -1 ) {
 
 						module.params.host = port.comName;
@@ -421,7 +421,7 @@ function setEvents( Arduino, resolver ) {
 
 		if( Arduino.currentCallResolver ) {
 			Arduino.currentCallResolver( Arduino.currentResponse );
-			
+
 			serialPort.drain( function() {
 
 				serialPort.flush( function() {
@@ -441,11 +441,11 @@ function setEvents( Arduino, resolver ) {
 	}
 
 	serialPort.on( 'data', function( data ) {
-		
+
 		Arduino.currentResponse = Arduino.currentResponse + data.toString('ascii');
-		
+
 		if( ! ( Arduino.currentResponse.indexOf("\r\n") == -1 ) ) {
-			
+
 			endData( Arduino.currentResponse );
 		}
 	} );
