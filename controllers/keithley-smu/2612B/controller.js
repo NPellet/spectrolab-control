@@ -71,7 +71,6 @@ var methods = {
 
 		method: 'VoltageStability',
 		parameters: function( options ) {
-			console.log( options );
 			return [ options.channel, options.bias, options.settlingtime, options.totaltime, options.complianceV, options.complianceI ]
 		},
 
@@ -279,12 +278,10 @@ var methods = {
 
 			method: 'longPulse',
 			parameters: function( options ) {
-console.log( [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ] );
 				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ];
 			},
 
 			processing: function( data, options ) {
-console.log( data );
 				return data;
 			}
 		}
@@ -329,7 +326,7 @@ Keithley.prototype.connect = function( callback ) {
 
 		try {
 			// Connect by raw TCP sockets
-		
+
 			var self = module,
 
 
@@ -359,7 +356,6 @@ for( var i in methods ) {
 	( function( j ) {
 
 		Keithley.prototype[ j ] = function( options ) {
-			console.log( j );
 			return this._callMethod( methods[ j ], options );
 		}
 
@@ -373,7 +369,6 @@ Keithley.prototype._callMethod = function( method, options ) {
 	var module = this;
 
 	return this.connect().then( function() {
-console.log("connected");
 		return new Promise( function( resolver, rejecter ) {
 
 			options = extend( true, {}, method.defaults, options );
@@ -384,7 +379,7 @@ console.log("connected");
 			}
 
 			function end( data ) {
-
+console.log( "Keithley ret:" + data );
 				if( method.processing ) {
 					data = method.processing( data, options );
 				}
@@ -451,12 +446,10 @@ Keithley.prototype.setEvents = function() {
 	var self = this;
 
 	this.socket.on('connect', function() {
-		console.log("SOCKET CONNECTED");
 		self.uploadScripts();
 		self.connected = true;
 		self.connecting = false;
 
-		console.log('Remove all Keithley listeners');
 		self.socket.removeAllListeners( 'data' );
 
 		self.flushErrors();

@@ -43,12 +43,12 @@ renderer.setModulesJSON( {
     path: 'display/status',
   },
 
-  lastVDecay: {
+  lastJDecay1: {
     wrapper: 'lastPulse',
     path: 'display/graph'
   },
 
-  lastJDecay: {
+  lastJDecay2: {
     wrapper: 'lastPulse',
     path: 'display/graph'
   },
