@@ -18,7 +18,7 @@ var experiment = {
 		experiment.parameters.delay = 2;
 		experiment.focus = false;
 
-		experiment.parameters.lightIntensities = [ 3, 5, 0, 8 ];
+		experiment.parameters.lightIntensities = [ 3, 8, 0, 5, 6 ];
 	},
 
 
@@ -43,7 +43,7 @@ var experiment = {
 	},
 
 	run: function() {
-		
+
 		var self = experiment;
 		return new Promise( function( resolver, rejecter ) {
 
@@ -61,14 +61,15 @@ var experiment = {
 
 			var recordedWaves = [];
 
-			var timeBases = [ 500000e-6 ];
-			var yScales = [ 20e-3 ];
+			var timeBases = [ 50e-6, 100000e-6 ];
+			var yScales = [ 10e-3, 5e-3 ];
+
 
 			var timeBase;
 
 			// Calculate delays
-			var nbPoints = 35,
-				b = ( Math.log( 1 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
+			var nbPoints = 45,
+				b = ( Math.log( 20 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
 				a = 10e-6 / Math.pow( 10, ( b * 0 ) ),
 				timeDelays = [];
 
@@ -76,8 +77,8 @@ var experiment = {
 				timeDelays.push( a * Math.pow( 10, b * i ) );
 			}
 
+			var blankWaves = [];
 
-timeDelays = [10e-6];
 
 			// Oscilloscope functions
 
@@ -108,7 +109,7 @@ timeDelays = [10e-6];
 			self.oscilloscope.setPreTrigger( "A", preTrigger ); // Set pre-trigger, 10%
 
 			self.oscilloscope.setChannelPosition( 2, -2.5 );
-			self.oscilloscope.setChannelPosition( 3, 2 );
+			self.oscilloscope.setChannelPosition( 3, -2.5 );
 
 			self.keithley.command("reset()"); // Reset keithley
 			self.keithley.command("*CLS"); // Reset keithley
@@ -117,30 +118,56 @@ timeDelays = [10e-6];
 
 			self.oscilloscope.setTriggerLevel( "A", 0.7 ); // Set trigger to 0.7V
 
-console.log("Running");
 			self.oscilloscope.ready.then( function() {
+
+
+
 
 				function *pulse( totalDelays, totalPulseNb ) {
 
-					var k = 0;
-
-					for( var l = 0; l < self.parameters.lightIntensities.length; l += 1 ) {
-
-				//		var l = Math.floor( Math.random() * ( self.parameters.lightIntensities.length ) );
-
+						var k = 0;
 						var j = 0;
+						var l;
 
-						self.arduino.setWhiteLightLevel( self.parameters.lightIntensities[ l ] );
+						for( var n = 0; n < timeBases.length; n += 1 ) {
 
-						waveVoc[ l ] = [];
+							timeBase = timeBases[ n ];
 
-						waveCapacitance[ l ] = [];
-						waveCharges[ l ] = [];
+							self.pulseBlank( timeBase, yScales[ n ] ).then( function( w ) {
+								blankWaves.push( w );
+//console.log( w );
+								if( ! self.paused ) {
+									p.next();
+								}
+							});
 
-						waveCapacitance2[ l ] = [];
-						waveCharges2[ l ] = [];
+							yield;
+						}
+
+
 
 						while( true ) {
+
+
+
+
+							if( j %  10 == 0 ) {
+								// Time to change the light
+								l = (j / 10) % ( self.parameters.lightIntensities.length );
+								self.arduino.setWhiteLightLevel( self.parameters.lightIntensities[ l ] );
+
+
+								waveVoc[ l ] = waveVoc[ l ] || [];
+
+								waveCapacitance[ l ] = waveCapacitance[ l ] || [];
+								waveCharges[ l ] = waveCharges[ l ] || [];
+
+								waveCapacitance2[ l ] = waveCapacitance2[ l ] || [];
+								waveCharges2[ l ] = waveCharges2[ l ] || [];
+
+							}
+
+							j++;
 
 							if( self.focus === false ) {
 
@@ -164,7 +191,8 @@ console.log("Running");
 							}
 
 
-							j++;
+
+
 							/*
 								Integration concept
 								- Two time scales to catch slow and fast component
@@ -175,7 +203,6 @@ console.log("Running");
 
 							recordedWaves = [];
 
-							console.log('Pulsing', timeBases);
 
 							for( var n = 0; n < timeBases.length; n += 1 ) {
 								timeBase = timeBases[ n ];
@@ -193,17 +220,16 @@ console.log("Running");
 							}
 
 							// Look on the first voltage wave
-							var level = recordedWaves[ 0 ][ "3" ].findLevel(0.02, {
+							var level = recordedWaves[ 0 ][ "3" ].findLevel(0.05, {
 								edge: 'descending',
 								box: 1,
 								rouding: 'before',
-								rangeP: [ 40, 60 ]
+								rangeP: [ 30, 80 ]
 							});
 
 
 							// We need to find some voltage !
 							if( level ) {
-
 								// Do the array exist ?
 								/*wavePulse[ i ] = wavePulse[ i ] || [];
 								waveVoltage[ i ] = waveVoltage[ i ] || [];
@@ -221,6 +247,7 @@ console.log("Running");
 
 
 								var voc = recordedWaves[ 0 ][ "3" ].get( level - 2 );
+								voc = recordedWaves[ 0 ]["3"].get(48);
 								var m = 0;
 								var charges = 0;
 								var fastestCharges;
@@ -234,13 +261,17 @@ console.log("Running");
 									var ptStart;
 									ptStart = preTrigger / 100 * 500;
 
+									w[ 2 ].subtract( blankWaves[ m ] );
 									if( m > 0 ) {
-										ptStart += timeBases[ m - 1 ] * 500 / timeBases[ m ]
+										ptStart += Math.ceil( timeBases[ m - 1 ] * 500 / timeBases[ m ] );
 									} else {
 										fastestCharges = w[ "2" ].integrateP( ptStart, 499 );
 									}
 
+
+									console.log(ptStart, charges);
 									charges += w[ "2" ].integrateP( ptStart, 499 );
+									console.log(ptStart, charges);
 									m++;
 								});
 
@@ -256,19 +287,19 @@ console.log("Running");
 								waveVoltage[ i ].push( allWaves[ "3" ] );
 								waveSwitch[ i ].push( allWaves[ "4" ] );
 	*/
-		console.log('PROG');
-								self.progress( j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance, waveCharges2, waveCapacitance2 );
+
+								self.progress( recordedWaves, j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveCapacitance, waveCharges2, waveCapacitance2 );
 							}
 
 							// Safeguard
-							if( j > 400 ) {
+							if( j > 40000 ) {
 								break;
 							//	yield;
 							}
 
 						}
 
-					}
+			//		}
 
 					resolver( [ waveCurrent, waveVoltage ] );
 				}
@@ -284,42 +315,92 @@ console.log("Running");
 
 	},
 
-	pulse: function( timeBase, yScale, delaySwitch ) {
+		pulse: function( timeBase, yScale, delaySwitch ) {
 
-		var self = experiment;
-		self.oscilloscope.setTimeBase( timeBase );
-		self.oscilloscope.setVoltScale( 2, yScale ); // 2mV over channel 2
+			var self = experiment;
+			self.oscilloscope.setTimeBase( timeBase );
+			self.oscilloscope.setVoltScale( 2, yScale ); // 2mV over channel 2
 
-		return self.keithley.pulseAndSwitchDiogio( {
+			return self.keithley.pulseAndSwitchDiogio( {
 
-			diodePin: self.parameters.ledPin,
-			switchPin: self.parameters.switchPin,
-			pulseWidth: self.parameters.pulseTime,
-			numberOfPulses: 1,
-			delayBetweenPulses: self.parameters.delay,
-			delaySwitch: delaySwitch
+				diodePin: self.parameters.ledPin,
+				switchPin: self.parameters.switchPin,
+				pulseWidth: self.parameters.pulseTime,
+				numberOfPulses: 1,
+				delayBetweenPulses: delaySwitch + 1,
+				delaySwitch: delaySwitch
 
-		} ).then( function( value ) {
+			} ).then( function( value ) {
 
-			return self.oscilloscope.getWaves().then( function( allWaves ) {
+				return self.oscilloscope.getWaves().then( function( allWaves ) {
 
-				// Zeroing voltage wave
-				var voltageWave = allWaves[ "3" ];
-				voltageWave.multiply( - 1 );
-				voltageWave.subtract( voltageWave.average( 400, 499 ) );
+					// Zeroing voltage wave
+					var voltageWave = allWaves[ "3" ];
+					voltageWave.multiply( 1 );
+					voltageWave.subtract( voltageWave.average( 400, 499 ) );
 
-				// Zeroing current wave
-				var currentWave = allWaves[ "2" ];
-				currentWave.multiply( 1 );
-				currentWave.divide( 50 );
-				currentWave.subtract( currentWave.average( 0, 40 ) );
+					// Zeroing current wave
+					var currentWave = allWaves[ "2" ];
+					currentWave.multiply( 1 );
+					currentWave.divide( 50 );
+					currentWave.subtract( currentWave.average( 0, 40 ) );
 
-				return allWaves;
+					return allWaves;
+				});
 			});
-		});
 
 
-	}
+		},
+
+
+		pulseBlank: function( timeBase, yScale ) {
+
+			var self = experiment;
+			self.oscilloscope.setTimeBase( timeBase );
+			self.oscilloscope.setVoltScale( 2, yScale ); // 2mV over channel 2
+			self.oscilloscope.enableAveraging();
+
+			function nearestPow2(n) {
+				var m = n;
+				for(var i = 0; m > 1; i++) {
+					m = m >>> 1;
+				}
+				// Round to nearest power
+				if (n & 1 << i-1) { i++; }
+				return 1 << i;
+			}
+
+
+			var nbPulses = nearestPow2( 10 / ( timeBase * 40 ) / 2 )
+
+			self.oscilloscope.setAveraging( nbPulses );
+
+			return self.keithley.longPulse( {
+
+				diodePin: self.parameters.switchPin,
+				pulseWidth: timeBase * 20,
+				numberOfPulses: nbPulses * 2,
+				delay: timeBase * 40
+
+			} ).then( function( value ) {
+
+				return self.oscilloscope.getWaves().then( function( allWaves ) {
+
+					// Zeroing current wave
+					var currentWave = allWaves[ "2" ];
+					currentWave.multiply( 1 );
+					currentWave.divide( 50 );
+					currentWave.subtract( currentWave.average( 0, 40 ) );
+					self.oscilloscope.disableAveraging();
+
+					return currentWave;
+
+
+				});
+			});
+
+
+		}
 }
 
 

@@ -25,7 +25,14 @@ experiment.onPause = function() {
 
 }
 
-proc.on("progress", function( pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
+proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
+
+
+	experiment.renderer.getModule("lastJDecay1").newSerie("jdecay1", recordedWaves[ 1 ][ "2"], { } );
+	//experiment.renderer.getModule("lastJDecay2").newSerie("jdecay2", recordedWaves[ 1 ][ "2"], { } );
+
+	experiment.renderer.getModule("lastJDecay1").autoscale();
+	//experiment.renderer.getModule("lastJDecay2").autoscale();
 
 	reprocess( charges, voc, capacitances, allDelays, chargesFastest, capacitanceFastest );
 //	status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
@@ -64,7 +71,7 @@ experiment.renderer.getModule("formConfig").on("validated", function( value ) {
 
 
 function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
-return;
+
 	var i = 0;
 	var colors = ['#a61111', '#2d2d94', '#479116', '#722f8b', '#a36228'];
 	var colors2 = ['#cf6565', '#6565cf', '#a2c48b', '#b58bc4', '#ce9f75'];
@@ -78,7 +85,8 @@ return;
 	experiment.renderer.getModule("chargesvstime").clear();
 	experiment.renderer.getModule("chargesvstime").setXLogScale( true );
 
-	var itx = new experiment.getITXBuilder();
+	var itx = experiment.getITXBuilder();
+	itx = new itx();
 
 
 
@@ -147,7 +155,7 @@ return;
 
 
 		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
-		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
+	//	experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
 		experiment.renderer.getModule("chargesvstime").autoscale();
 
 
@@ -202,13 +210,13 @@ return;
 
 
 		experiment.renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { }, dataCapaSDev, style );
-		experiment.renderer.getModule("C-t").newScatterSerie("CT_" + l + "_F", dataCapaF, { }, dataCapaSDevF, style2 );
+	//	experiment.renderer.getModule("C-t").newScatterSerie("CT_" + l + "_F", dataCapaF, { }, dataCapaSDevF, style2 );
 		experiment.renderer.getModule("C-t").autoscale();
 
 
 
 		experiment.renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
-		experiment.renderer.getModule("C-V").newScatterSerie("CV_" + l + "_F", dataCVF, { }, dataCVSdevF, style2 );
+	//	experiment.renderer.getModule("C-V").newScatterSerie("CV_" + l + "_F", dataCVF, { }, dataCVSdevF, style2 );
 		experiment.renderer.getModule("C-V").autoscale();
 
 

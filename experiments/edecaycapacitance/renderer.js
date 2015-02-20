@@ -50,21 +50,15 @@ renderer.init = function() {
       path: 'display/status',
     },
 
-    formConfig: {
-      wrapper: 'formConfig',
-      path: 'display/form'
-    },
-    
-    lastVDecay: {
+    lastJDecay1: {
       wrapper: 'lastPulse',
       path: 'display/graph'
     },
 
-    lastJDecay: {
+    lastJDecay2: {
       wrapper: 'lastPulse',
       path: 'display/graph'
     },
-
 
     vocvstime: {
       wrapper: 'summary',
@@ -109,57 +103,54 @@ renderer.init = function() {
     .setXAxisLabel("Time (s)");
 
 
-      var schema = {
-          "type": "object",
-          "properties": {
-              "timebase": {
-                  "type": "array",
-
-                  "items": {
-                  "title": "Timebase for current",
-                  "type": "object",
-                  "properties": {
-                      "timebase": {
-                          "title": "Pulse width",
-                          "type": "select",
-                          "enum": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesNb().map( function( val ) { return val.toString(); } ),
-
-                      },
-                      "voltscale": {
-                          "title": "Voltage scale of CH2",
-                          "type": "select",
-                          "enum": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleNb().map( function( val ) { return val.toString(); } )
-                      }
-                  }
-              }
-              }
-          }
-      };
-
-    
-      var options = {
-          "fields": {
-              "timebase": {
+    var schema = {
+        "type": "object",
+        "properties": {
+            "timebase": {
                 "type": "array",
-                "fields": {
-                  "item": {
-                    "fields": {
-                      "timebase": {
-                        "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()   
-                      },
 
-                      "voltscale": {
-                        optionLabels: renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleTxt()
-                      }
-                    }      
-                  }
+                "items": {
+                "title": "Timebase for current",
+                "type": "object",
+                "properties": {
+                    "timebase": {
+                        "title": "Pulse width",
+                        "type": "select",
+                        "enum": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesNb().map( function( val ) { return val.toString(); } ),
+
+                    },
+                    "voltscale": {
+                        "title": "Voltage scale of CH2",
+                        "type": "select",
+                        "enum": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleNb().map( function( val ) { return val.toString(); } )
+                    }
+                }
+            }
+            }
+        }
+    };
+
+  
+    var options = {
+        "fields": {
+            "timebase": {
+              "type": "array",
+              "fields": {
+                "item": {
+                  "fields": {
+                    "timebase": {
+                      "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()   
+                    },
+
+                    "voltscale": {
+                      optionLabels: renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleTxt()
+                    }
+                  }      
                 }
               }
-          }
-      };
-
-
-
+            }
+        }
+    };
 
   renderer.getModule("formConfig").setSchema( schema ).setOptions( options );
   
