@@ -1,5 +1,5 @@
 
-define( [ 'client/js/io' ], function( io )  {
+define( [ 'js/io' ], function( io )  {
 
 	var Module = function( ) { }
 	

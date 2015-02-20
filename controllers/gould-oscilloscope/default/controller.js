@@ -103,9 +103,18 @@ Gould.prototype.disable50Ohms = function( channel ) {
 Gould.prototype.enable50Ohm = Gould.prototype.enable50Ohms;
 Gould.prototype.disable50Ohm = Gould.prototype.disable50Ohms;
 
+
+Gould.prototype.getAvailableVoltScaleNb = function() {
+	return [ 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
+}
+
+Gould.prototype.getAvailableVoltScaleTxt = function() {
+	return [ "2 mV", "5 mV", "10 mV", "20 mV", "50 mV", "100 mV", "200 mV", "500 mV", "1 V", "2 V", "5 V" ];
+}
+
 Gould.prototype.setVoltScale = function( channel, voltscale ) {
 
-	var availableVoltScale = [ 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
+	var availableVoltScale = this.getAvailableTimebasesNb();
 	if( availableVoltScale.indexOf( voltscale ) == -1 ) {
 		throw "Cannot set volt scale \"" + voltscale + "\". Not in allowed list";
 		return;
@@ -185,10 +194,20 @@ Gould.prototype.setTriggerCoupling = function( trigger, coupling ) {
 	return callSerial( this, ":" + trigger + ":COUP " + coupling );
 }
 
+Gould.prototype.getAvailableTimebasesNb = function() {
+	return [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 10e-2, 20e-2, 50e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5 ];
+}
+
+
+Gould.prototype.getAvailableTimebasesTxt = function() {
+	return [ "10 µs", "20 µs", "50 µs", "100 µs", "200 µs", "500 µs", "1 ms", "2 ms", "5 ms", "10 ms", "20 ms", "50 ms", "100 ms", "1 s", "2 s", "5 s" ];
+}
+
+
 Gould.prototype.setTimeBase = function( timeBase ) {
 
-	var availableTimeBases = [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 10e-5, 2e-4, 5e-4, 10e-4, 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ];
-
+	var availableTimeBases = this.getAvailableTimebasesNb();
+	
 	if( availableTimeBases.indexOf( timeBase ) == -1 ) {
 		throw "Cannot set timebase \"" + timeBase + "\". Not in allowed list";
 		return;

@@ -1,5 +1,5 @@
 
-define( [ 'client/js/module'], function( defaultModule ) {
+define( [ 'js/module'], function( defaultModule ) {
 
 	var module = function() {}
 

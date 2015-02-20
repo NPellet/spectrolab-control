@@ -1,14 +1,15 @@
 
 requirejs.config({
 
-	baseUrl: '../../',
+	baseUrl: '../../client/',
 	paths: {
-		'jquery': 'client/js/lib/jquery.min',
-		'jsgraph': 'client/js/lib/jsgraph.min'
+		'jquery': 'js/lib/jquery.min',
+		'jsgraph': 'js/lib/jsgraph.min',
+		'jquery-ui': 'lib/jquery-ui/jquery-ui.min'
 	}
 });
 
-require( [ 'jquery', 'client/js/modulefactory', 'client/js/io' ] , function( $, ModuleFactory, IO ) {
+require( [ 'jquery', 'js/modulefactory', 'js/io' ] , function( $, ModuleFactory, IO ) {
 
 
 	ModuleFactory.parseDom( document );
@@ -18,6 +19,16 @@ require( [ 'jquery', 'client/js/modulefactory', 'client/js/io' ] , function( $, 
 
 	global( IO );
 } );
+
+
+function loadCss(url) {
+    var link = document.createElement("link");
+    link.type = "text/css";
+    link.rel = "stylesheet";
+    link.href = url;
+    document.getElementsByTagName("head")[0].appendChild(link);
+}
+
 
 function global( IO ) {
 

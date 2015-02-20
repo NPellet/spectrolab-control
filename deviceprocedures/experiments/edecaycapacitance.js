@@ -6,7 +6,6 @@ var experiment = {
 
 	init: function( parameters ) {
 
-
 		experiment.parameters = parameters;
 
 		experiment.oscilloscope = parameters.instruments["gould-oscilloscope"].instrument;
@@ -27,9 +26,24 @@ var experiment = {
 		experiment.focus = id;
 	},
 
+	config: {
+
+		pulses: function( val ) {
+			var timeBases = [];
+			var voltScales = [];
+			val.map( function( v ) {
+
+				timeBases.push( v.timebase );
+				voltScales.push( v.voltscale );
+			});
+
+			experiment.timeBases = timeBases;
+			experiment.yScales = voltScales;
+		}
+	},
 
 	run: function() {
-		console.log("Running1");
+		
 		var self = experiment;
 		return new Promise( function( resolver, rejecter ) {
 
@@ -48,7 +62,7 @@ var experiment = {
 			var recordedWaves = [];
 
 			var timeBases = [ 500000e-6 ];
-			var yScales = [ 20e-3];
+			var yScales = [ 20e-3 ];
 
 			var timeBase;
 

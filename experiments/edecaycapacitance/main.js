@@ -8,6 +8,10 @@ experiment.config = require('./config');
 experiment.renderer.experiment = experiment;
 experiment.loadInstruments();
 
+experiment.renderer.init();
+
+experiment.addInstrumentConnectModules();
+
 var proc = experiment.getDeviceProcedure('eDecayCapacitance');
 
 var Waveform = require('../../server/waveform');
@@ -52,6 +56,13 @@ renderer.getModule("focus").on("clicked", function() {
 
 });*/
 
+experiment.renderer.getModule("formConfig").on("validated", function( value ) {
+
+	proc.config("pulses", value.timebase );
+})
+
+
+
 function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
 return;
 	var i = 0;
@@ -68,6 +79,8 @@ return;
 	experiment.renderer.getModule("chargesvstime").setXLogScale( true );
 
 	var itx = new experiment.getITXBuilder();
+
+
 
 	for( var l = 0; l < vocsGlobal.length; l += 1 ) {
 
@@ -92,8 +105,6 @@ return;
 
 		var chargesF = chargesFGlobal[ l ];
 		var capacitanceF = capacitancesFGlobal[ l ];
-
-
 
 		var dataCharges = [], dataChargesSDev = [];
 		var dataChargesF = [], dataChargesSDevF = [];
@@ -232,13 +243,10 @@ return;
 
 		var itxw = itx.newWave( "capacitance_sdev_f_" + l );
 		itxw.setWaveform( wCapaSF );
-
-
 	}
 
 	var itxw = itx.newWave( "times" );
 	itxw.setWaveform( wTimeDelays );
-
 
 	var fileName = experiment.getFileSaver().save( {
 		contents: itx.getFile(),

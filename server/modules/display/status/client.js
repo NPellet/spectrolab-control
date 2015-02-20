@@ -1,4 +1,4 @@
-define( [ 'client/js/module'], function( defaultModule ) {
+define( [ 'js/module'], function( defaultModule ) {
 
 
 	function pad( val ) {

@@ -1,6 +1,6 @@
 
 
-define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
+define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 	var module = function() {}
 
@@ -176,7 +176,7 @@ define( [ 'client/js/module', 'jsgraph'], function( defaultModule, Graph ) {
 	};
 
 	module.prototype.setStatus = function( status ) {
-console.log( status );
+
 		var g = this.checkGraph();
 		var self = this;
 

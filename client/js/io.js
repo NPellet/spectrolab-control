@@ -1,5 +1,5 @@
 
-define( [ 'client/js/modulefactory' ], function( moduleFactory ) {
+define( [ 'js/modulefactory' ], function( moduleFactory ) {
 
 	var connected = false;
 	var ws;

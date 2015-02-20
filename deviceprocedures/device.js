@@ -46,4 +46,14 @@ Device.resume = function( methodName ) {
 	}
 }
 
+Device.config = function( cfgName, cfg ) {
+
+	if( methods[ currentMethod ].config && methods[ currentMethod ].config[ cfgName ] ) {
+		methods[ currentMethod ].config[ cfgName ]( cfg );
+	}
+
+
+}
+
+
 module.exports = Device;
