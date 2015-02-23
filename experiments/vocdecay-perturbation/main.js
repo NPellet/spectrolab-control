@@ -12,10 +12,10 @@ experiment.renderer.init();
 
 experiment.addInstrumentConnectModules();
 
-var proc = experiment.getDeviceProcedure('VocDecay-oscilloscope');
+var proc = experiment.getDeviceProcedure('VocDecay-perturbation');
 
 proc.on("progress", function( response ) {
-console.log( response );
+
 	var vocDecayWave = response;
 	var i = 1;
 
@@ -41,26 +41,18 @@ proc.on("done", function( response ) {
 	var waves = response;
 
 	var i = 0;
-
 	waves.map( function ( w ) {
 
 		var itxw = itx.newWave( "vocdecay_" + i  );
 		itxw.setWaveform( w );
-
-		if( i == 0 ) {
-			var itxw = itx.newWave("times");
-			itxw.setWaveform( w.getXWave() );
-		}
-
 		i++;
 	});
-
 
 	var fileName = experiment.getFileSaver().save( {
 		contents: itx.getFile(),
 		fileName: "vocdecay.itx",
 		fileExtension: 'itx',
-		dir: './vocdecay/'
+		dir: './vocdecay-perturbation/'
 	} );
 
 } );

@@ -6,6 +6,7 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	var ipAddress;
 
 	var globalCallbacks = {};
+	var onConnected = [];
 
 	function handleGlobal( data ) {
 
@@ -17,12 +18,20 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	}
 
 	function setEvents( ws ) {
-		// Stream is ready
+		// Stream is readyconsole.l
+
+		console.log('on');
 		ws.onopen = function( event ) {
 
 
 			connected = true;
+			console.log('c');
+			onConnected.map( function( c ) {
+				console.log('here');
+				c();
+			});
 
+			opConnected = [];
 		};
 
 		ws.onclose = function( ) {
@@ -76,7 +85,7 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	var send = function( message ) {
 
 		if( ! connected ) {
-			onConnected.add( function() {
+			onConnected.push( function() {
 				ws.send( message );
 			})
 		} else {

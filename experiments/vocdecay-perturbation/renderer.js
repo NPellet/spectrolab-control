@@ -33,8 +33,6 @@ renderer.init = function() {
     }
   } );
 
-  renderer.getModule("VocDecay").setHeight(400).setYAxisLabel("Voc (V)").setXAxisLabel("Time (s)").setXLogScale( true );
-
 }
 
 module.exports = renderer;

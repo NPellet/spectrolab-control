@@ -31,7 +31,7 @@ AFGCommand.prototype = extend( AFGCommand.prototype, {
 
 				module.status.response = data;
 				module.streamOut("response", data );
-
+				
 			} );
 		}
 	},

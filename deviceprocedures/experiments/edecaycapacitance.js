@@ -61,8 +61,8 @@ var experiment = {
 
 			var recordedWaves = [];
 
-			var timeBases = [ 50e-6, 100000e-6 ];
-			var yScales = [ 10e-3, 5e-3 ];
+			var timeBases = [ 50000e-6 ];
+			var yScales = [ 2e-3 ];
 
 
 			var timeBase;
@@ -136,8 +136,10 @@ var experiment = {
 							self.pulseBlank( timeBase, yScales[ n ] ).then( function( w ) {
 								blankWaves.push( w );
 //console.log( w );
-								if( ! self.paused ) {
+								if( ! self._paused ) {
 									p.next();
+								} else {
+									self.paused();
 								}
 							});
 
@@ -211,9 +213,13 @@ var experiment = {
 								self.pulse( timeBase, yScales[ n ], timeDelays[ i ] ).then( function( w ) {
 									recordedWaves.push( w );
 
-									if( ! self.paused ) {
+									if( ! self._paused ) {
 										p.next();
+									} else {
+										self.paused();
 									}
+
+
 								});
 
 								yield;
@@ -371,7 +377,7 @@ var experiment = {
 			}
 
 
-			var nbPulses = nearestPow2( 10 / ( timeBase * 40 ) / 2 )
+			var nbPulses = nearestPow2( 20 / ( timeBase * 40 ) / 2 )
 
 			self.oscilloscope.setAveraging( nbPulses );
 

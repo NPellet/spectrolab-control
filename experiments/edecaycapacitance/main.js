@@ -16,19 +16,12 @@ var proc = experiment.getDeviceProcedure('eDecayCapacitance');
 
 var Waveform = require('../../server/waveform');
 
-experiment.onStart = function() {
 
-
-}
-
-experiment.onPause = function() {
-
-}
 
 proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
 
 
-	experiment.renderer.getModule("lastJDecay1").newSerie("jdecay1", recordedWaves[ 1 ][ "2"], { } );
+	experiment.renderer.getModule("lastJDecay1").newSerie("jdecay1", recordedWaves[ 0 ][ "2"], { } );
 	//experiment.renderer.getModule("lastJDecay2").newSerie("jdecay2", recordedWaves[ 1 ][ "2"], { } );
 
 	experiment.renderer.getModule("lastJDecay1").autoscale();
@@ -62,12 +55,12 @@ renderer.getModule("focus").on("clicked", function() {
 	}
 
 });*/
-
+/*
 experiment.renderer.getModule("formConfig").on("validated", function( value ) {
 
 	proc.config("pulses", value.timebase );
 })
-
+*/
 
 
 function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {

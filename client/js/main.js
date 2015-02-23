@@ -34,46 +34,91 @@ function global( IO ) {
 
 	var experimentStatus = "stopped";
 
-	$("#experiment-run input").on('click', function() {
+		var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
 
-		switch( experimentStatus ) {
+		$("#experiment-run .run input").on('click', function() {
 
-			case 'stopped':
+			btns.prop( 'disabled', true );
 
-				IO.writeGlobal( "experiment-run" );
+			switch( experimentStatus ) {
 
-			break;
+				case 'stopped':
 
-			case 'running':
+					IO.writeGlobal( "experiment-run" );
 
-				IO.writeGlobal( "experiment-pause" );
+				break;
 
-			break;
+				case 'paused':
 
-			case 'paused':
+					IO.writeGlobal( "experiment-resume" );
 
-				IO.writeGlobal( "experiment-resume" );
+				break;
 
-			break;
-		}
-	});
+				case 'running':
+
+						IO.writeGlobal( "experiment-pause" );
+
+				break;
+			}
+		});
+
+
+
+			$("#experiment-run .abort input").on('click', function() {
+
+				btns.prop( 'disabled', true );
+
+				switch( experimentStatus ) {
+
+
+					case 'running':
+
+							IO.writeGlobal( "experiment-abort" );
+
+					break;
+				}
+			});
+
+
 
 	IO.onGlobal( "experiment-running", function() {
 
 		experimentStatus = "running";
-		$("#experiment-run input").attr('value', "Pause experiment").addClass('input-red').removeClass('input-green');
+		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Pause experiment").addClass('input-red').removeClass('input-green');
+		$("#experiment-run .run input").prop( "disabled", false ).addClass('input-red').removeClass('input-grey');
+		$("#experiment-abort .abort input").prop( "disabled", false );
 	} );
+
+
+	IO.onGlobal( "experiment-pausing", function() {
+
+		experimentStatus = "pausing";
+		$("#experiment-run .run input").prop("disabled", true ).attr('value', "Pausing experiment...").addClass('input-grey').removeClass('input-red');
+		$("#experiment-run .abort input").prop( "disabled", true ).addClass('input-grey').removeClass('input-red');
+
+	} );
+
+	IO.onGlobal( "experiment-aborting", function() {
+
+		experimentStatus = "pausing";
+		$("#experiment-run .run input").prop("disabled", true ).addClass('input-grey').removeClass('input-red');
+		$("#experiment-run .abort input").prop( "disabled", true ).attr('value', "Aborting experiment...").addClass('input-grey').removeClass('input-red');
+
+	} );
+
 
 	IO.onGlobal( "experiment-paused", function() {
 
 		experimentStatus = "paused";
-		$("#experiment-run input").attr('value', "Resume experiment").removeClass('input-red').addClass('input-green');
+		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Resume experiment").removeClass('input-red').removeClass('input-grey').addClass('input-green');
+		$("#experiment-abort .abort input").prop( "disabled", false );
 	} );
 
 	IO.onGlobal( "experiment-stopped", function() {
 
 		experimentStatus = "stopped";
-		$("#experiment-run input").attr('value', "Run experiment").removeClass('input-red').addClass('input-green');
+		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Run experiment").removeClass('input-red').addClass('input-green');
+		$("#experiment-abort .abort input").prop( "disabled", true ).addClass('input-grey').removeClass('input-red');
 	} );
 
 }

@@ -121,6 +121,22 @@ Arduino.prototype.setWhiteLightLevel = function( whiteLightLevel ) {
 }
 
 
+Arduino.prototype.setColorLightVoltage = function( voltage ) {
+
+	if( voltage > 2000 ) {
+		voltage = 2000;
+	}
+
+	if( voltage < 0 ) {
+		voltage = 0;
+	}
+
+	
+	var cmd = "5," + this.params.colorLightLED.arduinoAnalogPin + "," + voltage + ";";
+	return callSerial( this, cmd );
+}
+
+
 Arduino.prototype.close = function() {
 
 	var self = this;
@@ -326,68 +342,6 @@ function processQueue( Arduino ) {
 	});
 }
 
-function getChannel( channel, number ) {
-
-	if( typeof channel == "number" ) {
-		channel = Math.round( channel );
-		if( channel > 4 || channel < 1 ) {
-			throw "Channel must be between 1 and 4";
-		}
-
-		//return "CHAN" + channel;
-	} else if( channel.length == 1) {
-		channel = parseInt( channel );
-	}
-
-	if( number ) {
-		return channel;
-	}
-
-	return "CHAN" + channel;
-}
-
-
-function getTrigger( trigger ) {
-
-	switch( trigger.toLowerCase() ) {
-
-		case '2':
-		case 2:
-		case "b":
-			return "TRIGB";
-		break;
-
-		case '1':
-		case 1:
-		case 'a':
-			return "TRIGA";
-		break;
-	}
-}
-
-function getCoupling( coupling ) {
-
-	switch( coupling ) {
-
-		case 'ac':
-		case 'AC':
-			coupling = "AC";
-		break;
-
-		case 'dc':
-		case 'DC':
-			coupling = "DC";
-		break;
-
-		case 'GND':
-		case 'gnd':
-		case 'ground':
-		case 'GROUND':
-			coupling = "GND";
-		break;
-	}
-	return coupling;
-}
 
 function setEvents( Arduino, resolver ) {
 

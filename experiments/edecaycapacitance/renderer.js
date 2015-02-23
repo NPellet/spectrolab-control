@@ -130,7 +130,7 @@ renderer.init = function() {
         }
     };
 
-  
+
     var options = {
         "fields": {
             "timebase": {
@@ -139,21 +139,21 @@ renderer.init = function() {
                 "item": {
                   "fields": {
                     "timebase": {
-                      "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()   
+                      "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()
                     },
 
                     "voltscale": {
                       optionLabels: renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleTxt()
                     }
-                  }      
+                  }
                 }
               }
             }
         }
     };
 
-  renderer.getModule("formConfig").setSchema( schema ).setOptions( options );
-  
+//  renderer.getModule("formConfig").setSchema( schema ).setOptions( options );
+
 }
 
 module.exports = renderer;

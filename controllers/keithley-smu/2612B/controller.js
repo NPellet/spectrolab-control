@@ -278,6 +278,7 @@ var methods = {
 
 			method: 'longPulse',
 			parameters: function( options ) {
+				console.log( options );
 				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ];
 			},
 
@@ -425,6 +426,12 @@ Keithley.prototype.command = function( command ) {
 	});
 }
 
+Keithley.prototype.setDigioPin = function( pin, bln ) {
+		bln = bln ? 1 : 0;
+		this.command("digio.writebit( " + pin + ", " + bln + " )");
+}
+
+
 Keithley.prototype.flushErrors = function() {
 
 	this.command("errorqueue.clear();");
@@ -472,7 +479,6 @@ Keithley.prototype.setEvents = function() {
 		module.socket.removeAllListeners( 'data' );
 		self.emit("disconnected");
 	});
-
 }
 
 Keithley.prototype.uploadScripts = function() {

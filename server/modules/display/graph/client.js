@@ -57,7 +57,7 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 			switch( type ) {
 
 				case 'scatter':
-					
+
 					serie.setDataError( data.errors );
 					serie.setErrorStyle( [ 'bar'] );
 					serie.setStyle( data.style );
@@ -145,14 +145,14 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 		"setXAxisLabel": function ( data ) {
 
 			var g = this.checkGraph();
-			g.getXAxis().setLabel( data.value );
+			g.getXAxis().setLabel( data );
 		},
 
 
 		"setYAxisLabel": function ( data ) {
 
 			var g = this.checkGraph();
-			g.getYAxis().setLabel( data.value );
+			g.getYAxis().setLabel( data );
 		},
 
 		"setHeight": function ( data ) {
