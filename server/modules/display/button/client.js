@@ -11,7 +11,6 @@ define( [ 'js/module'], function( defaultModule ) {
 		this.button = this.getDom().find('.button');
 
 		this.button.on('click', function() {
-			console.log('out');
 			self.out('click');
 		});
 
@@ -19,16 +18,17 @@ define( [ 'js/module'], function( defaultModule ) {
 
 	module.prototype.in = {
 
-				"setText": function( text ) {
-					this.status.text = text;
-					this.button.attr( 'value', this.status.text );
-				},
+		"setText": function( text ) {
+			console.log( this, this.status );
+			this.status.text = text;
+			this.button.attr( 'value', this.status.text );
+		},
 
-				"setStatus": function( color ) {
+		"setColor": function( color ) {
 
-					this.status.color = color;
-					this.button.attr( 'data-color', this.status.color );
-				}
+			this.status.color = color;
+			this.button.attr( 'data-color', this.status.color );
+		}
 	};
 
 	module.prototype.setStatus = function( status ) {

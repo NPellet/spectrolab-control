@@ -20,12 +20,11 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	function setEvents( ws ) {
 		// Stream is readyconsole.l
 
-		console.log('on');
 		ws.onopen = function( event ) {
 
 
 			connected = true;
-			console.log('c');
+
 			onConnected.map( function( c ) {
 				console.log('here');
 				c();
@@ -112,7 +111,10 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 		},
 
 		connect: function() {
-
+			if( document.location.href.indexOf("127.0.0.1") > -1 ) {
+				ipAddress = "127.0.0.1";
+			}
+			
 			ws = new WebSocket('ws://' + ( ipAddress || '127.0.0.1' ) + ':8080');
 			setEvents( ws );
 		},

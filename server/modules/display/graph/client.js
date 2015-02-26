@@ -63,7 +63,7 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 					serie.setStyle( data.style );
 
 					serie.on( "mouseover", function( id ) {
-						module.streamOut("mouseOverPoint", { serieName: data.name, pointId: id } );
+						module.out("mouseOverPoint", { serieName: data.name, pointId: id } );
 					});
 
 				break;
@@ -146,6 +146,7 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 			var g = this.checkGraph();
 			g.getXAxis().setLabel( data );
+			
 		},
 
 
