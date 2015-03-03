@@ -1,39 +1,31 @@
 
 var Waveform = require('../../server/waveform');
 
-var experiment = function() { };
-
-experiment.prototype = {
+var experiment = {
 
 	init: function( parameters ) {
 
-		if( ! parameters.oscilloscope || ! parameters.keithley || ! parameters.arduino ) {
-			throw "An oscilloscope, a keithley SMU and an Arduino with analog output are required";
-		}
+		experiment.parameters = parameters;
 
-		this.parameters = parameters;
+		experiment.oscilloscope = parameters.instruments["gould-oscilloscope"].instrument;
+		experiment.keithley = parameters.instruments["keithley-smu"].instrument;
+		experiment.arduino = parameters.instruments.arduino.instrument;
 
-		this.oscilloscope = parameters.oscilloscope;
-		this.keithley = parameters.keithley;
-		this.arduino = parameters.arduino;
+		experiment.parameters.ledPin = 4;
+		experiment.parameters.pulseTime = 5;
+		experiment.parameters.delay = 15;
 
-		this.parameters.ledPin = 4;
-		this.parameters.pulseTime = 2;
-		this.parameters.delay = 15;
-
-		this.lightIntensities = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ];
+		experiment.lightIntensities = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ];
 	},
 
 	run: function() {
 
-		var self = this;
+		var self = experiment;
 		return new Promise( function( resolver, rejecter ) {
-
-
-			var recordedWaves = [];
 			
-
+			var recordedWaves = [];
 			var timeBases = [
+				1e-6,
 				10e-6,
 				100e-6,
 				1000e-6,
@@ -65,7 +57,7 @@ experiment.prototype = {
 			self.oscilloscope.setCoupling( 3, "DC");
 			self.oscilloscope.setCoupling( 4, "GND");
 
-			
+
 			self.oscilloscope.setTriggerLevel( "A", 1 ); // Set trigger to 0.7V
 			self.oscilloscope.setTriggerToChannel( "A", 1 ); // Set trigger on light control
 			self.oscilloscope.setTriggerCoupling( "A", "DC" ); // Trigger coupling should be AC
@@ -80,7 +72,7 @@ experiment.prototype = {
 			self.keithley.command("*CLS"); // Reset keithley
 			self.keithley.command("*RST"); // Reset keithley
 
-			
+
 
 
 			self.oscilloscope.ready.then( function() {
@@ -100,25 +92,46 @@ experiment.prototype = {
 
 						self.oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
 						self.oscilloscope.setPreTrigger( "A", 50 ); // Set pre-trigger, 10%
-						
-						self.oscilloscope.ready.then( function() {
 
-							self.pulse( 0.1, 2 ).then( function( w ) {
-								baseLine = w.average( 0, 100 );
-								p.next();
-							});								
-						});
-						
-						yield;
+						if( i == 0 ) {
+							self.oscilloscope.ready.then( function() {
+
+								self.pulse( 0.1, 2, 30 ).then( function( w ) {
+									baseLine = w.average( 0, 100 );
+
+console.log( "Baseline:" , baseLine, w.getData() );
+									if( ! experiment._paused ) {
+											p.next();
+									} else {
+										experiment.paused();
+									}
+
+								});
+							});
+
+							yield;
+
+						}
+
 
 						self.oscilloscope.setTriggerSlope("A", "DOWN"); // Trigger on bit going up
 						self.oscilloscope.setPreTrigger( "A", preTrigger ); // Set pre-trigger, 10%
-				
+
 						for( var n = 0; n < timeBases.length; n += 1 ) {
 							timeBase = timeBases[ n ];
-							self.pulse( timeBase ).then( function( w ) {
+							var nb = timeBase == 1 ? 2 : 1;
+							self.pulse( timeBase, nb ).then( function( w ) {
+
+								w.subtract( baseLine );
+								console.log( baseLine, w.getData() );
 								recordedWaves.push( w );
-								p.next();
+
+								if( ! experiment._paused ) {
+										p.next();
+								} else {
+									experiment.paused();
+								}
+
 							});
 
 							yield;
@@ -152,31 +165,30 @@ experiment.prototype = {
 						} );
 
 						vocDecay.shiftX( timeBases[ 0 ] * 10 / 500 );
-						vocDecay.subtract( baseLine );
+
 
 						vocDecays[ i ] = vocDecay
 
-						if( self.parameters.progress ) {
-							self.parameters.progress( [ vocDecays, self.lightIntensities ] );
-						}
-
+						experiment.progress( vocDecays, self.lightIntensities );
 					}
 
-					resolver( [ vocDecays, self.lightIntensities ] );
+					experiment.done( vocDecays, self.lightIntensities );
 				}
 
 				var p = pulse();
+				experiment.iterator = p;
 				p.next( );
 
 			}); // End oscilloscope ready
+
 
 		}); // End returned promise
 
 	},
 
-	pulse: function( timeBase, number ) {
+	pulse: function( timeBase, number, delay ) {
 
-		var self = this;
+		var self = experiment;
 		self.oscilloscope.setTimeBase( timeBase );
 
 		return self.keithley.longPulse( {
@@ -184,7 +196,7 @@ experiment.prototype = {
 			diodePin: self.parameters.ledPin,
 			pulseWidth: self.parameters.pulseTime,
 			numberOfPulses: number || 1,
-			delay: self.parameters.delay
+			delay: delay || self.parameters.delay
 
 		} ).then( function( value ) {
 

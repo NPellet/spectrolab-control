@@ -2,9 +2,10 @@
 define( [ 'js/io' ], function( io )  {
 
 	var Module = function( ) { }
-	
+
 	Module.prototype.init = function() {
 		this._locked = false;
+		this.status = {};
 		this.overlay = $( "<div />" ).addClass("overlay");
 	}
 
@@ -47,7 +48,7 @@ define( [ 'js/io' ], function( io )  {
 	}
 
 	Module.prototype.getStatus = function( ) {
-		
+
 		this.out( "getStatus", true );
 	}
 
@@ -61,7 +62,7 @@ define( [ 'js/io' ], function( io )  {
 		this._dom.prepend( this.overlay );
 
 		var dom = this._dom;
-		
+
 		this.overlay.css( {
 
 			top: dom.position().top,

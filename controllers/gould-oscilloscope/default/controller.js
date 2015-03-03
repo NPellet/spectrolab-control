@@ -195,7 +195,7 @@ Gould.prototype.setTriggerCoupling = function( trigger, coupling ) {
 }
 
 Gould.prototype.getAvailableTimebasesNb = function() {
-	return [ 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 10e-2, 20e-2, 50e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5 ];
+	return [ 1e-6, 2e-6, 5e-6, 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 10e-2, 20e-2, 50e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5 ];
 }
 
 
@@ -207,7 +207,7 @@ Gould.prototype.getAvailableTimebasesTxt = function() {
 Gould.prototype.setTimeBase = function( timeBase ) {
 
 	var availableTimeBases = this.getAvailableTimebasesNb();
-	
+
 	if( availableTimeBases.indexOf( timeBase ) == -1 ) {
 		throw "Cannot set timebase \"" + timeBase + "\". Not in allowed list";
 		return;
@@ -494,9 +494,11 @@ function checkQueue( gould ) {
 
 	if( gould.queue.length > 0 ) {
 
-		gould.ready = new Promise( function( resolver ) {
-			gould.readyResolve = resolver;
-		});
+		if( ! gould.ready ) {
+			gould.ready = new Promise( function( resolver ) {
+				gould.readyResolve = resolver;
+			});
+		}
 
 		processQueue( gould );
 	}
@@ -506,7 +508,12 @@ function processQueue( gould ) {
 
 	if( gould.queue.length == 0 ) {
 		gould.processingQueue = false;
-		gould.readyResolve();
+		setTimeout( function() {
+			gould.readyResolve();
+			gould.ready = false;
+		}, 1000 );
+
+
 		return;
 	}
 

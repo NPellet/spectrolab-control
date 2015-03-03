@@ -6,7 +6,6 @@ renderer.init = function() {
   renderer.setWrappersJSON( {
 
       control: {
-        special: "connect",
         title: "Experiment control",
         width: 3,
         top: 1,
@@ -33,9 +32,16 @@ renderer.init = function() {
         width: 10 // 500px
       },
 
-      summary: {
+      summary1: {
         title: "Summary",
         left: 13,
+        top: 1,
+        width: 10 // 500px
+      },
+
+      summary2: {
+        title: "Summary",
+        left: 23,
         top: 1,
         width: 10 // 500px
       }
@@ -45,38 +51,43 @@ renderer.init = function() {
 
   renderer.setModulesJSON( {
 
+    focus: {
+      wrapper: 'control',
+      path: 'display/button'
+    },
+
     status: {
       wrapper: 'status',
       path: 'display/status',
     },
 
-    lastJDecay1: {
+    lastJDecay: {
       wrapper: 'lastPulse',
       path: 'display/graph'
     },
 
-    lastJDecay2: {
+    pulses: {
       wrapper: 'lastPulse',
       path: 'display/graph'
     },
 
     vocvstime: {
-      wrapper: 'summary',
+      wrapper: 'summary1',
       path: 'display/graph'
     },
 
     chargesvstime: {
-      wrapper: 'summary',
+      wrapper: 'summary1',
       path: 'display/graph'
     },
 
     "C-V": {
-      wrapper: 'summary',
+      wrapper: 'summary2',
       path: 'display/graph'
     },
 
     "C-t": {
-      wrapper: 'summary',
+      wrapper: 'summary2',
       path: 'display/graph'
     }
 
@@ -85,22 +96,31 @@ renderer.init = function() {
   renderer.getModule("vocvstime")
     .setTitle("Voc vs time")
     .setHeight( 400 )
-    .setXAxisLabel("Time (s)");
+    .setXAxisLabel("Time (s)")
+    .setXLogScale( true );
 
   renderer.getModule("chargesvstime")
     .setTitle("Charges vs time")
     .setHeight( 400 )
-    .setXAxisLabel("Time (s)");
+    .setXAxisLabel("Time (s)")
+    .setXLogScale( true );
 
   renderer.getModule("C-V")
     .setTitle("C-V plot")
     .setHeight( 400 )
     .setXAxisLabel("Voltage (V)");
 
-  renderer.getModule("C-t")
-    .setTitle("Capacitance vs time")
-    .setHeight( 400 )
-    .setXAxisLabel("Time (s)");
+    renderer.getModule("C-t")
+      .setTitle("Capacitance vs time")
+      .setHeight( 400 )
+      .setXAxisLabel("Time (s)")
+      .setXLogScale( true );
+
+      renderer.getModule("pulses")
+        .setTitle("Number of pulses")
+        .setHeight( 200 )
+        .setXAxisLabel("Time (s)")
+        .setXLogScale( true );
 
 
     var schema = {
@@ -130,7 +150,7 @@ renderer.init = function() {
         }
     };
 
-  
+
     var options = {
         "fields": {
             "timebase": {
@@ -139,21 +159,21 @@ renderer.init = function() {
                 "item": {
                   "fields": {
                     "timebase": {
-                      "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()   
+                      "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()
                     },
 
                     "voltscale": {
                       optionLabels: renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleTxt()
                     }
-                  }      
+                  }
                 }
               }
             }
         }
     };
 
-  renderer.getModule("formConfig").setSchema( schema ).setOptions( options );
-  
+//  renderer.getModule("formConfig").setSchema( schema ).setOptions( options );
+
 }
 
 module.exports = renderer;

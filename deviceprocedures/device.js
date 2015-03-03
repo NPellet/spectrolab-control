@@ -21,6 +21,12 @@ Device.method = function( methodName, methodOptions ) {
 		arguments = Array.prototype.slice.call( arguments );
 		arguments.unshift( "progress" );
 		Device.emit.apply( Device, arguments );
+	};
+
+	experiment.done = function() {
+		arguments = Array.prototype.slice.call( arguments );
+		arguments.unshift( "done" );
+		Device.emit.apply( Device, arguments );
 	}
 
 	currentMethod = methodName;
@@ -36,14 +42,32 @@ Device.run = function( methodName ) {
 	}
 
 }
-Device.pause = function( methodName ) {
-	methods[ methodName ].paused = true;
+
+Device.pause = function( ) {
+
+	return new Promise( function( resolver, rejecter ) {
+		methods[ currentMethod ]._paused = true;
+		methods[ currentMethod ].paused = function() {
+			resolver();
+		}
+	} );
 }
 
+
 Device.resume = function( methodName ) {
-	if( methods[ methodName ].paused ) {
-		methods[ methodName ].iterator.next();
+	if( methods[ currentMethod ]._paused ) {
+		methods[ currentMethod ]._paused = false;
+		methods[ currentMethod ].iterator.next();
 	}
+}
+
+Device.abort = function( ) {
+	return new Promise( function( resolver, rejecter ) {
+		methods[ currentMethod ]._paused = true;
+		methods[ currentMethod ].paused = function() {
+			resolver();
+		}
+	} );
 }
 
 Device.config = function( cfgName, cfg ) {

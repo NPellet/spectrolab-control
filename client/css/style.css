@@ -28,7 +28,7 @@ body {
 }
 
 #header #experiment {
-	margin-left: 20px;	
+	margin-left: 20px;
 }
 
 #header #device-name {
@@ -57,7 +57,7 @@ body {
 
 	border-radius: 2px;
 	height: 30px;
-	border: 1px solid;	
+	border: 1px solid;
 	font-size: 20px;
 	cursor: pointer;
 }
@@ -68,11 +68,16 @@ body {
 	color: #066537;
 }
 
-
 .input-red {
 	background-color: #f0b9b9;
 	border-color: #650d0d;
 	color: #650d0d;
+}
+
+.input-grey {
+	background-color: #f0f0f0;
+	border-color: #606060;
+	color: #606060;
 }
 
 

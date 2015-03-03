@@ -6,6 +6,7 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	var ipAddress;
 
 	var globalCallbacks = {};
+	var onConnected = [];
 
 	function handleGlobal( data ) {
 
@@ -17,12 +18,19 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	}
 
 	function setEvents( ws ) {
-		// Stream is ready
+		// Stream is readyconsole.l
+
 		ws.onopen = function( event ) {
 
 
 			connected = true;
 
+			onConnected.map( function( c ) {
+				console.log('here');
+				c();
+			});
+
+			opConnected = [];
 		};
 
 		ws.onclose = function( ) {
@@ -76,7 +84,7 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 	var send = function( message ) {
 
 		if( ! connected ) {
-			onConnected.add( function() {
+			onConnected.push( function() {
 				ws.send( message );
 			})
 		} else {
@@ -103,7 +111,10 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 		},
 
 		connect: function() {
-
+			if( document.location.href.indexOf("127.0.0.1") > -1 ) {
+				ipAddress = "127.0.0.1";
+			}
+			
 			ws = new WebSocket('ws://' + ( ipAddress || '127.0.0.1' ) + ':8080');
 			setEvents( ws );
 		},

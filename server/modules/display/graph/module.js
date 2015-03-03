@@ -37,7 +37,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		var s = { name: name, data: data, options: options };
 		this.series[ name ] = s;
 
-		this.status.series = this.status.scatterSeries || {};
+		this.status.series = this.status.series || {};
 		this.status.series[ name ] = s;
 
 		this.out( "newSerie", s );

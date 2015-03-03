@@ -27,7 +27,7 @@
 			{{ experimentConfig.name }}
 		</span>
 	</div>
-		
+
 	<div class="right">
 		<div id="device-name">
 			<span class="label">
@@ -39,9 +39,14 @@
 		</div>
 
 		<div id="experiment-run">
-			<span class="go">
+			<span class="run">
 				<input type="submit" value="Run Experiment" class="input-green" />
 			</span>
+
+			<span class="abort">
+				<input type="submit" value="Abort Experiment" class="input-grey" disabled="disabled" />
+			</span>
+
 		</div>
 	</div>
 </div>
