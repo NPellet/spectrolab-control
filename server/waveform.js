@@ -32,6 +32,14 @@ Waveform.prototype = {
 		return this.data[ index ];
 	},
 
+	getMax: function() {
+		return Math.max.apply( null, this.data )
+	},
+
+	getMin: function() {
+		return Math.min.apply( null, this.data )
+	},
+
 	set: function( index, value ) {
 		this.data[ index ] = value;
 	},
@@ -389,7 +397,7 @@ Waveform.prototype = {
 			} else {
 				throw "Cannot subtract two waves with unequal number of points";
 			}
-		
+
 		} else {
 
 			for( var i = 0; i < this.data.length; i ++ ) {

@@ -121,7 +121,20 @@ Arduino.prototype.setWhiteLightLevel = function( whiteLightLevel ) {
 }
 
 
-Arduino.prototype.setColorLightVoltage = function( voltage ) {
+Arduino.prototype.setWhiteLightLevelVoltage = function( whiteLightLevel ) {
+	var max;
+	if( whiteLightLevel > ( max = this.params.whiteLightLED.arduinoAnalogValue[ 0 ] ) ) {
+			whiteLightLevel = max;
+	}
+
+
+	var cmd = "5," + this.params.whiteLightLED.arduinoAnalogPin + "," + whiteLightLevel + ";";
+	return callSerial( this, cmd );
+}
+
+
+
+Arduino.prototype.setColorLightLevelVoltage = function( voltage ) {
 
 	if( voltage > 2000 ) {
 		voltage = 2000;
@@ -131,7 +144,7 @@ Arduino.prototype.setColorLightVoltage = function( voltage ) {
 		voltage = 0;
 	}
 
-	
+
 	var cmd = "5," + this.params.colorLightLED.arduinoAnalogPin + "," + voltage + ";";
 	return callSerial( this, cmd );
 }

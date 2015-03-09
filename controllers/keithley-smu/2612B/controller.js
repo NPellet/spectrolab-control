@@ -29,35 +29,90 @@ var methods = {
 	},
 
 
-	'sweepIV': {
-		defaults: {
-			channel: 'smua',
-			startV: 0,
-			stopV: 1,
-			settlingTime: 0.02,
-			timeDelay: 0,
-			complianceI: 1,
-			nbPoints: 100
+		'sweepIV': {
+			defaults: {
+				channel: 'smua',
+				startV: 0,
+				stopV: 1,
+				settlingTime: 0.02,
+				timeDelay: 0,
+				complianceI: 1,
+				nbPoints: 100
+			},
+
+			method: 'LinVSweepMeasureI',
+			parameters: function( options ) {
+
+				return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints ]
+			},
+
+			processing: function( data, options ) {
+
+				var w = new Waveform();
+				var current, voltage, dataFinal = [];
+				data = data.split(/,[\t\r\s\n]*/);
+				for( var i = 0; i < data.length; i += 2 ) {
+					dataFinal.push( parseFloat( data[ i ] ) );
+				}
+
+				w.setData( dataFinal );
+				w.setXScaling( options.startV, ( ( options.stopV - options.startV ) / ( options.nbPoints - 1 ) ) );
+
+
+				return w;
+			}
 		},
 
-		method: 'LinVSweepMeasureI',
-		parameters: function( options ) {
 
-			return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints ]
+	'measureVoc': {
+		defaults: {
+			channel: 'smua',
+			settlingTime: 0.02
+		},
+
+		method: 'measurevoc',
+		parameters: function( options ) {
+			return [ options.channel, options.settlingTime ]
 		},
 
 		processing: function( data ) {
 
-
-			var current, voltage, dataFinal = [];
-			data = data.split(/,[\t\r\s\n]*/);
-			for( var i = 0; i < data.length; i += 2 ) {
-				dataFinal.push( [ parseFloat( data[ i + 1] ), parseFloat( data[ i ] ) ] );
-
-			}
-			return dataFinal;
+			return parseFloat( data );
 		}
 	},
+
+
+	'measureIsc': {
+		defaults: {
+			channel: 'smua',
+			settlingTime: 0.02
+		},
+
+		method: 'measurejsc',
+		parameters: function( options ) {
+
+			return [ options.channel, options.settlingTime ]
+		},
+
+		processing: function( data ) {
+console.log("Data: ", data );
+			return parseFloat( data );
+		}
+	},
+
+
+	'applyVoltage': {
+		defaults: {
+			bias: 0,
+			channel: 'smua'
+		},
+
+		method: 'applyvoltage',
+		parameters: function( options ) {
+			return [ options.channel, options.bias ]
+		}
+	},
+
 
 	'VoltageStability': {
 		defaults: {
@@ -138,7 +193,6 @@ var methods = {
 
 		method: 'HallMeasurement',
 		parameters: function( options ) {
-			console.log( options );
 			return [ options.channel, options.bias ]
 		},
 
@@ -176,7 +230,6 @@ var methods = {
 			var w = new Waveform();
 			var dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
-			console.log( data );
 			for( var i = 0; i < data.length; i ++ ) {
 				dataFinal.push( parseFloat( data[ i ] ) );
 			}
@@ -207,7 +260,6 @@ var methods = {
 
 		method: 'SineAmperemetryIV',
 		parameters: function( options ) {
-			console.log( options );
 			return [ options.channel, '"' + options.sense + '"', options.bias, options.level, options.complianceI, options.complianceV, options.settlingTime, options.nplc, options.points ]
 		},
 
@@ -278,7 +330,6 @@ var methods = {
 
 			method: 'longPulse',
 			parameters: function( options ) {
-				console.log( options );
 				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ];
 			},
 
@@ -380,11 +431,9 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			function end( data ) {
-console.log( "Keithley ret:" + data );
 				if( method.processing ) {
 					data = method.processing( data, options );
 				}
-
 				resolver( data );
 			}
 
@@ -402,7 +451,6 @@ console.log( "Keithley ret:" + data );
 
 			listen("");
 
-			console.log("writing in socket : " + method.method + "(" + method.parameters( options ).join() + ");\r\n" );
 
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
@@ -460,8 +508,10 @@ Keithley.prototype.setEvents = function() {
 		self.socket.removeAllListeners( 'data' );
 
 		self.flushErrors();
+
+		self.command("*RST"); // Reset keithley
 		self.command("digio.writeport(0)");
-		self.command("format.data=format.REAL32");
+	//	self.command("format.data=format.REAL32");
 		self.command("format.byteorder=format.LITTLEENDIAN");
 
 		self.socket.write("SpetroscopyScripts();\r\n");

@@ -100,12 +100,18 @@ TektronixAFG.prototype.connect = function(  ) {
 			module.shellInstance.once( 'message', function( data ) {
 
 					if( data == "IO:connected" ) {
-						resolver( module );
-						module.emit("connected");
+
+						module.getErrors().then( function() {
+
+							resolver( module );
+							module.emit("connected");
+
+						});
 					}
 
 
 			});
+
 
 
 			module.shellInstance.on( 'message', function( data ) {
@@ -140,6 +146,10 @@ TektronixAFG.prototype.connect = function(  ) {
 			self.runCommands();
 		});
 	}
+
+
+
+
 
 	TektronixAFG.prototype.commands = function( commands ) {
 		var self = this;
@@ -196,6 +206,50 @@ function query( module, query ) {
 		} );
 }
 
+TektronixAFG.prototype.getErrors = function() {
+	var self = this;
+	this.command("*ESR?"); // Read errors from the Status Event Register. Put then into the queue
+
+	return new Promise( function( resolver ) {
+
+
+		var errorQueue;
+var i = 0;
+		function *errors() {
+
+			while( true ) {
+				self.command("SYSTEM:ERROR:NEXT?").then( function( error ) {
+
+						error = error.split(',');
+						var errorCode = parseInt( error[ 0 ] );
+						var errorMessage = error[ 1 ].replace( /"/g, '' );
+
+						i++;
+						if( i > 100 ) {
+							console.log( "Infinite loop" );
+							return; // Infinite loop. Close the iterator;
+						}
+
+						if( errorCode != 0 ) {
+							console.log("Error: " + errorCode + "; Message: " + errorMessage );
+							errorQueue.next();
+						} else {
+
+							resolver();
+						}
+
+				} );
+
+				yield;
+			}
+		}
+
+		errorQueue = errors();
+		errorQueue.next();
+
+	})
+
+}
 
 TektronixAFG.prototype.setVoltageLowLimit = function( channel, voltage ) {
 
@@ -241,13 +295,33 @@ TektronixAFG.prototype.setVoltageHigh = function( channel, voltage ) {
 }
 
 
+TektronixAFG.prototype.setVoltageOffset = function( channel, offset ) {
+
+	channel = getChannel( channel );
+	offset = getVoltage( offset );
+
+	this.command("SOURCE" + channel + ":VOLTAGE:LEVEL:IMMEDIATE:OFFSET " + offset );
+}
+
+
+
+
+TektronixAFG.prototype.setFrequency = function( channel, frequency ) { // Delays the beginning of the pulse
+
+	channel = getChannel( channel );
+	frequency = frequency + "Hz";
+
+	this.command("SOURCE" + channel + ":FREQUENCY:MODE FIXED");
+
+	this.command("SOURCE" + channel + ":FREQUENCY:FIXED " + frequency );
+}
 
 TektronixAFG.prototype.setShape = function( channel, shape ) { // Delays the beginning of the pulse
 
 	channel = getChannel( channel );
 	shape = getShape( shape );
 
-	this.command("SOURCE" + channel + ":FUNCTION:SHAPE " + shape );
+	this.command( "SOURCE" + channel + ":FUNCTION:SHAPE " + shape );
 }
 
 
@@ -256,7 +330,7 @@ TektronixAFG.prototype.setPulsePeriod = function( channel, period ) {
 	channel = getChannel( channel );
 	period = getTime( period );
 
-	this.command("SOURCE" + channel + ":PULSE:PERIOD " + period );
+	this.command( "SOURCE" + channel + ":PULSE:PERIOD " + period );
 }
 
 TektronixAFG.prototype.setPulseDutyCycle = function( channel, cycle ) { // Delays the beginning of the pulse
@@ -264,7 +338,7 @@ TektronixAFG.prototype.setPulseDutyCycle = function( channel, cycle ) { // Delay
 	channel = getChannel( channel );
 	cycle = getPercent( cycle );
 
-	this.command("SOURCE" + channel + ":PULSE:DCYCLE " + time );
+	this.command( "SOURCE" + channel + ":PULSE:DCYCLE " + time );
 }
 
 
@@ -273,7 +347,7 @@ TektronixAFG.prototype.setPulseDelay = function( channel, time ) { // Delays the
 	channel = getChannel( channel );
 	time = getTime( time );
 
-	this.command("SOURCE" + channel + ":PULSE:DELAY " + time );
+	this.command( "SOURCE" + channel + ":PULSE:DELAY " + time );
 }
 
 
@@ -282,7 +356,7 @@ TektronixAFG.prototype.setPulseHold = function( channel, hold ) { // Asks to hol
 	channel = getChannel( channel );
 	hold = getFromList( hold, [ "WIDTH", "DUTY" ] );
 
-	this.command("SOURCE" + channel + ":PULSE:HOLD " + time );
+	this.command( "SOURCE" + channel + ":PULSE:HOLD " + hold );
 }
 
 
@@ -312,12 +386,10 @@ TektronixAFG.prototype.setPulseTrailingTime = function( channel, time ) { // Onl
 	this.command("SOURCE" + channel + ":PULSE:TRANSITION:TRAILING " + time );
 }
 
-TektronixAFG.prototype.setTriggerOut = function( channel, triggerType ) {
+TektronixAFG.prototype.setTriggerOut = function( triggerType ) {
 
-	channel = getChannel( channel );
 	triggerType = getFromList( triggerType, [ "TRIGGER", "SYNC" ] );
-
-	this.command("SOURCE" + channel + ":TRIGGER:MODE " + triggerType );
+	this.command("OUPUT:TRIGGER:MODE " + triggerType );
 }
 
 
@@ -332,7 +404,7 @@ TektronixAFG.prototype.setBurstMode = function( channel, mode ) {
 TektronixAFG.prototype.enableBurst = function( channel ) {
 
 	channel = getChannel( channel );
-	this.command("SOURCE" + channel + ":BURST:STATE:ON");
+	this.command("SOURCE" + channel + ":BURST:STATE ON");
 }
 
 TektronixAFG.prototype.disableBurst = function( channel ) {
@@ -365,13 +437,24 @@ TektronixAFG.prototype.turnChannelOn = function( channel ) {
 
 TektronixAFG.prototype.enableChannel = TektronixAFG.prototype.turnChannelOn;
 
+TektronixAFG.prototype.enableChannels = function() {
+	this.turnChannelOn( 1 );
+	this.turnChannelOn( 2 );
+}
+
 TektronixAFG.prototype.turnChannelOff = function( channel ) {
 
 	channel = getChannel( channel );
 	this.command("OUTPUT" + channel + ":STATE OFF");
 }
 
-TektronixAFG.prototype.disableChannel = TektronixAFG.prototype.turnChannelOn;
+TektronixAFG.prototype.disableChannel = TektronixAFG.prototype.turnChannelOff;
+
+
+TektronixAFG.prototype.disableChannels = function() {
+	this.turnChannelOff( 1 );
+	this.turnChannelOff( 2 );
+}
 
 TektronixAFG.prototype.trigger = function() { // Generates a trigger
 	this.command("*TRG");
@@ -402,7 +485,7 @@ function getChannel( channel ) {
 	if( channel == 1 || channel == 2 ) {
 		return channel;
 	}
-
+	console.trace();
 	throw "Channel invalid";
 }
 
@@ -468,6 +551,7 @@ function getFromList( value, list ) {
 		}
 	}
 
+	console.trace();
 	throw "Could not find element in list";
 }
 

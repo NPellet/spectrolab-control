@@ -20,8 +20,13 @@ var Waveform = require('../../server/waveform');
 
 proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
 
-
-	experiment.renderer.getModule("lastJDecay").newSerie("jdecay1", recordedWaves[ 1 ] ? recordedWaves[ 1 ][ "2" ] : recordedWaves[ 0 ][ "2" ] , { } );
+experiment.renderer.getModule("lastJDecay").clear();
+var i = 0;
+recordedWaves.map( function( w ) {
+	i++;
+	experiment.renderer.getModule("lastJDecay").newSerie("jdecay_" + i, w[ "2" ], {} );
+});
+	//experiment.renderer.getModule("lastJDecay").newSerie("jdecay1", recordedWaves[ 1 ] ? recordedWaves[ 1 ][ "2" ] : recordedWaves[ 0 ][ "2" ] , { } );
 	//experiment.renderer.getModule("lastJDecay2").newSerie("jdecay2", recordedWaves[ 1 ][ "2"], { } );
 
 	experiment.renderer.getModule("lastJDecay").autoscale();

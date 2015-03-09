@@ -116,8 +116,7 @@ Gould.prototype.setVoltScale = function( channel, voltscale ) {
 
 	var availableVoltScale = this.getAvailableTimebasesNb();
 	if( availableVoltScale.indexOf( voltscale ) == -1 ) {
-		throw "Cannot set volt scale \"" + voltscale + "\". Not in allowed list";
-		return;
+		voltscale = getClosest( voltscale, availableVoltScale );
 	}
 
 	channel = getChannel( channel );
@@ -168,7 +167,7 @@ Gould.prototype.setPreTrigger = function( trigger, percent ) {
 	trigger = getTrigger( trigger );
 
 	if( percent < 1 ) {
-		percent += 10;
+		percent *= 10;
 	}
 
 	if( percent > 100 ) {
@@ -195,7 +194,7 @@ Gould.prototype.setTriggerCoupling = function( trigger, coupling ) {
 }
 
 Gould.prototype.getAvailableTimebasesNb = function() {
-	return [ 1e-6, 2e-6, 5e-6, 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 10e-2, 20e-2, 50e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5 ];
+	return [ 50e-9, 100e-9, 200e-9, 500e-9 ,1e-6, 2e-6, 5e-6, 10e-6, 20e-6, 50e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 10e-2, 20e-2, 50e-2, 1e-1, 2e-1, 5e-1, 1, 2, 5 ];
 }
 
 
@@ -209,11 +208,11 @@ Gould.prototype.setTimeBase = function( timeBase ) {
 	var availableTimeBases = this.getAvailableTimebasesNb();
 
 	if( availableTimeBases.indexOf( timeBase ) == -1 ) {
-		throw "Cannot set timebase \"" + timeBase + "\". Not in allowed list";
-		return;
+		timeBase = getClosest( availableTimeBases, timeBase );
 	}
 
-	return callSerial( this, ":ACQ:TBASE " + timeBase );
+	callSerial( this, ":ACQ:TBASE " + timeBase );
+	return timeBase;
 }
 
 Gould.prototype.setChannelPosition = function( channel, position ) {
@@ -221,6 +220,14 @@ Gould.prototype.setChannelPosition = function( channel, position ) {
 	channel = getChannel( channel );
 	return callSerial( this, ":" + channel + ":POS " + position );
 }
+
+
+Gould.prototype.setChannelOffset = function( channel, offset ) {
+
+	channel = getChannel( channel );
+	return callSerial( this, ":" + channel + ":OFFSET " + offset );
+}
+
 
 Gould.prototype.getTimeBase = function() {
 	return callSerial( this, ":ACQ:TBASE?").then( function( val ) {
@@ -574,11 +581,27 @@ function processQueue( gould ) {
 	});
 }
 
+// Derived from: http://stackoverflow.com/questions/8584902/get-closet-number-out-of-array
+function getClosest( needle, haystack ) {
+
+	// Inversible arguments
+	if( Array.isArray( needle ) ) {
+		var haystack2 = needle;
+		needle = haystack;
+		haystack = haystack2;
+	}
+
+	return haystack.reduce(function (prev, curr) {
+		return (Math.abs(curr - needle) < Math.abs(prev - needle) ? curr : prev);
+	});
+}
+
 function getChannel( channel, number ) {
 
 	if( typeof channel == "number" ) {
 		channel = Math.round( channel );
 		if( channel > 4 || channel < 1 ) {
+			console.trace();
 			throw "Channel must be between 1 and 4";
 		}
 

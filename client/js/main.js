@@ -35,6 +35,14 @@ function global( IO ) {
 	var experimentStatus = "stopped";
 
 		var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
+		var deviceName = $("#device-name .name input");
+
+		deviceName.on('keyup blur change', function() {
+
+				var value = $( this ).attr( 'value' );
+				IO.writeGlobal( "deviceName", value );
+		});
+
 
 		$("#experiment-run .run input").on('click', function() {
 
@@ -87,6 +95,7 @@ function global( IO ) {
 		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Pause experiment").addClass('input-red').removeClass('input-green');
 		$("#experiment-run .run input").prop( "disabled", false ).addClass('input-red').removeClass('input-grey');
 		$("#experiment-abort .abort input").prop( "disabled", false );
+		deviceName.prop('disabled', true );
 	} );
 
 
@@ -119,6 +128,7 @@ function global( IO ) {
 		experimentStatus = "stopped";
 		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Run experiment").removeClass('input-red').addClass('input-green');
 		$("#experiment-abort .abort input").prop( "disabled", true ).addClass('input-grey').removeClass('input-red');
+		deviceName.prop('disabled', false );
 	} );
 
 }

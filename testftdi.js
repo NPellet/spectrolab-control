@@ -1,7 +1,7 @@
 
 var ftdi = require('ftdi');
 
-ftdi.find(function(err, devices) {console.log(devices)}); 
+ftdi.find(function(err, devices) {console.log(devices)});
 /*
 
     // Set Baud rate to 9600
@@ -26,76 +26,16 @@ var settings = {
 
 var currentState;
 
-function switchRelay( relayId, state, callback ) {
-	
-	var output = currentState;
-	switch( relayId ) {
-        case 1:
-            relay = 0x01;
-        break;
-
-        case 2:
-            relay = 0x02;
-        break;
-
-        case 3:
-            relay = 0x04;
-        break;
-
-        case 4:
-            relay = 0x08;
-        break;
-
-        case 5:
-            relay = 0x10;
-        break;
-
-        case 6:
-            relay = 0x20;
-        break;
-
-        case 7:
-        	relay = 0x40;
-        break;
-
-        case 8:
-        	relay = 0x80;
-        break;
-    }
-
-    switch (state) {
-        case 1:
-            output = (output | relay);
-        break;
-        case 0:
-            output = (output & ~(relay));
-        break;
-    }
-
-    currentState = output;
-
-    thedevice.write([ output ], function() {
-
-    	if( callback ) {
-
-    		setTimeout( function() {
-    			callback();
-    		}, 1000);
-    	}
-    
-    });
-}
-
 
 var thedevice;
 
 ftdi.find(function(err, devices){
-  
-  
+
+
   var device = new ftdi.FtdiDevice(devices[0]);
   thedevice = device;
   device.open(settings, function( err ) {
-    
+
 	console.log('connected');
 	currentState = 0x00;
 
@@ -115,7 +55,7 @@ console.log( pin, state );
 
 				} );
 
-				
+
 
 			}, 1000 );
 		}

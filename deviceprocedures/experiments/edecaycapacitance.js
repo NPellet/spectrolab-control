@@ -65,24 +65,28 @@ var experiment = {
 
 			var recordedWaves = [];
 
-			var timeBases = [ 50e-6, 500e-6, 5000e-6, 50000e-6 ];
-			var yScales = [ 5e-3, 5e-3, 5e-3, 5e-3 ];
+			var timeBases = [ 50e-6, 500e-6, 5000e-6, 100000e-6];
+			var yScales = [ 5e-3, 5e-3, 5e-3, 5e-3 , 5e-3];
 
 
 
 			var timeBase;
 
 			// Calculate delays
-			var nbPoints = 35,
-				b = ( Math.log( 30 / 20e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
-				a = 20e-6 / Math.pow( 10, ( b * 0 ) ),
+			var nbPoints = 20,
+				b = ( Math.log( 30 / 20e-3 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
+				a = 20e-3 / Math.pow( 10, ( b * 0 ) ),
 				timeDelays = [];
 
 			var timeBasePulsesEx = [];
 
+			for( var i = 20e-6; i < 20e-3; i *= 5) {
+				timeDelays.push( i );
+				timeBasePulsesEx.push( timeBases.slice( 0 ) );
+			}
+
 			for( var i = 0; i < nbPoints; i += 1 ) {
 				timeDelays.push( a * Math.pow( 10, b * i ) );
-
 				timeBasePulsesEx.push( timeBases.slice( 0 ) );
 			}
 
@@ -215,7 +219,6 @@ var experiment = {
 								- Charges is the sum of the two
 								- Weighting time bases ?
 							*/
-console.log("__________________________");
 							recordedWaves = [];
 
 							var breakIt = false;
@@ -232,9 +235,7 @@ console.log("__________________________");
 									w[ 2 ].subtract( blankWaves[ timeBases.indexOf( timeBasePulses[ l ][ i ][ n ] ) ] );
 									recordedWaves.push( w );
 
-									console.log( Math.abs( w[ 2 ].getAverageP( 400, 499 ) - w[ 2 ].getAverageP( 250, 300 ) ), w[ 2 ].getAverageP( 400, 499 ) );
-									if( Math.abs( w[ 2 ].getAverageP( 400, 499 ) - w[ 2 ].getAverageP( 250, 300 ) ) < 0.01e-4 && w[ 2 ].getAverageP( 400, 499 ) < 0.03e-4 ) {
-										console.log("Got all I need " + l + ", " + i + ", " + n );
+									if( Math.abs( w[ 2 ].getAverageP( 400, 499 ) - w[ 2 ].getAverageP( 250, 300 ) ) < 0.02e-4 && w[ 2 ].getAverageP( 400, 499 ) < 0.05e-4 ) {
 
 										var sp = timeBasePulses[ l ][ i ].splice( n + 1 );
 										if( sp.length > 0 ) {
@@ -271,8 +272,10 @@ console.log("__________________________");
 								}
 							}
 
-							if( timeBasePulses[ l ][ i ].length >= 3 ) {
-								while( timeBasePulses[ l ][ i ].length >= 3 ) {
+							var t = timeBasePulses[ l ][ i ].length - timeBasePulses[ l ][ i ].indexOf( 500e-6 );
+							console.log( t, timeBasePulses[ l ][ i ].indexOf( 500e-6 ) );
+							if( timeBasePulses[ l ][ i ].length > t ) {
+								while( timeBasePulses[ l ][ i ].length > t ) {
 									var el = timeBasePulses[ l ][ i ].shift();
 									recordedWaves.shift();
 									for( var u = 0; u < i; u ++ ) {
@@ -281,9 +284,15 @@ console.log("__________________________");
 											timeBasePulses[ l ][ u ].splice( index, 1 );
 										}
 									}
+									t = timeBasePulses[ l ][ i ].length - timeBasePulses[ l ].indexOf( 50e-6 );
 								}
 
 							}
+
+							recordedWaves.map( function( w ) {
+
+								w[ "3" ].subtract( recordedWaves[ recordedWaves.length - 1 ]["3"].average( 450, 499 ) );
+							});
 
 							// Look on the first voltage wave
 							var level = recordedWaves[ 0 ][ "3" ].findLevel(0.05, {
@@ -293,11 +302,11 @@ console.log("__________________________");
 								rangeP: [ 30, 80 ]
 							});
 
-							if( recordedWaves.length >= 3 ) { // Let's keep two pulses max per el.
+						/*	if( recordedWaves.length >= 3 ) { // Let's keep two pulses max per el.
 								console.log("Too many ! " + l + ", " + i );
 								continue;
 							}
-
+*/
 							// We need to find some voltage !
 							if( recordedWaves[ 0 ][ "3" ].get( 40 ) > 0.01 ) {
 
@@ -318,7 +327,6 @@ console.log("__________________________");
 						//		baseLine.subtract( blankWaves[ recordedWaves.length - 1 ] );
 								baseLine = baseLine.getAverageP( 400, 499 );
 
-								console.log( baseLine );
 
 								recordedWaves.map( function( w ) {
 
@@ -402,7 +410,6 @@ console.log("__________________________");
 					// Zeroing voltage wave
 					var voltageWave = allWaves[ "3" ];
 					voltageWave.multiply( 1 );
-					voltageWave.subtract( voltageWave.average( 400, 499 ) );
 
 					// Zeroing current wave
 					var currentWave = allWaves[ "2" ];
@@ -439,6 +446,7 @@ console.log("__________________________");
 			var nbPulses = nearestPow2( 20 / ( timeBase * 40 ) / 2 )
 
 			self.oscilloscope.setAveraging( nbPulses );
+			//self.keithley.command("exit()"); // Reset keithley
 
 			return new Promise( function( resolver ) {
 
