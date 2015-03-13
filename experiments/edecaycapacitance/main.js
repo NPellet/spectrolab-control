@@ -18,7 +18,7 @@ var Waveform = require('../../server/waveform');
 
 
 
-proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances, chargesFastest, capacitanceFastest ) {
+proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, capacitances ) {
 
 experiment.renderer.getModule("lastJDecay").clear();
 var i = 0;
@@ -32,7 +32,7 @@ recordedWaves.map( function( w ) {
 	experiment.renderer.getModule("lastJDecay").autoscale();
 	//experiment.renderer.getModule("lastJDecay2").autoscale();
 
-	reprocess( charges, voc, capacitances, allDelays, chargesFastest, capacitanceFastest );
+	reprocess( charges, voc, capacitances, allDelays );
 //	status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 });
 
@@ -70,7 +70,7 @@ experiment.renderer.getModule("formConfig").on("validated", function( value ) {
 */
 
 
-function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, chargesFGlobal, capacitancesFGlobal ) {
+function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays ) {
 
 	var i = 0;
 	var colors = ['#a61111', '#2d2d94', '#479116', '#722f8b', '#a36228'];
@@ -84,8 +84,6 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 
 	var itx = experiment.getITXBuilder();
 	itx = new itx();
-
-
 
 	for( var l = 0; l < vocsGlobal.length; l += 1 ) {
 
@@ -109,22 +107,19 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 		var capacitances = capacitancesGlobal[ l ];
 
 
-		var dataCharges = [], dataChargesSDev = [];
+		var dataCharges = [], dataChargesSDev = [], dataChargesA = [];
 
 		var wTimeDelays = new Waveform();
 		var wCapa = new Waveform();
+		var wCapaA = new Waveform();
 		var wCapaS = new Waveform();
 
-		var wCapaF = new Waveform();
-		var wCapaSF = new Waveform();
-
 		var wCharges = new Waveform();
+		var wChargesA = new Waveform();
 		var wChargesS = new Waveform();
 
-		var wChargesF = new Waveform();
-		var wChargesSF = new Waveform();
-
 		var wVocs = new Waveform();
+		var wVocsA = new Waveform();
 		var wVocsS = new Waveform();
 
 		wTimeDelays.setData( delays );
@@ -134,36 +129,39 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 			var i = charges.indexOf( charge );
 
 			dataCharges.push( [ delays[ i ], charge.median() ] );
+			dataChargesA.push( [ delays[ i ], charge.average() ] );
 			dataChargesSDev.push( [ [ charge.stdDev() ] ] );
 
 			wCharges.push( charge.median() );
+			wChargesA.push( charge.average() );
 			wChargesS.push( charge.stdDev() );
 
 		});
 
 
 		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, dataCharges, { }, dataChargesSDev, style );
+		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_A_" + l, dataChargesA, { }, dataChargesSDev, style );
 	//	experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l + "_F", dataChargesF, { }, dataChargesSDevF, style2 );
 		experiment.renderer.getModule("chargesvstime").autoscale();
 
 
-		var dataVoc = [], dataVocSDev = [];
+		var dataVoc = [], dataVocSDev = [], dataVocA = [];
 		vocs.map( function( voc ) {
 
 			var i = vocs.indexOf( voc );
 
 			dataVoc.push( [ delays[ i ], voc.median() ] );
+			dataVocA.push( [ delays[ i ], voc.average() ] );
 			dataVocSDev.push( [ [ voc.stdDev() ] ] );
 
 			wVocs.push( voc.median() );
+			wVocsA.push( voc.average() );
 			wVocsS.push( voc.stdDev() );
 		});
 
-		var dataCapa = [], dataCapaSDev = [];
-		var dataCV = [], dataCVSdev = [];
+		var dataCapa = [], dataCapaSDev = [], dataCapaA = [];
+		var dataCV = [], dataCVSdev = [], dataCVA = [];
 
-		var dataCapaF = [], dataCapaSDevF = [];
-		var dataCVF = [], dataCVSdevF = [];
 
 		var wNb = [];
 
@@ -173,15 +171,17 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 			var i = capacitances.indexOf( c );
 
 			dataCapa.push( [ delays[ i ], c.median() ] );
+			dataCapaA.push( [ delays[ i ], c.average() ] );
 			dataCapaSDev.push( [ [ c.stdDev() ] ] );
 
 			dataCV.push( [ vocs[ i ].median(), c.median() ] );
+			dataCVA.push( [ vocs[ i ].average(), c.average() ] );
+
 			dataCVSdev.push( [ [ c.stdDev() ] ] );
-
-
 
 			wCapa.push( c.median() );
 			wCapaS.push( c.stdDev() );
+			wCapaA.push( c.average() );
 
 
 			wNb.push( [ delays[ i ], c.getDataLength() ] );
@@ -190,27 +190,41 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 
 
 		experiment.renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, dataVoc, {}, dataVocSDev, style );
+		experiment.renderer.getModule("vocvstime").newScatterSerie("vocvstime_A_" + l, dataVocA, {}, dataVocSDev, style );
 		experiment.renderer.getModule("vocvstime").autoscale();
 
 
 		experiment.renderer.getModule("C-t").newScatterSerie("CT_" + l, dataCapa, { }, dataCapaSDev, style );
 		experiment.renderer.getModule("C-t").autoscale();
 
+		experiment.renderer.getModule("C-t").newScatterSerie("CT_A_" + l, dataCapaA, { }, dataCapaSDev, style );
+		experiment.renderer.getModule("C-t").autoscale();
+
+
 		experiment.renderer.getModule("C-V").newScatterSerie("CV_" + l, dataCV, { }, dataCVSdev, style );
+		experiment.renderer.getModule("C-V").autoscale();
+
+		experiment.renderer.getModule("C-V").newScatterSerie("CV_A_" + l, dataCVA, { }, dataCVSdev, style );
 		experiment.renderer.getModule("C-V").autoscale();
 
 		experiment.renderer.getModule("pulses").newScatterSerie("pulses", wNb , { } );
 		experiment.renderer.getModule("pulses").autoscale();
 
-
 		var itxw = itx.newWave( "voc_" + l );
 		itxw.setWaveform( wVocs );
+
+		var itxw = itx.newWave( "voc_avg_" + l );
+		itxw.setWaveform( wVocsA );
 
 		var itxw = itx.newWave( "voc_sdev_" + l );
 		itxw.setWaveform( wVocsS );
 
 		var itxw = itx.newWave( "charges_" + l );
 		itxw.setWaveform( wCharges );
+
+		var itxw = itx.newWave( "charges_avg_" + l );
+		itxw.setWaveform( wChargesA );
+
 
 		var itxw = itx.newWave( "charges_sdev_" + l );
 		itxw.setWaveform( wChargesS );
@@ -219,6 +233,10 @@ function reprocess( chargesGlobal, vocsGlobal, capacitancesGlobal, delays, charg
 
 		var itxw = itx.newWave( "capacitance_" + l );
 		itxw.setWaveform( wCapa );
+
+
+		var itxw = itx.newWave( "capacitance_avg_" + l );
+		itxw.setWaveform( wCapaA );
 
 		var itxw = itx.newWave( "capacitance_sdev_" + l );
 		itxw.setWaveform( wCapaS );

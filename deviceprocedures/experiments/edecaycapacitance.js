@@ -49,6 +49,9 @@ var experiment = {
 	run: function() {
 
 		var self = experiment;
+		var keithley = experiment.keithley;
+		keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+
 		return new Promise( function( resolver, rejecter ) {
 
 			var wavePulse = [];
@@ -66,7 +69,7 @@ var experiment = {
 			var recordedWaves = [];
 
 			var timeBases = [ 50e-6, 500e-6, 5000e-6, 100000e-6];
-			var yScales = [ 5e-3, 5e-3, 5e-3, 5e-3 , 5e-3];
+			var yScales = [ 20e-3, 20e-3, 20e-3, 20e-3 , 20e-3];
 
 
 
@@ -105,9 +108,13 @@ var experiment = {
 
 			self.oscilloscope.enable50Ohms( 2 );
 			self.oscilloscope.disable50Ohms( 3 );
+			self.oscilloscope.disable50Ohms( 1 );
+			self.oscilloscope.disable50Ohms( 4 );
 
 			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
+
+			self.keithley.command( "exit()" ); // The off mode of the Keithley should be high impedance
 
 			self.oscilloscope.setVoltScale( 2, 2e-3 ); // 2mV over channel 2
 			self.oscilloscope.setVoltScale( 3, 200e-3 ); // 200mV over channel 3
@@ -128,9 +135,9 @@ var experiment = {
 			self.oscilloscope.setChannelPosition( 2, -2.5 );
 			self.oscilloscope.setChannelPosition( 3, -2.5 );
 
-			self.keithley.command("exit()"); // Reset keithley
-			self.keithley.command("*CLS"); // Reset keithley
-			self.keithley.command("*RST"); // Reset keithley
+
+			self.oscilloscope.setChannelOffset( 2, 0 );
+			self.oscilloscope.setChannelOffset( 3, 0 );
 
 
 			self.oscilloscope.setTriggerLevel( "A", 0.7 ); // Set trigger to 0.7V
@@ -226,16 +233,12 @@ var experiment = {
 								timeBase = timeBases[ n ];
 								breakIt = false;
 
-
-								console.log( timeBasePulses, l );
-
-
 								self.pulse( timeBasePulses[ l ][ i ][ n ], yScales[ timeBases.indexOf( timeBasePulses[ l ][ i ][ n ] ) ], timeDelays[ i ] ).then( function( w ) {
 
 									w[ 2 ].subtract( blankWaves[ timeBases.indexOf( timeBasePulses[ l ][ i ][ n ] ) ] );
 									recordedWaves.push( w );
 
-									if( Math.abs( w[ 2 ].getAverageP( 400, 499 ) - w[ 2 ].getAverageP( 250, 300 ) ) < 0.02e-4 && w[ 2 ].getAverageP( 400, 499 ) < 0.05e-4 ) {
+									if( Math.abs( w[ 2 ].getAverageP( 400, 499 ) - w[ 2 ].getAverageP( 250, 300 ) ) < 0.03e-4 && w[ 2 ].getAverageP( 400, 499 ) < 0.08e-4 ) {
 
 										var sp = timeBasePulses[ l ][ i ].splice( n + 1 );
 										if( sp.length > 0 ) {
@@ -243,18 +246,11 @@ var experiment = {
 											breakIt = true;
 										}
 
-
 										for( var u = i; u < timeBasePulses[ l ].length; u ++ ) {
-
 											sp.map( function( sp1 ) {
 												_.pull( timeBasePulses[ l ][ u ], sp1 );
 											});
-
-
 										}
-
-
-
 									}
 
 									if( ! self._paused ) {
@@ -273,7 +269,6 @@ var experiment = {
 							}
 
 							var t = timeBasePulses[ l ][ i ].length - timeBasePulses[ l ][ i ].indexOf( 500e-6 );
-							console.log( t, timeBasePulses[ l ][ i ].indexOf( 500e-6 ) );
 							if( timeBasePulses[ l ][ i ].length > t ) {
 								while( timeBasePulses[ l ][ i ].length > t ) {
 									var el = timeBasePulses[ l ][ i ].shift();
@@ -343,9 +338,8 @@ var experiment = {
 									if( m > 0 ) {
 										ptStart += Math.ceil( timeBases[ m - 1 ] * 500 / timeBases[ m ] );
 									} else {
-										fastestCharges = w[ "2" ].integrateP( ptStart, 499 );
 									}
-
+console.log( ptStart, w[ "2" ].integrateP( ptStart, 499 ), w["2"] );
 									charges += w[ "2" ].integrateP( ptStart, 499 );
 									m++;
 								});

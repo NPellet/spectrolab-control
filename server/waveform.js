@@ -187,7 +187,7 @@ Waveform.prototype = {
 
 		while( true ) {
 
-			kint = Math.ceil( ( k2 - k1 ) / 2 );
+			kint = Math.ceil( ( k2 + k1 ) / 2 );
 
 			if( kint == k2 || kint == k1 && k2 - k1 > 1 ) {
 				throw "Error in binary search";
@@ -218,12 +218,17 @@ Waveform.prototype = {
 		}
 	},
 
-
-
 	getValueAt: function( p ) {
 
 		if( this.data.length - 1 < p ) {
 			throw "Cannot access index " + p + ". Index is out of range";
+		}
+
+		if( p != Math.round( p ) ) {
+			var prev = this.data[ Math.floor( p ) ];
+			var next = this.data[ Math.ceil( p ) ];
+
+			return prev * ( p - Math.round( p ) ) + next * ( Math.ceil( p ) - p )
 		}
 
 		return this.data[ p ];
@@ -272,7 +277,7 @@ Waveform.prototype = {
 
 			case 'wave':
 
-				return this.xScaling.getXFromIndex( p1 ) - this.xScaling.getXFromIndex( p2 );
+				return this.xScaling.wave.getXFromIndex( p1 ) - this.xScaling.wave.getXFromIndex( p2 );
 			break;
 		}
 	},
@@ -349,6 +354,14 @@ Waveform.prototype = {
 
 
 	average: function( p0, p1 ) {
+		if( p0 == undefined ) {
+			p0 = 0;
+		}
+
+		if( p1 == undefined ) {
+			p1 = this.getDataLength() - 1;
+		}
+		
 		return this.getAverageP( p0, p1 );
 	},
 
@@ -435,14 +448,28 @@ Waveform.prototype = {
 
 			var deltaTot = this.getXDeltaBetween( to, from - 1 );
 			// Temporary fix
-			deltaTot = this.xScaling.xDelta * l;
 
-			for( ; from <= to ; from ++ ) {
+			if( this.getXScalingMode() == 'delta' ) {
 
-				delta = this.xScaling.xDelta;//this.getXDeltaBetween( from, from - 1 );
+				deltaTot = this.xScaling.xDelta * l;
 
-				if( delta !== false ) {
-					sum += this.data[ from ] * delta;
+				for( ; from <= to ; from ++ ) {
+
+					delta = this.xScaling.xDelta;//this.getXDeltaBetween( from, from - 1 );
+
+					if( delta !== false ) {
+						sum += this.data[ from ] * delta;
+					}
+				}
+
+			} else {
+
+				deltaTot = 0;
+				var xWave = this.getXWave().getData();
+				for( ; from <= to ; from ++ ) {
+
+					deltaTot += xWave[ from + 1] - xWave[ from ]
+					sum += this.data[ from ] * ( xWave[ from + 1] - xWave[ from ] );
 				}
 			}
 		} else {
@@ -606,7 +633,6 @@ Waveform.prototype = {
 				below = value < level;
 				continue;
 			}
-
 			// Crossing up
 			if( value > level && below ) {
 
@@ -629,11 +655,8 @@ Waveform.prototype = {
 
 				if( options.edge == 'descending' ) {
 
-
 					for( j = i + ( box - 1 ) / 2 ; j >= i - ( box - 1 ) / 2 ; j -- ) {
-
 						if( this.data[ j ] < level && this.data[ j - 1 ] > level ) { // Find a crossing
-
 							return options.rounding == "before" ? j - 1 : j;
 						}
 					}

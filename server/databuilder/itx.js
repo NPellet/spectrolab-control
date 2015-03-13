@@ -71,10 +71,31 @@ IgorWave.prototype = {
 		}
 
 		var string = "";
-		string += "WAVES/D	" + this.name + "\n";
-		string += "BEGIN\n";
-		string += this.waveform.getData().join("\n");
+		string += "WAVES/D	" + this.name;
+
+		if( this.waveform.hasXScaling() && this.waveform.getXScalingMode() == 'wave') {
+				string += " " + this.name + "_x";
+		}
 		string += "\n";
+		string += "BEGIN\n";
+
+
+		if( this.waveform.hasXScaling() && this.waveform.getXScalingMode() == 'wave') {
+
+				var data = this.waveform.getData();
+				var dataX = this.waveform.getXWave().getData();
+
+				for( var i = 0, l = data.length; i < l ; i ++ ) {
+					string += data[ i ] + " " + dataX[ i ] + "\n";
+				}
+
+		} else {
+
+			string += this.waveform.getData().join("\n");
+			string += "\n";
+		}
+
+
 		string += "END\n";
 
 		// If we have scaling or x axis unit

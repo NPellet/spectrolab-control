@@ -107,6 +107,10 @@ TektronixAFG.prototype.connect = function(  ) {
 							module.emit("connected");
 
 						});
+						
+					} else if( data == "IO:unreachable") {
+						rejecter( module );
+						module.emit("connectionerror");
 					}
 
 

@@ -29,6 +29,15 @@ Device.method = function( methodName, methodOptions ) {
 		Device.emit.apply( Device, arguments );
 	}
 
+	experiment.next = function() {
+
+		if( ! experiment._paused ) {
+			experiment.iterator.next();
+		} else {
+			experiment.paused();
+		}
+	}
+
 	currentMethod = methodName;
 	methods[ methodName ] = experiment;
 	return this;

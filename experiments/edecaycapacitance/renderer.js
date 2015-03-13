@@ -61,6 +61,8 @@ renderer.init = function() {
       path: 'display/status',
     },
 
+
+
     lastJDecay: {
       wrapper: 'lastPulse',
       path: 'display/graph'

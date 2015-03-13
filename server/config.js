@@ -39,7 +39,13 @@ var config = {
 		"tektronix-functiongenerator": {
 
 			host: '192.168.0.100'
-		}
+		},
+
+
+		"tektronix-oscilloscope": {
+			host: '192.168.0.102'
+		},
+
 	}
 
 

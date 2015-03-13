@@ -17,6 +17,7 @@ var Gould = function( params ) {
 	this.params = params;
 	this.connected = false;
 	this.queue = [];
+	this.voltscales = {};
 };
 
 Gould.prototype = new events.EventEmitter;
@@ -112,16 +113,51 @@ Gould.prototype.getAvailableVoltScaleTxt = function() {
 	return [ "2 mV", "5 mV", "10 mV", "20 mV", "50 mV", "100 mV", "200 mV", "500 mV", "1 V", "2 V", "5 V" ];
 }
 
+
+Gould.prototype.getAvailableVoltScale = function() {
+	return [ 2e-3, 5e-3, 10e-3, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 10e-3, 2e-2, 5e-2, 10e-2, 2e-1, 5e-1, 10e-1, 2, 5 ]
+}
+
 Gould.prototype.setVoltScale = function( channel, voltscale ) {
 
-	var availableVoltScale = this.getAvailableTimebasesNb();
+	var availableVoltScale = this.getAvailableVoltScaleNb();
 	if( availableVoltScale.indexOf( voltscale ) == -1 ) {
-		voltscale = getClosest( voltscale, availableVoltScale );
+		throw "Cannot set volt scale \"" + voltscale + "\". Not in allowed list";
+		return;
 	}
 
 	channel = getChannel( channel );
+	this.voltscales[ channel ] = voltscale;
 	return callSerial( this, ":" + channel + ":RANG " + voltscale );
 }
+
+Gould.prototype.getSupVoltScale = function( channel ) {
+
+	channel = getChannel( channel );
+	var current = this.voltscales[ channel ];
+	var available = this.getAvailableVoltScaleNb();
+
+	if( available.indexOf( current ) == available.length - 1 ) {
+		return false;
+	}
+	return available[ available.indexOf( current ) + 1 ];
+}
+
+Gould.prototype.getInfVoltScale = function( channel ) {
+
+	channel = getChannel( channel );
+	var current = this.voltscales[ channel ];
+	var available = this.getAvailableVoltScaleNb();
+
+	if( available.indexOf( current ) == 0 ) {
+		return false;
+	}
+	return available[ available.indexOf( current ) - 1 ];
+}
+
+
+
+
 
 Gould.prototype.getVoltScale = function( channel ) {
 	channel = getChannel( channel );

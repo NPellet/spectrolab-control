@@ -39,8 +39,9 @@ function global( IO ) {
 
 		deviceName.on('keyup blur change', function() {
 
-				var value = $( this ).attr( 'value' );
+				var value = $( this ).prop( 'value' );
 				IO.writeGlobal( "deviceName", value );
+				console.log( value );
 		});
 
 
@@ -64,7 +65,7 @@ function global( IO ) {
 
 				case 'running':
 
-						IO.writeGlobal( "experiment-pause" );
+					IO.writeGlobal( "experiment-pause" );
 
 				break;
 			}
@@ -72,20 +73,20 @@ function global( IO ) {
 
 
 
-			$("#experiment-run .abort input").on('click', function() {
+		$("#experiment-run .abort input").on('click', function() {
 
-				btns.prop( 'disabled', true );
+			btns.prop( 'disabled', true );
 
-				switch( experimentStatus ) {
+			switch( experimentStatus ) {
 
 
-					case 'running':
+				case 'running':
 
-							IO.writeGlobal( "experiment-abort" );
+						IO.writeGlobal( "experiment-abort" );
 
-					break;
-				}
-			});
+				break;
+			}
+		});
 
 
 

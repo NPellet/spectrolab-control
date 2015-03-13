@@ -1,6 +1,7 @@
 
 var Waveform = require('../../server/waveform');
 var _ = require('lodash');
+var extend = require('extend');
 
 var experiment = {
 
@@ -27,22 +28,18 @@ var experiment = {
 		experiment.focus = id;
 	},
 
-	makeIV: function() {
+	makeIV: function( options ) {
 
-
-		return experiment.keithley.sweepIV( {
+		return experiment.keithley.sweepIV( extend( {
 			channel: 'smub',
 			startV: 1,
 			stopV: 0,
 			settlingTime: 0.02,
 			timeDelay: 2,
 			complianceI: 1,
-			nbPoints: 100
-		} ).then( function( iv ) {
-
-			experiment.iterator.next();
-			return iv;
-		});
+			nbPoints: 100,
+			hysteresis: 0
+		}, ( options || {} ) ) );
 	},
 
 
@@ -85,6 +82,7 @@ var experiment = {
 			afg.disableChannels( ); // Set the pin LOW
 			afg.getErrors();
 
+			keithley.setDigioPin( 4, 1 );
 
 			oscilloscope.enableAveraging();
 
@@ -92,7 +90,10 @@ var experiment = {
 			oscilloscope.disable50Ohms( 3 );
 
 			oscilloscope.setVoltScale( 3, 5e-3 ); // 20mV over channel 3
+
+			var voltScale = 500e-3;
 			oscilloscope.setVoltScale( 1, 500e-3 ); // 20mV over channel 3
+
 
 			oscilloscope.setCoupling( 1, "DC");
 			oscilloscope.setCoupling( 3, "DC");
@@ -127,9 +128,7 @@ var experiment = {
 			//y1 - y2 = a ln( x1 / x2 );
 
 			var b = Math.log( y1 / y2 ) / ( x2 - x1 );
-			console.log( b );
 			var a = y1 / Math.pow( 2.71828, - x1 * b );
-			console.log( a );
 
 			var frequencies = [];
 
@@ -149,20 +148,43 @@ var experiment = {
 						afg.enableChannel( 1 );
 						keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 
+						var voltage, current;
+
 						experiment.makeIV().then( function( iv ) {
 							self.progress("IV_Before", [ iv ] );
+							voltage = iv.getXFromIndex( iv.findLevel( 0, { edge: 'descending'} ) );
+							console.log( voltage );
+							current = iv.get( iv.getDataLength() - 1 );
+
+							experiment.next();
 						});
 						yield;
 
+						for( var i = 0; i < frequencies.length; i += 5 ) {
+
+							if( frequencies[ i ] > 10000 ) {
+								continue;
+							}
+
+							experiment.makeIV( {
+
+								timeDelay: 25,
+								settlingTime: ( 10 / frequencies[ i ] ) / 200,
+								nbPoints: 15,
+								hysteresis: 1
+
+							}).then( function( iv ) {
+
+								self.progress("IV", [ frequencies[ i ] / 10, iv ] );
+								experiment.next();
+							});
+							yield;
+						}
+
+						console.log("Device metrics: Voc: " + voltage + "V; Jsc: " + ( current * 1000 ) +"mA");
 
 						if( impsimvs == 'imvs' ) {
 
-							var voltage;
-							keithley.measureVoc( { channel: 'smub', settlingTime: 2 }).then( function( v ) {
-								console.log( "Voltage:", v );
-								p.next( v );
-							})
-							voltage = yield;
 							var delta;
 							if( voltage > 0.5 ) {
 								delta = voltage - 0.5;
@@ -170,22 +192,16 @@ var experiment = {
 							} else {
 								delta = 0;
 							}
+							delta -= 10e-3;
+
+							console.log( voltage, delta );
 							oscilloscope.setChannelOffset( 3, - voltage );
-
-								oscilloscope.setChannelPosition( 3, - delta / 5e-3 );
-								oscilloscope.setVoltScale( 3, 5e-3 );
-
-
+							oscilloscope.setChannelPosition( 3, - delta / 5e-3 );
+							oscilloscope.setVoltScale( 3, 5e-3 );
 							oscilloscope.disable50Ohms( 3 );
-
 
 						} else {
 
-							var current;
-							keithley.measureIsc( { channel: 'smub', settlingTime: 2 } ).then( function( c ) {
-								p.next( c );
-							});
-							current = yield;
 							current *= 50; // 50 ohm
 
 							console.log( "Current: ", current );
@@ -229,11 +245,10 @@ var experiment = {
 							}
 							afg.setFrequency( 1, frequency );
 
-							l--;
 
-							var time = 30; // 15 sec aquisition
+							var time = 45; // 15 sec aquisition
 							if( frequency < 1 ) {
-								time = 100; // allow till 0.1 Hz
+								time = 160; // allow till 0.1 Hz
 							}
 
 							var timeBase = oscilloscope.setTimeBase( timeBase ); // 20 cycles
@@ -241,14 +256,33 @@ var experiment = {
 							averaging = ( time / timeBase / 12 );
 							averaging = Math.min( averaging, experiment.parameters.defaultAveraging );
 
-
 							oscilloscope.setAveraging( averaging );
-
 
 							setTimeout( function() {
 								self.oscilloscope.getWaves().then( function( allWaves ) {
 
-									self.progress("IMPSIMVSData", [ frequency, allWaves["1"], allWaves["3"], impsimvs ] );
+									var drive = allWaves[ "1" ];
+									var diff = drive.getMax() - drive.getMin();
+									var ok = true;
+
+/*
+									if( diff < oscilloscope.getInfVoltScale( 1 ) * 7 && voltScale > 20e-3 ) {
+										voltScale = oscilloscope.getInfVoltScale( 1 );
+										oscilloscope.setVoltScale( 1, oscilloscope.getInfVoltScale( 1 ) );
+										ok = false;
+									}
+
+									if( diff > voltScale * 7 ) {
+										voltScale = oscilloscope.getSupVoltScale( 1 );
+										oscilloscope.setVoltScale( 1, oscilloscope.getSupVoltScale( 1 ) );
+										ok = false;
+									}
+*/
+									if( ok ) {
+										self.progress("IMPSIMVSData", [ frequency, allWaves["1"], allWaves["3"], impsimvs ] );
+										l--;
+									}
+
 									p.next(  );
 								});
 
@@ -263,6 +297,7 @@ var experiment = {
 
 						experiment.makeIV().then( function( iv ) {
 							self.progress("IV_After", [ iv ] );
+							experiment.next();
 						});
 						yield;
 						afg.disableChannel( 1 );

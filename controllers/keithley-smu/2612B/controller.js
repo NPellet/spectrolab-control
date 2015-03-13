@@ -37,26 +37,34 @@ var methods = {
 				settlingTime: 0.02,
 				timeDelay: 0,
 				complianceI: 1,
-				nbPoints: 100
+				nbPoints: 100,
+				hysteresis: false
 			},
 
 			method: 'LinVSweepMeasureI',
 			parameters: function( options ) {
-
-				return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints ]
+console.log([ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ]);
+				return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ]
 			},
 
 			processing: function( data, options ) {
 
 				var w = new Waveform();
-				var current, voltage, dataFinal = [];
+				var waveX = new Waveform();
+
+				var current, voltage, dataFinal = [], dataFinalX = [];
 				data = data.split(/,[\t\r\s\n]*/);
 				for( var i = 0; i < data.length; i += 2 ) {
 					dataFinal.push( parseFloat( data[ i ] ) );
+					dataFinalX.push( parseFloat( data[ i + 1 ] ) );
 				}
 
 				w.setData( dataFinal );
-				w.setXScaling( options.startV, ( ( options.stopV - options.startV ) / ( options.nbPoints - 1 ) ) );
+
+				waveX.setData( dataFinalX );
+				w.setXWave( waveX );
+
+				//w.setXScaling( options.startV, ( ( options.stopV - options.startV ) / ( options.nbPoints - 1 ) ) );
 
 
 				return w;
@@ -507,9 +515,9 @@ Keithley.prototype.setEvents = function() {
 
 		self.socket.removeAllListeners( 'data' );
 
-		self.flushErrors();
+	//	self.flushErrors();
 
-		self.command("*RST"); // Reset keithley
+	//	self.command("*RST"); // Reset keithley
 		self.command("digio.writeport(0)");
 	//	self.command("format.data=format.REAL32");
 		self.command("format.byteorder=format.LITTLEENDIAN");
@@ -547,6 +555,9 @@ Keithley.prototype.uploadScripts = function() {
 		}
 
 		console.log("Uploading script: " + files[ i ] );
+
+		console.log( files[ i ] );
+		console.log( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ).toString('ascii') );
 		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ) );
 		this.socket.write("\r\n");
 	}

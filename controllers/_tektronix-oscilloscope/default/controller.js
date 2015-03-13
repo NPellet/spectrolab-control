@@ -31,14 +31,14 @@ Controller.prototype.connect = function( callback ) {
   // Launches a python instance which will communicate in VXI11 with the scope
   this.shellInstance = new pythonShell( 'io.py', {
     scriptPath: path.resolve( __dirname, './python-scripts/' ),
-    args: [ this.params.host ], // Pass the IP address 
+    args: [ this.params.host ], // Pass the IP address
     mode: "text" // Text mode
   } );
 
   // At this point we are already connected. No asynchronous behaviour with python
   this.connected = true;
 
-  this.setEvents(); 
+  this.setEvents();
 };
 
 
@@ -100,7 +100,7 @@ Controller.prototype.setCoupling = function( channel, coupling ) {
 Controller.prototype.getCoupling = function( channel ) {
   channel = checkChannel( channel );
   return this.query( "CH" + channel + ":COUPLING", true ).then( function( value ) {
-    val 
+    val
     console.log( value );
   });
 }
@@ -225,14 +225,14 @@ function callCommand( instance, cmd, ask ) {
           } else {
 
             if( data.indexOf( cmd ) == 0 ) { // The response is exactly what has been requested
-              resolver( data );  
+              resolver( data );
             } else {
               throw "The oscilloscope response was unexpected. Message : " + data;
             }
           }
 
         } );
-      } 
+      }
 
       listen("");
       instance.send( cmd + "?;*WAI" );
@@ -244,9 +244,9 @@ function callCommand( instance, cmd, ask ) {
 
   } );
 
-  
 
-  return promise; 
+
+  return promise;
 }
 
 module.exports = Keithley;
@@ -267,7 +267,7 @@ function checkChannel( ch ) {
 
 
 function checkCoupling( coupling ) {
-  
+
   switch ( coupling ) {
 
     case 'AC':
@@ -279,7 +279,7 @@ function checkCoupling( coupling ) {
     case 'DC':
     case 'dc':
     case 'direct':
-      return 'DC':
+      return 'DC';
     break;
 
     case 'gnd':
@@ -288,7 +288,7 @@ function checkCoupling( coupling ) {
       return 'GND';
     break;
   }
-  
+
   throw "Coupling not recognized";
 }
 
@@ -309,6 +309,6 @@ function getFloat( val ) {
     throw "Value is NaN";
     return NaN;
   }
-  
+
   return val;
 }

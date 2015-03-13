@@ -20,25 +20,44 @@ proc.on("progress", function( mode, args ) {
 
 	switch( mode ) {
 
-				case "IV_Before":
+		case "IV_Before":
 
-						experiment.renderer.getModule("IV").newSerie("iv_before", args[ 0 ], { lineColor: 'red' } );
-						experiment.renderer.getModule("IV").autoscale();
+				experiment.renderer.getModule("IV").newSerie("iv_before", args[ 0 ], { lineColor: 'red' } );
+				experiment.renderer.getModule("IV").autoscale();
 
-						var itx = experiment.getITXBuilder();
-						itx = new itx();
+				var itx = experiment.getITXBuilder();
+				itx = new itx();
 
-						var itxw = itx.newWave( "iv_before" );
-						itxw.setWaveform( args[ 0 ] );
+				var itxw = itx.newWave( "iv_before" );
+				itxw.setWaveform( args[ 0 ] );
 
-						var fileName = experiment.getFileSaver().save( {
-							contents: itx.getFile(),
-							forceFileName: experiment.getDeviceName() + "_IV_Before",
-							fileExtension: 'itx',
-							dir: './imps/'
-						} );
+				var fileName = experiment.getFileSaver().save( {
+					contents: itx.getFile(),
+					forceFileName: experiment.getDeviceName() + "_IV_Before.itx",
+					dir: './imps/iv/'
+				} );
 
-				break;
+		break;
+
+
+		case "IV":
+
+				experiment.renderer.getModule("IV").newSerie("iv_" + args[ 0 ], args[ 1 ], { lineColor: 'red' } );
+				experiment.renderer.getModule("IV").autoscale();
+
+				var itx = experiment.getITXBuilder();
+				itx = new itx();
+
+				var itxw = itx.newWave( "iv" );
+				itxw.setWaveform( args[ 1 ] );
+
+				var fileName = experiment.getFileSaver().save( {
+					contents: itx.getFile(),
+					forceFileName: experiment.getDeviceName() + "_IV_" + args[ 0 ] + ".itx",
+					dir: './imps/iv/'
+				} );
+
+		break;
 
 
 
@@ -55,9 +74,8 @@ proc.on("progress", function( mode, args ) {
 
 					var fileName = experiment.getFileSaver().save( {
 						contents: itx.getFile(),
-						forceFileName: experiment.getDeviceName() + "_IV_After",
-						fileExtension: 'itx',
-						dir: './imps/'
+						forceFileName: experiment.getDeviceName() + "_IV_After.itx",
+						dir: './imps/iv/'
 					} );
 
 			break;
