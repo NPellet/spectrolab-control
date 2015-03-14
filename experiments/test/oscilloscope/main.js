@@ -21,4 +21,8 @@ var moduleGraphs = [ 'vocvstime', 'chargesvstime', 'C-V', 'C-t' ];
 experiment.getInstruments()['tektronix-oscilloscope'].instrument.on("connected", function() {
 
 	console.log( "smth" );
+
+	this.getChannel().then( function( ch ) {
+		console.log ( ch );
+	})
 })
