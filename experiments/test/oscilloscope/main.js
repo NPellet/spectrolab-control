@@ -18,7 +18,7 @@ var scope = experiment.getInstruments()['tektronix-oscilloscope'].instrument;
 scope.on("connected", function() {
 
 	this.setAcquisitionMode( "SAMPLE" );
-	this.setAquisitionLength( 1000 );
+	this.setRecordLength( 1000 );
 
 	this.setHorizontalScale( 2e-6 ); // 2 us / div
 	this.stopAfterSequence( false );
