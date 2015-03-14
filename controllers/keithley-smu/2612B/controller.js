@@ -515,9 +515,10 @@ Keithley.prototype.setEvents = function() {
 
 		self.socket.removeAllListeners( 'data' );
 
-	//	self.flushErrors();
+		self.flushErrors();
 
-	//	self.command("*RST"); // Reset keithley
+		self.command("*RST"); // Reset keithley
+		self.command("*CLS"); // Reset keithley
 		self.command("digio.writeport(0)");
 	//	self.command("format.data=format.REAL32");
 		self.command("format.byteorder=format.LITTLEENDIAN");
