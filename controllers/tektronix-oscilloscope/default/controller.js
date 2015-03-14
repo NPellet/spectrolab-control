@@ -466,8 +466,7 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   promises.push( self.command('CURVE?').then( function( data ) {
 
     waveform.setData( processData( data ) ); // Data is comma separated. We put it in the wave
-    resolver( waveform );
-
+    
   } ) );
 
   promises.push( self.getAcquisitionLength().then( function( aqLength ) {
