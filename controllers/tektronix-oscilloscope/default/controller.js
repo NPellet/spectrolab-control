@@ -528,7 +528,7 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   return Promise.all( promises ).then( function( ) {
     waveform.setXScaling( 0, duration / length );
     waveform.divideBy( 256 );
-    waveform.mutliplyBy( vscale * 10 );
+    waveform.multiplyBy( vscale * 10 );
     waveform.add( offset );
     return waveform;
   });
