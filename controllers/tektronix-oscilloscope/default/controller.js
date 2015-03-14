@@ -338,11 +338,6 @@ TektronixOscilloscope.prototype.setHorizontalMode = function() {
   return this.command("HORizontal:MODE " + mode );
 }
 
-TektronixOscilloscope.prototype.setRecordLength = function( length ) {
-  length = getInt( length );
-  return this.command("HORizontal:MODE:RECOrdlength " + length );
-}
-
 TektronixOscilloscope.prototype.setSampleRate = function( rate ) {
   rate = getInt( rate );
   return this.command("HORizontal:MODE:SAMPLERate " + rate ); 
@@ -471,6 +466,10 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
   promises.push( self.getAcquisitionLength().then( function( aqLength ) {
     console.log( aqLength );
+  } ) );
+
+  promises.push( self.getAcquisitionDuration().then( function( aqLength ) {
+    console.log( aqDuration );
   } ) );
 
   return Promise.all( promises ).then( function( ) {

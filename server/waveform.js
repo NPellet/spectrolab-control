@@ -2,7 +2,14 @@
 var extend = require('extend');
 
 var Waveform = function() {
+	
 	this.data = [];
+	
+	this.xScaling = { 
+		mode: 'delta',
+		xDelta: 1,
+		x0: 0
+	}
 };
 
 Waveform.prototype = {
