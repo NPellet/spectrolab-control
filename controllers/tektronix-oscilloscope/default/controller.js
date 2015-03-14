@@ -588,6 +588,7 @@ module.exports = TektronixOscilloscope;
 
 function getChannel( channel, number ) {
 
+  var v;
   if( typeof channel == "number" ) {
     channel = Math.round( channel );
     if( channel > 4 || channel < 1 ) {
@@ -598,6 +599,8 @@ function getChannel( channel, number ) {
     //return "CHAN" + channel;
   } else if( channel.length == 1) {
     channel = parseInt( channel );
+  } else if( ( v = ( /CH([0-4])/.exec( channel ) ) ) ) {
+    channel = parseInt( v );
   }
 
   if( number ) {
