@@ -349,7 +349,6 @@ TektronixOscilloscope.prototype.setHorizontalScale = function( scale ) {
 }
 
 TektronixOscilloscope.prototype.getHorizontalScale = function() {
-  scale = getInt( scale );
   return this.command("HORizontal:MODE:SCAle?");  
 }
 
