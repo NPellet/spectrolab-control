@@ -472,7 +472,7 @@ TektronixOscilloscope.prototype.getPosition = function( channel ) {
 TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
   var self = this;
-  
+  var t = Date.now();
   channel = getChannel( channel );
 
   self.command( "DATa:SOUrce " + channel );
@@ -524,8 +524,10 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   return Promise.all( promises ).then( function( ) {
     waveform.setXScaling( 0, duration / length );
     waveform.divideBy( 256 );
-    waveform.multiplyBy( vscale * 10 );
-    waveform.add( offset );
+//    waveform.multiplyBy( vscale * 10 );
+    //waveform.add( offset );
+
+    console.log( "Total query time: " + ( Date.now() - t ) / 1000 + "s" );
     return waveform;
   });
 }
