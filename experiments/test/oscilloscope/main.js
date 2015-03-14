@@ -23,6 +23,10 @@ experiment.getInstruments()['tektronix-oscilloscope'].instrument.on("connected",
 	console.log( "smth" );
 
 	this.getChannel().then( function( ch ) {
+
 		console.log ( ch );
+
+		experiment.renderer.getModule("oscilloscope").newSerie( "rt", ch );
+		experiment.renderer.getModule("oscilloscope").autoScale();
 	})
 })

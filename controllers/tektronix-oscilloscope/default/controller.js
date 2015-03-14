@@ -349,6 +349,19 @@ TektronixOscilloscope.prototype.setSampleRate = function( rate ) {
 }
 
 
+TektronixOscilloscope.prototype.getScaling = function() {
+
+  this.query("HORIZONTAL:ACQLENGTH?").then( function( data ) {
+    console.log( data );
+  } );
+
+  this.query("HORIZONTAL:ACQDURATION?").then( function( data ) {
+    console.log( data );
+  } );
+}
+
+
+
 TektronixOscilloscope.prototype.set50Ohms = function( channel, bln ) {
 
   if( bln == undefined ) {
@@ -449,15 +462,25 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
   var waveform = new Waveform();
 
-  return new Promise( function( resolver, rejecter ) {
+  var promises = [];
+  promises.push( self.command('CURVE?').then( function( data ) {
 
-      self.command('CURVE?').then( function( data ) {
-        console.log( data );
-        waveform.setData( data.split(",") ); // Data is comma separated. We put it in the wave
-        resolver( waveform );
+    waveform.setData( processData( data ) ); // Data is comma separated. We put it in the wave
+    resolver( waveform );
 
-      } );
-  } );
+  } ) );
+
+  promises.push( self.getAcquisitionLength().then( function( aqLength ) {
+    console.log( aqLength );
+  } ) );
+
+  return Promise.all( promises ).then( function( ) {
+    return waveform;
+  });
+}
+
+function processData( data ) {
+  return data.split(",").map( parseFloat );
 }
 
 
