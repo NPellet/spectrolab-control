@@ -13,20 +13,33 @@ experiment.addInstrumentConnectModules();
 
 experiment.renderer.render();
 
+var scope = experiment.getInstruments()['tektronix-oscilloscope'].instrument;
 
-var focusId = false;
+scope.on("connected", function() {
 
-var moduleGraphs = [ 'vocvstime', 'chargesvstime', 'C-V', 'C-t' ];
+	this.setAcquisitionMode( "SAMPLE" );
+	this.setAquisitionLength( 1000 );
 
-experiment.getInstruments()['tektronix-oscilloscope'].instrument.on("connected", function() {
+	this.setHorizontalScale( 2e-6 ); // 2 us / div
+	this.stopAfterSequence( false );
+	this.startAquisition();
 
 	console.log( "smth" );
 
-	this.getChannel().then( function( ch ) {
+	update();
+})
 
-		console.log ( ch );
+function update() {
+
+	scope.getChannel().then( function( ch ) {
 
 		experiment.renderer.getModule("oscilloscope").newSerie( "rt", ch );
-		experiment.renderer.getModule("oscilloscope").autoScale();
-	})
-})
+		experiment.renderer.getModule("oscilloscope").autoscale();
+
+		setTimeout( function() {
+
+			update();
+
+		}, 2000 );
+	} );
+}

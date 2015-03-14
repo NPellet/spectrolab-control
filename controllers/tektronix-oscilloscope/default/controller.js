@@ -333,6 +333,26 @@ TektronixOscilloscope.prototype.getAcquisitionLength = function() { // time
   return this.command("HORizontal:ACQLENGTH?");
 }
 
+
+TektronixOscilloscope.prototype.setRecordLength = function( l ) { // time
+  var l = getInt( l );
+  return this.command("HORizontal:MODE:RECOrdlength " + l );
+}
+
+TektronixOscilloscope.prototype.getRecordLength = function() { 
+  return this.command("HORizontal:MODE:RECOrdlength?" );
+}
+
+TektronixOscilloscope.prototype.setHorizontalScale = function( scale ) {
+  scale = getInt( scale );
+  return this.command("HORizontal:MODE:SCAle " + scale );  
+}
+
+TektronixOscilloscope.prototype.getHorizontalScale = function() {
+  scale = getInt( scale );
+  return this.command("HORizontal:MODE:SCAle?");  
+}
+
 TektronixOscilloscope.prototype.setHorizontalMode = function() {
   mode = getMnemonic( mode, [ 'AUTO', 'CONStant', 'MANual' ] );
   return this.command("HORizontal:MODE " + mode );
@@ -343,18 +363,9 @@ TektronixOscilloscope.prototype.setSampleRate = function( rate ) {
   return this.command("HORizontal:MODE:SAMPLERate " + rate ); 
 }
 
-
-TektronixOscilloscope.prototype.getScaling = function() {
-
-  this.query("HORIZONTAL:ACQLENGTH?").then( function( data ) {
-    console.log( data );
-  } );
-
-  this.query("HORIZONTAL:ACQDURATION?").then( function( data ) {
-    console.log( data );
-  } );
+TektronixOscilloscope.prototype.getSampleRate = function( ) {
+  return this.command("HORizontal:MODE:SAMPLERate?"); 
 }
-
 
 
 TektronixOscilloscope.prototype.set50Ohms = function( channel, bln ) {
@@ -472,7 +483,20 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   var duration;
   promises.push( self.getAcquisitionDuration().then( function( aqDuration ) {
     duration = aqDuration;
+    console.log("Acquisition duration: " + aqDuration );
   } ) );
+
+  promises.push( self.getHorizontalScale().then( function( v ) {
+    console.log("Horizontal scale: " + v );
+  }));
+
+  promises.push( self.getSampleRate().then( function( v ) {
+    console.log("Sample rate: " + v );
+  }));
+
+  promises.push( self.getRecordLength().then( function( v ) {
+    console.log("Record length: " + v );
+  }));
 
   return Promise.all( promises ).then( function( ) {
     waveform.setXScaling( 0, duration / length );
