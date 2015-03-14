@@ -447,13 +447,13 @@ TektronixOscilloscope.prototype.getCoupling = function( channel ) {
 TektronixOscilloscope.prototype.setOffset = function( channel, offset ) {
   offset = getExpValue( offset );
   channel = getChannel( channel );
-  return this.query( channel + ":OFFSET " + offset );
+  return this.command( channel + ":OFFSET " + offset );
 }
 
 
 TektronixOscilloscope.prototype.getOffset = function( channel ) {
   channel = getChannel( channel );
-  return this.query( channel + ":OFFSET?").then( function( value ) {
+  return this.command( channel + ":OFFSET?").then( function( value ) {
     console.log( value );
   });
 }
@@ -461,28 +461,15 @@ TektronixOscilloscope.prototype.getOffset = function( channel ) {
 TektronixOscilloscope.prototype.setPosition = function( channel, position ) {
   position = getExpValue( position );
   channel = getChannel( channel );
-  return this.query( channel + ":POSITION " + position );
+  return this.command( channel + ":POSITION " + position );
 }
 
 TektronixOscilloscope.prototype.getPosition = function( channel ) {
   channel = getChannel( channel );
-  return this.query( channel + ":POSITION?" ).then( function( value ) {
+  return this.command( channel + ":POSITION?" ).then( function( value ) {
     console.log( value );
   });
 }
-
-TektronixOscilloscope.prototype.getScaling = function() {
-
-  this.query("HORIZONTAL:ACQLENGTH?").then( function( data ) {
-    console.log( data );
-  } );
-
-  this.query("HORIZONTAL:ACQDURATION?").then( function( data ) {
-    console.log( data );
-  } );
-}
-
-
 
 TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
