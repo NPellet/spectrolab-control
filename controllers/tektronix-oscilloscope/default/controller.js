@@ -1,9 +1,8 @@
 
 "use strict";
 
-var net = require('net'),
+var 
   extend = require('extend'),
-  fs = require('fs'),
   events = require("events"),
   path = require("path"),
   pythonShell = require("python-shell"),
@@ -217,10 +216,11 @@ TektronixOscilloscope.prototype.getErrors = function() {
 
 
     var errorQueue;
-var i = 0;
+  var i = 0;
     function *errors() {
 
       while( true ) {
+
         self.command("SYSTEM:ERROR:NEXT?").then( function( error ) {
 
             error = error.split(',');
@@ -229,12 +229,12 @@ var i = 0;
 
             i++;
             if( i > 100 ) {
-              console.log( "Infinite loop" );
+              console.log( "More than 100 errors. Infinite loop ?" );
               return; // Infinite loop. Close the iterator;
             }
 
             if( errorCode != 0 ) {
-              console.log("Error: " + errorCode + "; Message: " + errorMessage );
+              console.log("Event ID: " + errorCode + "; Message: " + errorMessage );
               errorQueue.next();
             } else {
 
@@ -255,9 +255,99 @@ var i = 0;
 }
 
 
-function processWave( val ) {
-  return val.split(",");
+TektronixOscilloscope.prototype.setAcquisitionMode = function( aqMode ) {
+  aqMode = getMnemonic( aqMode, ['SAMple', 'PEAKdetect', 'HIRes', 'AVErage', 'WFMDB', 'ENVelope'] );
+  return this.command("ACQUIRE:MODE " + aqMode );
 }
+
+TektronixOscilloscope.prototype.getAcquisitionMode = function( ) {
+  return this.command("ACQUIRE:MODE?");
+}
+
+TektronixOscilloscope.prototype.enhanceNOBAuto = function() {
+  return this.command("ACQuire:ENHANCEDEnob AUTO");
+}
+
+TektronixOscilloscope.prototype.enhanceNOBOff = function() {
+  return this.command("ACQuire:ENHANCEDEnob OFF");
+}
+
+TektronixOscilloscope.prototype.setNbAverage = function( value ) {
+  value = getInt( value );
+  return this.command("ACQuire:NUMAVg " + value );
+}
+
+TektronixOscilloscope.prototype.getNbAverage = function() {
+  return this.command("ACQuire:NUMAvg?");
+}
+
+TektronixOscilloscope.prototype.getCurrentNbAcquisitions = function() { // in Sample or Avg mode
+  return this.command("ACQuire:NUMACq?");
+}
+
+TektronixOscilloscope.prototype.getCurrentNbFrames = function() { // In FastFrame mode
+  // TODO: Check for fast frame
+  return this.command("ACQuire:NUMFRAMESACQuired?");
+}
+
+TektronixOscilloscope.prototype.setSamplingMode = function( mode ) { // Real time or equivalent time ( sampling mode ) ?
+  mode = getMnemonic( mode, [ "RT", "ET", "IT" ]);
+  return this.command("ACQuire:SAMPlingmode " + mode );
+}
+
+TektronixOscilloscope.prototype.getSamplingMode = function() {
+  return this.command("ACQUIRE:SAMPLINGMODE?");
+}
+
+TektronixOscilloscope.prototype.startAquisition = function() {
+ return this.command("ACQUIRE:STATE RUN"); // Resets current acquisitions 
+}
+
+TektronixOscilloscope.prototype.stopAquisition = function() { 
+  return this.command("ACQUIRE:STATE STOP"); // Stops acquisition, even if in the middle of it
+}
+
+TektronixOscilloscope.prototype.isAquiring = function() {
+  return this.command("ACQUIRE:STATE?").then( function( value ) {
+    value = getInt( value );
+    if( value == 0 ) {
+      return false;
+    }
+    return true;
+  }); 
+}
+
+TektronixOscilloscope.prototype.stopAfterSequence = function( bln ) {
+  if( bln === undefined ) {
+    bln = true;
+  }
+  return this.command("ACQUIRE:STOPAfter " + ( bln ? "SEQuence" : "RUNStop" ) );
+}
+
+TektronixOscilloscope.prototype.getAcquisitionDuration = function() { // time
+  return this.command("HORizontal:ACQDURATION?");
+}
+
+
+TektronixOscilloscope.prototype.getAcquisitionLength = function() { // time
+  return this.command("HORizontal:ACQLENGTH?");
+}
+
+TektronixOscilloscope.prototype.setHorizontalMode = function() {
+  mode = getMnemonic( mode, [ 'AUTO', 'CONStant', 'MANual' ] );
+  return this.command("HORizontal:MODE " + mode );
+}
+
+TektronixOscilloscope.prototype.setRecordLength = function( length ) {
+  length = getInt( length );
+  return this.command("HORizontal:MODE:RECOrdlength " + length );
+}
+
+TektronixOscilloscope.prototype.setSampleRate = function( rate ) {
+  rate = getInt( rate );
+  return this.command("HORizontal:MODE:SAMPLERate " + rate ); 
+}
+
 
 TektronixOscilloscope.prototype.set50Ohms = function( channel, bln ) {
 
@@ -334,11 +424,6 @@ TektronixOscilloscope.prototype.getPosition = function( channel ) {
 }
 
 
-
-
-
-
-
 TektronixOscilloscope.prototype.getScaling = function() {
 
   this.query("HORIZONTAL:ACQLENGTH?").then( function( data ) {
@@ -348,34 +433,17 @@ TektronixOscilloscope.prototype.getScaling = function() {
   this.query("HORIZONTAL:ACQDURATION?").then( function( data ) {
     console.log( data );
   } );
-
-
-
-
 }
 
 
 
-TektronixOscilloscope.prototype.getWaveform = function( channel ) {
+TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
   this.query( "DATa:SOUrce CH1" );
   this.query( "DATa:SOUrce?" );
   this.query( "DATa:ENCdg ASCii" );
   this.query( "WFMOutpre:BYT_Nr 8" );
 
-  this.getScaling().then( function( scaling ) {
-
-
-  });
-
-  this.query("HORIZONTAL:MODE:SAMPLERRATE?").then( function( data ) {
-console.log( data );
-  } );
-
-
-  this.query("HORIZONTAL:MODE:SCALE?").then( function( data ) {
-console.log( data );
-  } );
 
   var waveform = new Waveform();
 
@@ -497,3 +565,36 @@ function getFloat( val ) {
 
   return val;
 }
+
+
+function getMnemonic( needle, haystack ) {
+
+  needle = needle.toLowerCase();
+
+  for( var i = 0, l = haystack.length; i < l ; i ++ ) {
+
+    if( needle == haystack[ i ].toLowerCase() ) {
+      return haystack[ i ];
+    }
+
+    if( /[A-Z]*/.exec( haystack[ i ]).toLowerCase() == needle ) {
+      return haystack[ i ];
+    }
+  }
+}
+
+function getInt( i ) {
+  if( typeof i == "number" ) {
+    return Math.round( i );
+  }
+
+  i = parseInt( i );
+
+  if( isNaN( i ) ) {
+    return false;
+  }
+
+  return i;
+}
+
+
