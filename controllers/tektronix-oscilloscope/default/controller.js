@@ -381,13 +381,13 @@ TektronixOscilloscope.prototype.setVerticalScale = function( channel, vscale ) {
 
 TektronixOscilloscope.prototype.getPosition = function( channel ) {
   channel = getChannel( channel );
-  return this.command( channel + ":POSITION?");
+  return this.command( channel + ":POSition?");
 }
 
 TektronixOscilloscope.prototype.setPosition = function( channel, position ) {
   channel = getChannel( channel );
   position = getInt( position );
-  return this.command( channel + ":POSITION " + position );
+  return this.command( channel + ":POSition " + position );
 }
 
 TektronixOscilloscope.prototype.getOffset = function( channel ) {
@@ -455,9 +455,7 @@ TektronixOscilloscope.prototype.setOffset = function( channel, offset ) {
 
 TektronixOscilloscope.prototype.getOffset = function( channel ) {
   channel = getChannel( channel );
-  return this.command( channel + ":OFFSET?").then( function( value ) {
-    console.log( value );
-  });
+  return this.command( channel + ":OFFSET?");
 }
 
 TektronixOscilloscope.prototype.setPosition = function( channel, position ) {
@@ -468,9 +466,7 @@ TektronixOscilloscope.prototype.setPosition = function( channel, position ) {
 
 TektronixOscilloscope.prototype.getPosition = function( channel ) {
   channel = getChannel( channel );
-  return this.command( channel + ":POSITION?" ).then( function( value ) {
-    console.log( value );
-  });
+  return this.command( channel + ":POSITION?" );
 }
 
 TektronixOscilloscope.prototype.getChannel = function( channel ) {
@@ -568,7 +564,7 @@ function callCommand( instance, cmd, ask ) {
       }
 
       listen("");
-      instance.send( cmd + "?;*WAI" );
+      instance.send( cmd + "?" );
 
     } else {
 
