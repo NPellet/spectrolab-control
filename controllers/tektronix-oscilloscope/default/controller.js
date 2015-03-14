@@ -464,15 +464,18 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
     
   } ) );
 
+  var length;
   promises.push( self.getAcquisitionLength().then( function( aqLength ) {
-    console.log( aqLength );
+    length = aqLength;
   } ) );
 
-  promises.push( self.getAcquisitionDuration().then( function( aqLength ) {
-    console.log( aqDuration );
+  var duration;
+  promises.push( self.getAcquisitionDuration().then( function( aqDuration ) {
+    duration = aqDuration;
   } ) );
 
   return Promise.all( promises ).then( function( ) {
+    waveform.setXScaling( 0, duration / length );
     return waveform;
   });
 }

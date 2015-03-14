@@ -130,7 +130,7 @@ Waveform.prototype = {
 
 	_checkScalingWave: function() {
 
-		if( ! this.hasXScaling() || ! this.xScaling.mode == "wave" ) {
+		if( ! this.hasXScaling() || ! ( this.xScaling.mode == "wave" ) ) {
 			return;
 		}
 
