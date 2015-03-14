@@ -18,7 +18,7 @@ var focusId = false;
 
 var moduleGraphs = [ 'vocvstime', 'chargesvstime', 'C-V', 'C-t' ];
 
-experiment.getInstruments()['tektronix-oscilloscope'].instrument.on("connect", function() {
+experiment.getInstruments()['tektronix-oscilloscope'].instrument.on("connected", function() {
 
 	console.log( "smth" );
 })
