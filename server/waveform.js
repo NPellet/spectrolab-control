@@ -427,6 +427,37 @@ Waveform.prototype = {
 		}
 	},
 
+	add: function( val ) {
+
+
+		if( typeof val == "function" ) {
+
+			for( var i = 0; i < this.data.length; i ++ ) {
+
+				this.data[ i ] += val( this.getXFromIndex( i ), this.data[ i ] );
+			}
+
+		}	else if( val instanceof Waveform ) {
+
+			if( val.getDataLength() == this.getDataLength() ) {
+
+				for( var i = 0; i < this.data.length; i ++ ) {
+					this.data[ i ] += val.get( i );
+				}
+
+			} else {
+				throw "Cannot subtract two waves with unequal number of points";
+			}
+
+		} else {
+
+			for( var i = 0; i < this.data.length; i ++ ) {
+
+				this.data[ i ] += val;
+			}
+		}
+	},
+
 	_integrateX: function( xFrom, xTo ) {
 
 		var from, to;

@@ -406,7 +406,7 @@ TektronixOscilloscope.prototype.set50Ohms = function( channel, bln ) {
     bln = true;
   }
 
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   var terminationValue = getExpValue( bln ? 50 : 1e6 );
 
   return this.query( channel + ":TERMINATION " + terminationValue );
@@ -415,7 +415,7 @@ TektronixOscilloscope.prototype.set50Ohms = function( channel, bln ) {
 
 TektronixOscilloscope.prototype.get50Ohms = function( channel ) {
 
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
 
   return this.query( channel + ":TERMINATION?" ).then( function( val ) {
 
@@ -430,13 +430,13 @@ TektronixOscilloscope.prototype.setCoupling = function( channel, coupling ) {
     coupling = "AC";
   }
 
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   coupling = checkCoupling( coupling );
   return this.query( channel + ":COUPLING " + coupling );
 }
 
 TektronixOscilloscope.prototype.getCoupling = function( channel ) {
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   return this.query( channel + ":COUPLING", true ).then( function( value ) {
     val
     console.log( value );
@@ -446,13 +446,13 @@ TektronixOscilloscope.prototype.getCoupling = function( channel ) {
 
 TektronixOscilloscope.prototype.setOffset = function( channel, offset ) {
   offset = getExpValue( offset );
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   return this.query( channel + ":OFFSET " + offset );
 }
 
 
 TektronixOscilloscope.prototype.getOffset = function( channel ) {
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   return this.query( channel + ":OFFSET?").then( function( value ) {
     console.log( value );
   });
@@ -460,12 +460,12 @@ TektronixOscilloscope.prototype.getOffset = function( channel ) {
 
 TektronixOscilloscope.prototype.setPosition = function( channel, position ) {
   position = getExpValue( position );
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   return this.query( channel + ":POSITION " + position );
 }
 
 TektronixOscilloscope.prototype.getPosition = function( channel ) {
-  channel = checkChannel( channel );
+  channel = getChannel( channel );
   return this.query( channel + ":POSITION?" ).then( function( value ) {
     console.log( value );
   });
@@ -540,6 +540,7 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
     waveform.setXScaling( 0, duration / length );
     waveform.divideBy( 256 );
     waveform.mutliplyBy( vscale * 10 );
+    waveform.add( offset );
     return waveform;
   });
 }
