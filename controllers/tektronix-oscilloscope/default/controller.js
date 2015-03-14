@@ -508,20 +508,20 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   var position;
   promises.push( self.getPosition( channel ).then( function( pos ) {
     position = pos;
-    console.log( position );
+    console.log( "Vertical position: " + position );
   } ) );
 
   var offset;
   promises.push( self.getOffset( channel ).then( function( off ) {
     offset = off;
-    console.log( offset );
+    console.log( "Offset: " + offset );
   } ) );
 
 
   var vscale;
   promises.push( self.getVerticalScale( channel ).then( function( v ) {
     vscale = v;
-    console.log( vscale );
+    console.log( "Vertical scale: " + vscale );
   } ) );
 
 
