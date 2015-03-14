@@ -600,8 +600,7 @@ function getChannel( channel, number ) {
   } else if( channel.length == 1) {
     channel = parseInt( channel );
   } else if( ( v = ( /^CH([0-4])$/.exec( channel ) ) ) ) {
-    console.log( v );
-    channel = parseInt( v );
+    channel = parseInt( v[ 1 ] );
   }
 
   if( number ) {
