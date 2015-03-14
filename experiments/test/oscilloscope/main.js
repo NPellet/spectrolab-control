@@ -31,7 +31,7 @@ scope.on("connected", function() {
 
 function update() {
 
-	scope.getChannel().then( function( ch ) {
+	scope.getChannel( 1 ).then( function( ch ) {
 
 		experiment.renderer.getModule("oscilloscope").newSerie( "rt", ch );
 		experiment.renderer.getModule("oscilloscope").autoscale();
