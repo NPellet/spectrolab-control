@@ -8,7 +8,7 @@ var
   pythonShell = require("python-shell"),
   promise = require("bluebird");
 
-var waveform = require("../../../server/waveform");
+var Waveform = require("../../../server/waveform");
 
 var TektronixOscilloscope = function( params ) {
   this.params = params;
