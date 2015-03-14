@@ -439,23 +439,25 @@ TektronixOscilloscope.prototype.getScaling = function() {
 
 TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
-  this.query( "DATa:SOUrce CH1" );
-  this.query( "DATa:SOUrce?" );
-  this.query( "DATa:ENCdg ASCii" );
-  this.query( "WFMOutpre:BYT_Nr 8" );
+  var self = this;
+
+  self.command( "DATa:SOUrce CH1" );
+  self.command( "DATa:SOUrce?" );
+  self.command( "DATa:ENCdg ASCii" );
+  self.command( "WFMOutpre:BYT_Nr 8" );
 
 
   var waveform = new Waveform();
 
-  // Getting the curve
-  promises.push(
-    this.query('CURVE?').then( function( data ) {
-      waveform.setData( data.split(",") ); // Data is comma separated. We put it in the wave
-    } )
-  );
+  return new Promise( function( resolver, rejecter ) {
 
+      self.command('CURVE?').then( function( data ) {
+        console.log( data );
+        waveform.setData( data.split(",") ); // Data is comma separated. We put it in the wave
+        resolver( waveform );
 
-  return Promise.all( [] )
+      } );
+  } );
 }
 
 
