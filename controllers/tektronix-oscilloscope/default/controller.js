@@ -117,7 +117,7 @@ TektronixOscilloscope.prototype.connect = function(  ) {
 
 
       module.shellInstance.on( 'message', function( data ) {
-        console.log("Receiving from AFG: " + data );
+        //console.log("Receiving from AFG: " + data );
 
       });
 
@@ -200,6 +200,8 @@ function query( module, query ) {
         module.shellInstance.send( query );
         resolver();
       }
+
+      console.log('Query: ' + query );
 
     } ).then( function( data ) {
       if( data ) {
