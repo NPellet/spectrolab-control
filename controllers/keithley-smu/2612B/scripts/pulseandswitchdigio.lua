@@ -1,5 +1,5 @@
 
-function pulseAndSwitchDiogio(diodePin, switchPin, pulseWidth, numberOfPulses, delayBetweenPulses, delaySwitch)
+function pulseAndSwitchDigio(diodePin, switchPin, pulseWidth, numberOfPulses, delayBetweenPulses, delaySwitch)
 
 	local pulseNum = 1
 	digio.writebit( switchPin, 0 )
@@ -15,6 +15,6 @@ function pulseAndSwitchDiogio(diodePin, switchPin, pulseWidth, numberOfPulses, d
 		digio.writebit( switchPin, 0 )
 	end
 
-	print("method_done");
+	print("method_done:pulseAndSwitchDigio");
 
 end

@@ -2,14 +2,7 @@
 var extend = require('extend');
 
 var Waveform = function() {
-	
 	this.data = [];
-	
-	this.xScaling = { 
-		mode: 'delta',
-		xDelta: 1,
-		x0: 0
-	}
 };
 
 Waveform.prototype = {
@@ -119,6 +112,14 @@ Waveform.prototype = {
 		}
 
 		if( ! w instanceof Waveform ) {
+
+			if( Array.isArray( w ) ) {
+
+					var wave = new Waveform();
+					wave.setData( w );
+					w = wave;
+			}
+
 			throw "X wave must be a waveform"
 		}
 
@@ -368,12 +369,12 @@ Waveform.prototype = {
 		if( p1 == undefined ) {
 			p1 = this.getDataLength() - 1;
 		}
-		
+
 		return this.getAverageP( p0, p1 );
 	},
 
 	mean: function() {
-		return this.average( 0, this.data.length - 1 );
+		return this.average();
 	},
 
 	median: function() {
@@ -423,37 +424,6 @@ Waveform.prototype = {
 			for( var i = 0; i < this.data.length; i ++ ) {
 
 				this.data[ i ] -= val;
-			}
-		}
-	},
-
-	add: function( val ) {
-
-
-		if( typeof val == "function" ) {
-
-			for( var i = 0; i < this.data.length; i ++ ) {
-
-				this.data[ i ] += val( this.getXFromIndex( i ), this.data[ i ] );
-			}
-
-		}	else if( val instanceof Waveform ) {
-
-			if( val.getDataLength() == this.getDataLength() ) {
-
-				for( var i = 0; i < this.data.length; i ++ ) {
-					this.data[ i ] += val.get( i );
-				}
-
-			} else {
-				throw "Cannot subtract two waves with unequal number of points";
-			}
-
-		} else {
-
-			for( var i = 0; i < this.data.length; i ++ ) {
-
-				this.data[ i ] += val;
 			}
 		}
 	},
@@ -701,9 +671,34 @@ Waveform.prototype = {
 				}
 			}
 		}
+	},
 
+	degradeExp: function( nbPoints ) {
 
+		var d = this.getData();
+		var x = this.getXWave().getData();
+		var dl = this.getDataLength();
+
+		var y0 = -1,
+				b = Math.log( dl ) / ( nbPoints - 1 ),
+				index,
+				dFinal = [],
+				xFinal = [];
+
+		for( var i = 0; i < nbPoints; i ++ ) {
+
+			index = -1 + Math.pow( e, ( b * i ) );
+			dFinal.push( d[ index ] );
+			xFinal.push( x[ index ] );
+		}
+
+		var w = new Waveform();
+		w.setData( dFinal );
+		w.setXWave( xFinal );
+
+		return w;
 	}
+
 }
 
 module.exports = Waveform;

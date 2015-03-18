@@ -302,7 +302,7 @@ console.log("Data: ", data );
 	},
 
 
-	'pulseAndSwitchDiogio': {
+	'pulseAndSwitchDigio': {
 
 		defaults: {
 			diodePin: 1,
@@ -313,7 +313,7 @@ console.log("Data: ", data );
 			delaySwitch: 0.1
 		},
 
-		method: 'pulseAndSwitchDiogio',
+		method: 'pulseAndSwitchDigio',
 		parameters: function( options ) {
 
 			return [ options.diodePin, options.switchPin, options.pulseWidth, options.numberOfPulses, options.delayBetweenPulses, options.delaySwitch ]
@@ -439,6 +439,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			function end( data ) {
+				console.log('end: ' + data );
 				if( method.processing ) {
 					data = method.processing( data, options );
 				}
@@ -448,6 +449,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 			function listen( prevData ) {
 
 				module.socket.once( 'data', function( data ) {
+					console.log("once: " + data );
 					data = prevData + data.toString('ascii');
 					if( data.indexOf("\n") == -1 ) {
 						listen( data );
@@ -458,7 +460,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			listen("");
-
+console.log("Writing");
 
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
@@ -515,8 +517,8 @@ Keithley.prototype.setEvents = function() {
 
 		self.socket.removeAllListeners( 'data' );
 
+		self.command("exit()"); // Reset keithley
 		self.flushErrors();
-
 		self.command("*RST"); // Reset keithley
 		self.command("*CLS"); // Reset keithley
 		self.command("digio.writeport(0)");
@@ -526,6 +528,9 @@ Keithley.prototype.setEvents = function() {
 		self.socket.write("SpetroscopyScripts();\r\n");
 		self.emit("connected");
 
+		self.socket.on("data", function(d) {
+			console.log("Constant Keithley SMU Listener: " + d );
+		})
 		self.queue.map( function( resolver ) {
 			resolver();
 		});
@@ -555,10 +560,6 @@ Keithley.prototype.uploadScripts = function() {
 			continue;
 		}
 
-		console.log("Uploading script: " + files[ i ] );
-
-		console.log( files[ i ] );
-		console.log( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ).toString('ascii') );
 		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ) );
 		this.socket.write("\r\n");
 	}

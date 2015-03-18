@@ -24,8 +24,6 @@ scope.on("connected", function() {
 	this.stopAfterSequence( false );
 	this.startAquisition();
 
-	console.log( "smth" );
-
 	update();
 })
 
@@ -40,6 +38,6 @@ function update() {
 
 			update();
 
-		}, 2000 );
+		}, 1000 );
 	} );
 }

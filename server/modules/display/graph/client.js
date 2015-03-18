@@ -35,8 +35,9 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 		var module = this;
 		var g = this.checkGraph();
 		if( serie = g.getSerie( data.name ) ) {
+
 			serie.setData( data.data );
-			serie.options = data.options;
+			serie.options = data.options || {};
 
 			switch( type ) {
 
@@ -142,11 +143,25 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 			g.getYAxis().forceMax( data );
 		},
 
+		"setXScientificTicks": function( bln ) {
+			var g = this.checkGraph();
+
+			g.getXAxis().options.scientificTicks = bln;
+			return this;
+		},
+
+		"setYScientificTicks": function( bln ) {
+			var g = this.checkGraph();
+
+			g.getYAxis().options.scientificTicks = bln;
+			return this;
+		},
+
 		"setXAxisLabel": function ( data ) {
 
 			var g = this.checkGraph();
 			g.getXAxis().setLabel( data );
-			
+
 		},
 
 
@@ -185,12 +200,12 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 			g.setHeight( status.height );
 		}
 
-		if( status.xLabel ) {
-			g.getXAxis().setLabel( xLabel );
+		if( status.xAxisLabel ) {
+			g.getXAxis().setLabel( status.xAxisLabel );
 		}
 
-		if( status.yLabel ) {
-			g.getYAxis().setLabel( yLabel );
+		if( status.yAxisLabel ) {
+			g.getYAxis().setLabel( status.yAxisLabel );
 		}
 
 		if( status.forceYMin !== undefined ) {
@@ -207,6 +222,14 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 		if( status.forceXMax !== undefined ) {
 			g.getXAxis().forceMax( status.forceXMax );
+		}
+
+		if( status.xScientificTicks !== undefined ) {
+			g.getXAxis().options.scientificTicks = status.xScientificTicks;
+		}
+
+		if( status.yScientificTicks !== undefined ) {
+			g.getYAxis().options.scientificTicks = status.yScientificTicks;
 		}
 
 		if( status.xLogScale ) {

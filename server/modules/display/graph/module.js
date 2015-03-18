@@ -116,6 +116,26 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		return this;
 	},
 
+
+
+	setXAxisLabel: function( label ) {
+		this.status.xAxisLabel = label;
+		this.out( "setXAxisLabel", label );
+		return this;
+	},
+
+	setXScientificTicks: function( bln ) {
+		this.status.xScientificTicks = bln;
+		this.out( "setXScientificTicks", bln );
+		return this;
+	},
+	setYScientificTicks: function( bln ) {
+		this.status.yScientificTicks = bln;
+		this.out( "setYScientificTicks", bln );
+		return this;
+	},
+
+
 	setHeight: function( h ) {
 		this.status.height = h;
 		this.out( "setHeight", h );

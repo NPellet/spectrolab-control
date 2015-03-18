@@ -1,7 +1,7 @@
 
 "use strict";
 
-var 
+var
   extend = require('extend'),
   events = require("events"),
   path = require("path"),
@@ -150,9 +150,6 @@ TektronixOscilloscope.prototype.connect = function(  ) {
   }
 
 
-
-
-
   TektronixOscilloscope.prototype.commands = function( commands ) {
     var self = this;
     commands.map( function( cmd ) {
@@ -201,7 +198,7 @@ function query( module, query ) {
         resolver();
       }
 
-      console.log('Query: ' + query );
+  //    console.log('Query: ' + query );
 
     } ).then( function( data ) {
       if( data ) {
@@ -251,14 +248,47 @@ TektronixOscilloscope.prototype.getErrors = function() {
 
     errorQueue = errors();
     errorQueue.next();
-
-  })
-
+  } );
 }
 
+TektronixOscilloscope.prototype.setTriggerRefPoint = function( ref ) {
+  ref = getInt( ref );
+  console.log( "HORizontal:MAIn:DELay:POSition " + ref  );
+  return this.command("HORizontal:MAIn:DELay:POSition " + ref );
+}
+
+TektronixOscilloscope.prototype.setTriggerCoupling = function( coupling ) {
+  coupling = getMnemonic( coupling, [ "AC", "DC", "HFRej", "LFRej", "NOISErej", "ATRIGger" ] );
+  return this.command("TRIGger:A:EDGE:COUPling " + coupling );
+}
+
+TektronixOscilloscope.prototype.setTriggerToChannel = function( channel ) {
+  channel = getChannel( channel );
+  return this.command("TRIGger:A:EDGE:SOURCE " + channel );
+}
+
+TektronixOscilloscope.prototype.setTriggerLevel = function( level ) {
+  level = getFloat( level );
+  return this.command("TRIGger:A:LEVel " + level );
+}
+
+TektronixOscilloscope.prototype.setTriggerSlope = function( channel, slope ) {
+  channel = getChannel( channel );
+  slope = getMnemonic( slope, [ 'RISe', 'FALL', 'EITher' ] );
+  return this.command("TRIGGER:A:EDGE:SLOPE:" + channel + " " + slope );
+}
+
+TektronixOscilloscope.prototype.disableAveraging = function() {
+  return this.setAcquisitionMode( "SAMPLE" );
+}
+
+TektronixOscilloscope.prototype.enableAveraging = function() {
+  return this.setAcquisitionMode( "AVERAGE" );
+}
 
 TektronixOscilloscope.prototype.setAcquisitionMode = function( aqMode ) {
   aqMode = getMnemonic( aqMode, ['SAMple', 'PEAKdetect', 'HIRes', 'AVErage', 'WFMDB', 'ENVelope'] );
+  console.log( aqMode );
   return this.command("ACQUIRE:MODE " + aqMode );
 }
 
@@ -302,10 +332,10 @@ TektronixOscilloscope.prototype.getSamplingMode = function() {
 }
 
 TektronixOscilloscope.prototype.startAquisition = function() {
- return this.command("ACQUIRE:STATE RUN"); // Resets current acquisitions 
+ return this.command("ACQUIRE:STATE RUN"); // Resets current acquisitions
 }
 
-TektronixOscilloscope.prototype.stopAquisition = function() { 
+TektronixOscilloscope.prototype.stopAquisition = function() {
   return this.command("ACQUIRE:STATE STOP"); // Stops acquisition, even if in the middle of it
 }
 
@@ -316,7 +346,7 @@ TektronixOscilloscope.prototype.isAquiring = function() {
       return false;
     }
     return true;
-  }); 
+  });
 }
 
 TektronixOscilloscope.prototype.stopAfterSequence = function( bln ) {
@@ -324,6 +354,12 @@ TektronixOscilloscope.prototype.stopAfterSequence = function( bln ) {
     bln = true;
   }
   return this.command("ACQUIRE:STOPAfter " + ( bln ? "SEQuence" : "RUNStop" ) );
+}
+
+
+TektronixOscilloscope.prototype.clear = function(  ) {
+
+  return this.command("CLEAR ALL");
 }
 
 TektronixOscilloscope.prototype.getAcquisitionDuration = function() { // time
@@ -338,20 +374,40 @@ TektronixOscilloscope.prototype.getAcquisitionLength = function() { // time
 
 TektronixOscilloscope.prototype.setRecordLength = function( l ) { // time
   var l = getInt( l );
+  console.log( "HORizontal:MODE:RECOrdlength " + l  );
   return this.command("HORizontal:MODE:RECOrdlength " + l );
 }
 
-TektronixOscilloscope.prototype.getRecordLength = function() { 
+TektronixOscilloscope.prototype.getRecordLength = function() {
   return this.command("HORizontal:MODE:RECOrdlength?" );
 }
 
 TektronixOscilloscope.prototype.setHorizontalScale = function( scale ) {
-  scale = getInt( scale );
-  return this.command("HORizontal:MODE:SCAle " + scale );  
+
+  var self = this;
+
+  this.getHorizontalMode().then( function( mode ) {
+    console.log( mode );
+
+    switch( mode ) {
+      case 'MANUAL':
+
+          self.getRecordLength().then( function( rlength ) {
+            self.setSampleRate( rlength / ( scale * 10 ) );
+          } );
+
+      break;
+      default:
+        scale = getFloat( scale );
+        return self.command("HORizontal:MODE:SCAle " + scale );
+      break;
+    }
+
+  });
 }
 
 TektronixOscilloscope.prototype.getHorizontalScale = function() {
-  return this.command("HORizontal:MODE:SCAle?");  
+  return this.command("HORizontal:MODE:SCAle?");
 }
 
 TektronixOscilloscope.prototype.setHorizontalMode = function() {
@@ -359,13 +415,18 @@ TektronixOscilloscope.prototype.setHorizontalMode = function() {
   return this.command("HORizontal:MODE " + mode );
 }
 
+
+TektronixOscilloscope.prototype.getHorizontalMode = function() {
+  return this.command("HORizontal:MODE?");
+}
+
 TektronixOscilloscope.prototype.setSampleRate = function( rate ) {
   rate = getInt( rate );
-  return this.command("HORizontal:MODE:SAMPLERate " + rate ); 
+  return this.command("HORizontal:MODE:SAMPLERate " + rate );
 }
 
 TektronixOscilloscope.prototype.getSampleRate = function( ) {
-  return this.command("HORizontal:MODE:SAMPLERate?"); 
+  return this.command("HORizontal:MODE:SAMPLERate?");
 }
 
 TektronixOscilloscope.prototype.getVerticalScale = function( channel ) {
@@ -375,7 +436,7 @@ TektronixOscilloscope.prototype.getVerticalScale = function( channel ) {
 
 TektronixOscilloscope.prototype.setVerticalScale = function( channel, vscale ) {
   channel = getChannel( channel );
-  vscale = getInt( vscale );
+  vscale = getFloat( vscale );
   return this.command( channel + ":SCALE " + vscale );
 }
 
@@ -402,16 +463,14 @@ TektronixOscilloscope.prototype.setOffset = function( channel, offset ) {
 }
 
 
-TektronixOscilloscope.prototype.set50Ohms = function( channel, bln ) {
-
-  if( bln == undefined ) {
-    bln = true;
-  }
-
+TektronixOscilloscope.prototype.enable50Ohms = function( channel ) {
   channel = getChannel( channel );
-  var terminationValue = getExpValue( bln ? 50 : 1e6 );
+  return this.command( channel + ":TERMINATION 50" );
+}
 
-  return this.query( channel + ":TERMINATION " + terminationValue );
+TektronixOscilloscope.prototype.disable50Ohms = function( channel ) {
+  channel = getChannel( channel );
+  return this.command( channel + ":TERMINATION 1000000" );
 }
 
 
@@ -427,20 +486,15 @@ TektronixOscilloscope.prototype.get50Ohms = function( channel ) {
 
 
 TektronixOscilloscope.prototype.setCoupling = function( channel, coupling ) {
-
-  if( coupling == undefined ) {
-    coupling = "AC";
-  }
-
   channel = getChannel( channel );
   coupling = checkCoupling( coupling );
-  return this.query( channel + ":COUPLING " + coupling );
+  return this.command( channel + ":COUPLING " + coupling );
 }
 
 TektronixOscilloscope.prototype.getCoupling = function( channel ) {
   channel = getChannel( channel );
   return this.query( channel + ":COUPLING", true ).then( function( value ) {
-    val
+
     console.log( value );
   });
 }
@@ -455,7 +509,9 @@ TektronixOscilloscope.prototype.setOffset = function( channel, offset ) {
 
 TektronixOscilloscope.prototype.getOffset = function( channel ) {
   channel = getChannel( channel );
-  return this.command( channel + ":OFFSET?");
+  return this.command( channel + ":OFFSET?").then( function( v ) {
+    return parseFloat( v );
+  });
 }
 
 TektronixOscilloscope.prototype.setPosition = function( channel, position ) {
@@ -475,20 +531,11 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   var t = Date.now();
   channel = getChannel( channel );
 
-  self.command( "DATa:SOUrce " + channel );
-  self.command( "DATa:SOUrce?" );
-  self.command( "DATa:ENCdg ASCii" );
-  //self.command( "WFMOutpre:BYT_Nr 8" );
 
 
   var waveform = new Waveform();
 
   var promises = [];
-  promises.push( self.command('CURVE?').then( function( data ) {
-
-    waveform.setData( processData( data ) ); // Data is comma separated. We put it in the wave
-    
-  } ) );
 
   var length;
   promises.push( self.getAcquisitionLength().then( function( aqLength ) {
@@ -504,33 +551,68 @@ TektronixOscilloscope.prototype.getChannel = function( channel ) {
   var position;
   promises.push( self.getPosition( channel ).then( function( pos ) {
     position = pos;
-    console.log( "Vertical position: " + position );
   } ) );
 
   var offset;
   promises.push( self.getOffset( channel ).then( function( off ) {
     offset = off;
-    console.log( "Offset: " + offset );
   } ) );
 
 
   var vscale;
   promises.push( self.getVerticalScale( channel ).then( function( v ) {
     vscale = v;
-    console.log( "Vertical scale: " + vscale );
   } ) );
 
 
   return Promise.all( promises ).then( function( ) {
-    waveform.setXScaling( 0, duration / length );
-    waveform.divideBy( 256 );
-//    waveform.multiplyBy( vscale * 10 );
-    //waveform.add( offset );
 
-    console.log( "Total query time: " + ( Date.now() - t ) / 1000 + "s" );
-    return waveform;
-  });
+    self.command( "DATa:SOUrce " + channel );
+    self.command( "DATa:ENCdg ASCii" );
+    self.command( "WFMOutpre:BYT_Nr 8" );
+
+    self.command( "DATa:START 1" );
+    self.command( "DATa:STOP " + length );
+
+    waveform.setXScaling( 0, duration / length );
+
+    return self.command('CURVE?').then( function( data ) {
+
+      var d = processData( data );
+      waveform.setData( d ); // Data is comma separated. We put it in the wave
+      waveform.divideBy( 256 );
+      waveform.multiplyBy( vscale * 10 );
+      waveform.subtract( position * vscale );
+      waveform.add( offset );
+
+      return waveform;
+
+    } );
+
+  } );
 }
+
+TektronixOscilloscope.prototype.getWaves = function() {
+  var promises = [];
+  for( var i = 1; i <= 4 ; i ++ ) {
+    promises.push( this.getChannel( i ) );
+  }
+
+  return Promise.all( promises ).then( function( waves ) {
+    var w = {};
+    for( var i = 0; i < waves.length; i ++ ) {
+      w[ i + 1 ] = waves[ i ];
+    }
+    return w;
+  } );
+}
+
+TektronixOscilloscope.prototype.ready = function() {
+  this.command( "*OPC" );
+  return this.command( "*OPC?" );
+}
+
+
 
 function processData( data ) {
   return data.split(",").map( parseFloat );
@@ -668,7 +750,10 @@ function getMnemonic( needle, haystack ) {
       return haystack[ i ];
     }
 
-    if( /[A-Z]*/.exec( haystack[ i ]).toLowerCase() == needle ) {
+    var el = /[A-Z]*/.exec( haystack[ i ]);
+
+    el = el[ 0 ];
+    if( el.toLowerCase() == needle ) {
       return haystack[ i ];
     }
   }
@@ -689,3 +774,18 @@ function getInt( i ) {
 }
 
 
+
+
+function getFloat( i ) {
+  if( typeof i == "number" ) {
+    return i;
+  }
+
+  i = parseFloat( i );
+
+  if( isNaN( i ) ) {
+    return false;
+  }
+
+  return i;
+}

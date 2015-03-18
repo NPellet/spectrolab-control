@@ -12,7 +12,7 @@ experiment.renderer.init();
 
 experiment.addInstrumentConnectModules();
 
-var proc = experiment.getDeviceProcedure('VocDecay-oscilloscope');
+var proc = experiment.getDeviceProcedure('VocDecay');
 
 proc.on("progress", function( response ) {
 console.log( response );

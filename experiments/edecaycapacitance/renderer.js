@@ -28,7 +28,7 @@ renderer.init = function() {
       lastPulse: {
         title: "Last pulse",
         left: 3,
-        top: 10,
+        top: 1,
         width: 10 // 500px
       },
 
@@ -63,15 +63,17 @@ renderer.init = function() {
 
 
 
-    lastJDecay: {
-      wrapper: 'lastPulse',
-      path: 'display/graph'
-    },
+        lastJDecay: {
+          wrapper: 'lastPulse',
+          path: 'display/graph'
+        },
 
-    pulses: {
-      wrapper: 'lastPulse',
-      path: 'display/graph'
-    },
+
+            lastVDecay: {
+              wrapper: 'lastPulse',
+              path: 'display/graph'
+            },
+
 
     vocvstime: {
       wrapper: 'summary1',
@@ -83,47 +85,49 @@ renderer.init = function() {
       path: 'display/graph'
     },
 
-    "C-V": {
-      wrapper: 'summary2',
-      path: 'display/graph'
-    },
-
-    "C-t": {
+    chargesvsvoc: {
       wrapper: 'summary2',
       path: 'display/graph'
     }
 
   } );
 
-  renderer.getModule("vocvstime")
-    .setTitle("Voc vs time")
-    .setHeight( 400 )
+  renderer.getModule("lastJDecay")
+    .setTitle("Current pulse")
+    .setHeight( 300 )
     .setXAxisLabel("Time (s)")
-    .setXLogScale( true );
+    .setXLogScale( false )
+    .setYAxisLabel("Current (A)");
+
+
+    renderer.getModule("lastVDecay")
+      .setTitle("Voltage pulse")
+      .setHeight( 400 )
+      .setXAxisLabel("Time (s)")
+      .setYAxisLabel("Voltage (V)");
+
+
+      renderer.getModule("vocvstime")
+        .setTitle("Voc vs time")
+        .setHeight( 400 )
+        .setXAxisLabel("Time (s)")
+        .setXLogScale( true )
+        .setYAxisLabel("Voltage (V)");
 
   renderer.getModule("chargesvstime")
     .setTitle("Charges vs time")
     .setHeight( 400 )
     .setXAxisLabel("Time (s)")
-    .setXLogScale( true );
+    .setXLogScale( true )
+    .setYAxisLabel("Charges (C)")
+    .setYScientificTicks( true );
 
-  renderer.getModule("C-V")
-    .setTitle("C-V plot")
+  renderer.getModule("chargesvsvoc")
+    .setTitle("Q-V plot")
     .setHeight( 400 )
-    .setXAxisLabel("Voltage (V)");
-
-    renderer.getModule("C-t")
-      .setTitle("Capacitance vs time")
-      .setHeight( 400 )
-      .setXAxisLabel("Time (s)")
-      .setXLogScale( true );
-
-      renderer.getModule("pulses")
-        .setTitle("Number of pulses")
-        .setHeight( 200 )
-        .setXAxisLabel("Time (s)")
-        .setXLogScale( true );
-
+    .setXAxisLabel("Voltage (V)")
+    .setYAxisLabel("Charges (C)")
+    .setYScientificTicks( true );
 
     var schema = {
         "type": "object",
