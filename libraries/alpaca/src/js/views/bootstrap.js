@@ -31,6 +31,7 @@
     styles["downIcon"] = "glyphicon glyphicon-chevron-down";
     styles["expandedIcon"] = "glyphicon glyphicon-circle-arrow-down";
     styles["collapsedIcon"] = "glyphicon glyphicon-circle-arrow-right";
+    styles["table"] = "table table-striped table-bordered table-hover";
 
     // custom callbacks
     var callbacks = {};
@@ -166,7 +167,9 @@
             $(containerEl).addClass("collapse in");
 
             // set up legend anchor
-            $(anchorEl).attr("data-target", "#" + id);
+            if (!$(anchorEl).attr("data-target")) {
+                $(anchorEl).attr("data-target", "#" + id);
+            }
 
             $(anchorEl).mouseover(function(e) {
                 $(this).css("cursor", "pointer");

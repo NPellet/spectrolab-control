@@ -16,7 +16,8 @@ var experiment = {
 
 		experiment.parameters = parameters;
 
-		experiment.oscilloscope = parameters.instruments["gould-oscilloscope"].instrument;
+		experiment.arduino = parameters.instruments["arduino"].instrument;
+		experiment.oscilloscope = parameters.instruments["tektronix-oscilloscope"].instrument;
 		experiment.afg = parameters.instruments["tektronix-functiongenerator"].instrument;
 		experiment.keithley = parameters.instruments["keithley-smu"].instrument;
 
@@ -34,10 +35,10 @@ var experiment = {
 			channel: 'smub',
 			startV: 1,
 			stopV: 0,
-			settlingTime: 0.02,
+			settlingTime: 0.1,
 			timeDelay: 2,
 			complianceI: 1,
-			nbPoints: 100,
+			nbPoints: 50,
 			hysteresis: 0
 		}, ( options || {} ) ) );
 	},
@@ -65,7 +66,9 @@ var experiment = {
 
 	run: function() {
 
+			var coupling = "AC";
 			var afg = experiment.afg;
+			var arduino = experiment.arduino;
 			var keithley = experiment.keithley;
 			var oscilloscope = experiment.oscilloscope;
 
@@ -78,37 +81,33 @@ var experiment = {
 			var min = 2.1;
 			var max = 2.8;
 
+			arduino.setWhiteLightLevel( 2 );
 
 			afg.disableChannels( ); // Set the pin LOW
 			afg.getErrors();
 
 			keithley.setDigioPin( 4, 1 );
 
-			oscilloscope.enableAveraging();
+			oscilloscope.enable50Ohms( 1 ); // LED is on current
+			oscilloscope.disable50Ohms( 3 ); // Cell is on voltage
 
-			oscilloscope.enable50Ohms( 1 );
-			oscilloscope.disable50Ohms( 3 );
-
-			oscilloscope.setVoltScale( 3, 5e-3 ); // 20mV over channel 3
-
-			var voltScale = 500e-3;
-			oscilloscope.setVoltScale( 1, 500e-3 ); // 20mV over channel 3
-
+			oscilloscope.setVerticalScale( 1, 500e-3 ); // 20mV over channel 3
+			oscilloscope.setVerticalScale( 3, 0.67e-3 ); // 20mV over channel 3
 
 			oscilloscope.setCoupling( 1, "DC");
 			oscilloscope.setCoupling( 3, "DC");
 
-			oscilloscope.setTriggerToChannel( "A", "2" ); // Set trigger on switch channel. Can also use down trigger from Channel 1
-			oscilloscope.setTriggerCoupling( "A", "DC" ); // Trigger coupling should be DC
-			oscilloscope.setTriggerSlope("A", "UP"); // Trigger on bit going up
-			oscilloscope.setTriggerLevel("A", 2); // Trigger on bit going up
-			oscilloscope.setPreTrigger( "A", 0 ); // Set pre-trigger, 10%
+			oscilloscope.setTriggerToChannel( "1" ); // Set trigger on switch channel. Can also use down trigger from Channel 1
+			oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
+			oscilloscope.setTriggerSlope( 1, "RISE"); // Trigger on bit going up
+			oscilloscope.setTriggerLevel( 1.46 ); // Trigger on bit going up
 
+			oscilloscope.setPosition( 3, 0 );
+			oscilloscope.setPosition( 2, 0 );
 
-			oscilloscope.setChannelPosition( 3, 0 );
-			oscilloscope.setChannelPosition( 2, 0 );
+			oscilloscope.setOffset( 3, 0 );
+			oscilloscope.setOffset( 2, 0 );
 
-			oscilloscope.setTriggerLevel( "A", 0.7 ); // Set trigger to 0.7V
 
 
 
@@ -138,7 +137,7 @@ var experiment = {
 
 			return new Promise( function( resolver, rejecter ) {
 
-				self.oscilloscope.ready.then( function() {
+				oscilloscope.ready().then( function() {
 
 
 					function *pulse( ) {
@@ -160,139 +159,126 @@ var experiment = {
 						});
 						yield;
 
-						for( var i = 0; i < frequencies.length; i += 5 ) {
-
-							if( frequencies[ i ] > 10000 ) {
-								continue;
-							}
-
-							experiment.makeIV( {
-
-								timeDelay: 25,
-								settlingTime: ( 10 / frequencies[ i ] ) / 200,
-								nbPoints: 15,
-								hysteresis: 1
-
-							}).then( function( iv ) {
-
-								self.progress("IV", [ frequencies[ i ] / 10, iv ] );
-								experiment.next();
-							});
-							yield;
-						}
-
 						console.log("Device metrics: Voc: " + voltage + "V; Jsc: " + ( current * 1000 ) +"mA");
-
-						if( impsimvs == 'imvs' ) {
-
-							var delta;
-							if( voltage > 0.5 ) {
-								delta = voltage - 0.5;
-								voltage = 0.5;
-							} else {
-								delta = 0;
-							}
-							delta -= 10e-3;
-
-							console.log( voltage, delta );
-							oscilloscope.setChannelOffset( 3, - voltage );
-							oscilloscope.setChannelPosition( 3, - delta / 5e-3 );
-							oscilloscope.setVoltScale( 3, 5e-3 );
-							oscilloscope.disable50Ohms( 3 );
-
-						} else {
-
-							current *= 50; // 50 ohm
-
-							console.log( "Current: ", current );
-							var delta;
-							if( current > 0.5 ) {
-								delta = current - 0.5;
-								current = 0.5;
-							} else {
-								delta = 0;
-							}
-
-							oscilloscope.setChannelPosition( 3, - delta / 2e-3 );
-							oscilloscope.setVoltScale( 3, 2e-3 );
-							oscilloscope.setChannelOffset( 3, - current);
-							oscilloscope.enable50Ohms( 3 ); // IMPS
-						}
+						keithley.measureVoc( { channel: 'smub', settlingTime: 10 }).then( function( v ) {
+							voltage = v;
+							console.log('Voltage: ' + v );
+							experiment.next();
+						});
+						yield;
 
 
-						afg.enableBurst( 1 );
-						afg.setBurstNCycles( 1, 50 );
+						oscilloscope.setCoupling( 3, coupling);
+						oscilloscope.setPosition( 3, 0 );
+
+
 						afg.setShape( 1, "SIN" );
-						afg.setBurstMode( 1, "TRIGGERED");
 						afg.setVoltageLow( 1, min );
 						afg.setVoltageHigh( 1, max );
-
 
 						var l = frequencies.length - 1;
 						var voltage = 0;
 
-						afg.enableChannel( 1 );
 
 						while( true ) {
 
 							var frequency = frequencies[ l ];
-
-							var timeBase = 1 / frequency / 2;
-							timeBase = Math.min( timeBase, 1 ); // max 1 sec
-
 							if( ! frequency ) {
 								break;
 							}
-							afg.setFrequency( 1, frequency );
 
+							var timeBase = 0.2 / frequency;
+							console.log( timeBase );
+							timeBase = Math.min( timeBase, 1 ); // max 1 sec
+							console.log( timeBase );
 
-							var time = 45; // 15 sec aquisition
-							if( frequency < 1 ) {
-								time = 160; // allow till 0.1 Hz
+							oscilloscope.clear();
+							oscilloscope.setRecordLength( 10000 );
+							oscilloscope.setHorizontalScale( timeBase ); // 20 cycles
+
+							if( timeBase > 40e-3 && coupling == "AC" ) {
+								coupling = "DC";
+								oscilloscope.setCoupling( 3, coupling );
+								oscilloscope.setOffset( 3, voltage );
+								oscilloscope.setVerticalScale( 3, 2e-3 ); // 20mV over channel 3
+
 							}
+							oscilloscope.enableAveraging( );
+							oscilloscope.setNbAverage( Math.min( 10000, Math.max( 2, 0.5 * frequency ) ) );
 
-							var timeBase = oscilloscope.setTimeBase( timeBase ); // 20 cycles
 
-							averaging = ( time / timeBase / 12 );
-							averaging = Math.min( averaging, experiment.parameters.defaultAveraging );
+							afg.setFrequency( 1, frequency );
+							afg.enableChannel( 1 );
 
-							oscilloscope.setAveraging( averaging );
+							oscilloscope.setMeasurementType( 1, "PHASE" );
+							oscilloscope.setMeasurementSource( 1, 1 );
+							oscilloscope.setMeasurementReference( 1, 3 );
 
-							setTimeout( function() {
-								self.oscilloscope.getWaves().then( function( allWaves ) {
+							oscilloscope.setMeasurementType( 2, "AMPLITUDE" );
+							oscilloscope.setMeasurementSource( 2, 1 );
 
-									var drive = allWaves[ "1" ];
-									var diff = drive.getMax() - drive.getMin();
-									var ok = true;
+							oscilloscope.setMeasurementType( 3, "AMPLITUDE" );
+							oscilloscope.setMeasurementSource( 3, 3 );
 
-/*
-									if( diff < oscilloscope.getInfVoltScale( 1 ) * 7 && voltScale > 20e-3 ) {
-										voltScale = oscilloscope.getInfVoltScale( 1 );
-										oscilloscope.setVoltScale( 1, oscilloscope.getInfVoltScale( 1 ) );
-										ok = false;
-									}
+							oscilloscope.setMeasurementType( 4, "MEAN" );
+							oscilloscope.setMeasurementSource( 4, 3 );
 
-									if( diff > voltScale * 7 ) {
-										voltScale = oscilloscope.getSupVoltScale( 1 );
-										oscilloscope.setVoltScale( 1, oscilloscope.getSupVoltScale( 1 ) );
-										ok = false;
-									}
-*/
-									if( ok ) {
-										self.progress("IMPSIMVSData", [ frequency, allWaves["1"], allWaves["3"], impsimvs ] );
-										l--;
-									}
 
-									p.next(  );
-								});
+							oscilloscope.enableMeasurement( 1 );
+							oscilloscope.enableMeasurement( 2 );
+							oscilloscope.enableMeasurement( 3 );
+							oscilloscope.enableMeasurement( 4 );
 
-							}, time * 1000 );
-							console.log( time );
+							var response = {};
+							var offset;
+
+							Promise.all( [
+
+								oscilloscope.getMeasurementUntilStdDev( 1, 0.15, 10, 1 ).then( function( val ) {
+									console.log( val.mean );
+									console.log( val.stdDev );
+									console.log( "Time : " + val.time + " ms" );
+									console.log( "Iterations : " + val.nbIterations );
+									response.phase = val;
+
+								}),
+
+								oscilloscope.getMeasurementUntilStdDev( 2, 0.15, 10, 1 ).then( function( val ) {
+									console.log( val.mean );
+									console.log( val.stdDev );
+									console.log( "Time : " + val.time + " ms" );
+									console.log( "Iterations : " + val.nbIterations );
+									response.drive = val;
+								}),
+
+								oscilloscope.getMeasurementUntilStdDev( 3, 0.15, 10, 1 ).then( function( val ) {
+									console.log( val.mean );
+									console.log( val.stdDev );
+									console.log( "Time : " + val.time + " ms" );
+									console.log( "Iterations : " + val.nbIterations );
+									response.response = val;
+								})
+
+							]).then( function() {
+							//	self.progress("IMPSIMVSData", [ frequency, allWaves["1"], allWaves["3"], impsimvs ] );
+
+								// Auto offset correction
+
+								if( coupling == "DC" ) {
+									oscilloscope.getMeasurementMean( 4 ).then( function( offset ) {
+										oscilloscope.setOffset( 3, offset );
+									});
+								} else {
+
+
+								}
+
+								l--;
+								p.next();
+								return response;
+							});
 
 							yield;
-
-
-
 						}
 
 						experiment.makeIV().then( function( iv ) {
@@ -304,14 +290,9 @@ var experiment = {
 
 					} // end while true
 
-					//	resolver( [ waveVoc, wavedV, wavedQ, wavedC ] );
-				 // end generator
-
-
 					var p = pulse();
 					p.next( );
 					self.iterator = p;
-
 
 				}); // End oscilloscope ready
 

@@ -103,7 +103,6 @@ console.log([ options.channel, options.startV, options.stopV, options.settlingTi
 		},
 
 		processing: function( data ) {
-console.log("Data: ", data );
 			return parseFloat( data );
 		}
 	},
@@ -439,7 +438,6 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			function end( data ) {
-				console.log('end: ' + data );
 				if( method.processing ) {
 					data = method.processing( data, options );
 				}
@@ -449,7 +447,6 @@ Keithley.prototype._callMethod = function( method, options ) {
 			function listen( prevData ) {
 
 				module.socket.once( 'data', function( data ) {
-					console.log("once: " + data );
 					data = prevData + data.toString('ascii');
 					if( data.indexOf("\n") == -1 ) {
 						listen( data );
@@ -553,7 +550,6 @@ Keithley.prototype.uploadScripts = function() {
 
 	// Voltage sourcing, current measurement
 	var files = fs.readdirSync( path.resolve( __dirname, "scripts/" ) );
-
 
 	for( var i = 0; i < files.length ; i ++ ) {
 		if( files[ i ].substr( 0, 1 ) == '_' ) {

@@ -66,13 +66,6 @@
 <script type="text/javascript" src="{{ BASE_PATH }}/lib/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.js"></script>
 <link type="text/css" href="{{ BASE_PATH }}/lib/jqueryui-timepicker-addon/dist/jquery-ui-timepicker-addon.css" rel="stylesheet"/>
 
-<!-- Required for Bootstrap-DateTimePicker -->
-<!--
-<script type="text/javascript" src="{{ BASE_PATH }}/lib/moment/moment.min.js"></script>
-<script type="text/javascript" src="{{ BASE_PATH }}/lib/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
-<link type="text/css" href="{{ BASE_PATH }}/lib/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet"/>
--->
-
 <!-- Required for Text Field masking -->
 <script type="text/javascript" src="{{ BASE_PATH }}/lib/jquery-maskedinput/dist/jquery.maskedinput.min.js"></script>
 
@@ -90,13 +83,15 @@
 
 <!-- datatables (for TableField) -->
 <script src="{{ BASE_PATH }}/lib/datatables/media/js/jquery.dataTables.js" type="text/javascript"></script>
-<link type="text/css" href="{{ BASE_PATH }}/lib/datatables/media/css/jquery.dataTables.css" rel="stylesheet"/>
+<!--<link type="text/css" href="{{ BASE_PATH }}/lib/datatables/media/css/jquery.dataTables.css" rel="stylesheet"/>-->
 <script src="{{ BASE_PATH }}/lib/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap.js" type="text/javascript"></script>
 <link type="text/css" href="{{ BASE_PATH }}/lib/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap.css" rel="stylesheet"/>
 
 <!-- ckeditor (for the ckeditor field) -->
 <script src="{{ BASE_PATH }}/lib/ckeditor/ckeditor.js" type="text/javascript"></script>
-<script src="{{ BASE_PATH }}/lib/ckeditor/adapters/jquery.js" type="text/javascript"></script>
+
+<!-- tinymce (for the tinymce field) -->
+<script src="{{ BASE_PATH }}/lib/tinymce/tinymce.js" type="text/javascript"></script>
 
 <!-- fileupload control (for UploadField) -->
 <link rel="stylesheet" type="text/css" href="{{ BASE_PATH }}/lib/jquery-file-upload/css/jquery.fileupload.css"/>
@@ -111,9 +106,8 @@
 <script src="{{ BASE_PATH }}/lib/handsontable/dist/jquery.handsontable.full.js"></script>
 <link rel="stylesheet" media="screen" href="{{ BASE_PATH }}/lib/handsontable/dist/jquery.handsontable.full.css"/>
 
-<!-- moment for date and datetime controls -->
+<!-- bootstrap datetimepicker for date, time and datetime controls -->
 <script src="{{ BASE_PATH }}/lib/moment/min/moment-with-locales.min.js"></script>
-<!-- bootstrap datetimepicker for date and datetime controls -->
 <script src="{{ BASE_PATH }}/lib/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
 <link rel="stylesheet" media="screen" href="{{ BASE_PATH }}/lib/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.css"/>
 

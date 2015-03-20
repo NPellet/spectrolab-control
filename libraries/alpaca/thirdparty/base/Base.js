@@ -1,147 +1,372 @@
-/*
- Based on Base.js 1.1a (c) 2006-2010, Dean Edwards
- Updated to pass JSHint and converted into a module by Kenneth Powers
- License: http://www.opensource.org/licenses/mit-license.php
-
- GitHub: https://github.com/KenPowers/Base.js-Module
+/**
+ * Using fork:
+ * https://github.com/kcmoot/Base.js-Fork/blob/master/build/base.js
  */
-/*global define:true module:true*/
-/*jshint eqeqeq:true*/
-(function (name, global, definition) {
-//    if (typeof module !== 'undefined') {
-//        module.exports = definition();
-//    } else if (typeof define !== 'undefined' && typeof define.amd === 'object') {
-//        define(definition);
-//    } else {
-    global[name] = definition();
-//    }
-})('Base', this, function () {
-    // Base Object
-    var Base = function () {};
+(function (root, factory) {
+    /*
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define([], function () {
+            return (root.returnExportsGlobal = factory());
+        });
+    } else if (typeof exports === 'object') {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like enviroments that support module.exports,
+        // like Node.
+        module.exports = factory();
+    } else {
+    */
+        root['Base'] = factory();
+    /*
+    }
+    */
+}(this, function () {
 
-    // Implementation
-    Base.extend = function (_instance, _static) { // subclass
+    /**
+     *   Base.js, version 1.1a
+     *   Copyright 2006-2010, Dean Edwards
+     *   License: http://www.opensource.org/licenses/mit-license.php
+     *
+     *   Modified by the Nerdery for improved performance and various bugfixes
+     */
+
+    /**
+     * Function type
+     *
+     * @type String
+     * @ignore
+     * @final
+     */
+    var TYPE_FUNCTION = 'function';
+
+    /**
+     * Object type
+     *
+     * @type String
+     * @ignore
+     * @final
+     */
+    var TYPE_OBJECT = 'object';
+
+    /**
+     * String type
+     *
+     * @type String
+     * @ignore
+     * @final
+     */
+    var TYPE_STRING = 'string';
+
+    /**
+     * Flag to determine if we are currently creating a clean prototype of a class
+     *
+     * @type Boolean
+     * @private
+     * @ignore
+     */
+    var _prototyping = false;
+
+    /**
+     * Method to extend manually - do not do automatically
+     *
+     * @type Array
+     * @private
+     * @ignore
+     */
+    var _hiddenMethods = ['constructor', 'toString', 'valueOf'];
+
+    /**
+     * Lenth of hidden methods array
+     *
+     * @type Number
+     * @private
+     * @ignore
+     */
+    var _hiddenMethodsLength = _hiddenMethods.length;
+
+    /**
+     * Regex to find any calls to a parent method
+     *
+     * @type RegExp
+     * @private
+     * @ignore
+     */
+    var _superMethodRegex = /\bbase\b/;
+
+    /**
+     * Blank function
+     *
+     * @type Function
+     * @private
+     * @ignore
+     */
+    var _blankFunction = function() {};
+
+    /**
+     * Prototype default values. When extending methods, if both sources have these values, do not copy them.
+     *
+     * @type Object
+     * @private
+     * @ignore
+     */
+    var _prototypeDefaults = { toSource: null, base: _blankFunction };
+
+    /**
+     * BaseLib class
+     *
+     * A library to create a more traditional OOP interface for developers to work with
+     *
+     * @class Lib.Base.Base
+     *
+     * @constructor
+     */
+    var Base = function() {};
+
+    /**
+     * Subclass a class
+     *
+     * @method extend
+     * @param {Object} [instanceMethods] Instance members/methods
+     * @param {Object} [staticMethods] Static members/methods
+     * @return {Function}
+     * @static
+     */
+    Base.extend = function(instanceMethods, staticMethods) { // subclass
         var extend = Base.prototype.extend;
+
         // build the prototype
-        Base._prototyping = true;
+        _prototyping = true;
+
         var proto = new this();
-        extend.call(proto, _instance);
-        proto.base = function () {
-            // call this method from any other method to invoke that method's ancestor
-        };
-        delete Base._prototyping;
+        extend.call(proto, instanceMethods);
+
+        // call this method from any other method to invoke that method's ancestor
+        proto.base = _prototypeDefaults.base;
+
+        _prototyping = false;
+
         // create the wrapper for the constructor function
-        //var constructor = proto.constructor.valueOf(); //-dean
         var constructor = proto.constructor;
-        var klass = proto.constructor = function () {
-            if (!Base._prototyping) {
-                if (this._constructing || this.constructor === klass) { // instantiation
+        var klass = proto.constructor = function() {
+            if (!_prototyping) {
+                // instantiation
+                if (this && (this._constructing || this.constructor === klass)) {
                     this._constructing = true;
                     constructor.apply(this, arguments);
-                    delete this._constructing;
-                } else if (arguments[0] !== null) { // casting
-                    return (arguments[0].extend || extend).call(arguments[0], proto);
+                    this._constructing = false;
+
+                    // casting
+                } else if (arguments.length) {
+                    Base.cast.apply(klass, arguments);
                 }
             }
         };
         // build the class interface
+        extend.call(klass, this);
         klass.ancestor = this;
-        klass.extend = this.extend;
-        klass.forEach = this.forEach;
-        klass.implement = this.implement;
         klass.prototype = proto;
-        klass.toString = this.toString;
-        klass.valueOf = function (type) {
-            return (type === 'object') ? klass : constructor.valueOf();
+
+        /**
+         * Return original method
+         *
+         * @method valueOf
+         * @param {String} [type]
+         * @return Function
+         * @static
+         */
+        klass.valueOf = function(type) {
+            return (type === TYPE_OBJECT) ? klass : constructor.valueOf();
         };
-        extend.call(klass, _static);
-        // class initialization
-        if (typeof klass.init === 'function') klass.init();
+        extend.call(klass, staticMethods);
+
+        // if static init method exists, call it
+        if (typeof klass.init === TYPE_FUNCTION) {
+            klass.init();
+        }
+
         return klass;
     };
 
-    Base.prototype = {
-        extend: function (source, value) {
-            if (arguments.length > 1) { // extending with a name/value pair
-                var ancestor = this[source];
-                if (ancestor && (typeof value === 'function') && // overriding a method?
+    /**
+     * @method extend
+     * @param {String|Object} source
+     * @param {Function} [value]
+     * @chainable
+     */
+    Base.prototype.extend = function(source, value) {
+        // extending with a name/value pair
+        if (typeof source === TYPE_STRING && arguments.length > 1) {
+            var ancestor = this[source];
+            if (
+                ancestor &&
+                    // overriding a method?
+                (typeof value === TYPE_FUNCTION) &&
                     // the valueOf() comparison is to avoid circular references
-                    (!ancestor.valueOf || ancestor.valueOf() !== value.valueOf()) && /\bbase\b/.test(value)) {
-                    // get the underlying method
-                    var method = value.valueOf();
-                    // override
-                    value = function () {
-                        var previous = this.base || Base.prototype.base;
-                        this.base = ancestor;
-                        var returnValue = method.apply(this, arguments);
-                        this.base = previous;
-                        return returnValue;
-                    };
-                    // point to the underlying method
-                    value.valueOf = function (type) {
-                        return (type === 'object') ? value : method;
-                    };
-                    value.toString = Base.toString;
-                }
-                this[source] = value;
-            } else if (source) { // extending with an object literal
-                var extend = Base.prototype.extend;
-                // if this object has a customized extend method then use it
-                if (!Base._prototyping && typeof this !== 'function') {
-                    extend = this.extend || extend;
-                }
-                var proto = {
-                    toSource: null
+                (!ancestor.valueOf || ancestor.valueOf() !== value.valueOf()) &&
+                _superMethodRegex.test(value)
+            ) {
+                // get the underlying method
+                var method = value.valueOf();
+
+                // override
+                value = function() {
+                    var returnValue;
+                    var previous = this.base || _prototypeDefaults.base;
+                    this.base = ancestor;
+                    if (arguments.length === 0) {
+                        returnValue = method.call(this);
+                    } else {
+                        returnValue = method.apply(this, arguments);
+                    }
+                    this.base = previous;
+                    return returnValue;
                 };
-                // do the "toString" and other methods manually
-                var hidden = ['constructor', 'toString', 'valueOf'];
-                // if we are prototyping then include the constructor
-                for (var i = Base._prototyping ? 0 : 1; i < hidden.length; i++) {
-                    var h = hidden[i];
-                    if (source[h] !== proto[h])
-                        extend.call(this, h, source[h]);
-                }
-                // copy each of the source object's properties to this object
-                for (var key in source) {
-                    if (!proto[key]) extend.call(this, key, source[key]);
+
+                // point to the underlying method
+                value.valueOf = function(type) {
+                    return (type === TYPE_OBJECT) ? value : method;
+                };
+                value.toString = Base.toString;
+            }
+            this[source] = value;
+
+            // extending with an object literal
+        } else if (source) {
+            var extend = Base.prototype.extend;
+
+            // if this object has a customised extend method then use it
+            if (!_prototyping && typeof this !== TYPE_FUNCTION) {
+                extend = this.extend || extend;
+            }
+
+            // do hidden methods separately
+            // if we are prototyping then include the constructor
+            var i = _prototyping ? 0 : 1;
+            var key;
+            for (; i < _hiddenMethodsLength; i++) {
+                key = _hiddenMethods[i];
+                if (source[key] !== _prototypeDefaults[key]) {
+                    extend.call(this, key, source[key]);
                 }
             }
-            return this;
+
+            // copy each of the source object's properties to this object
+            for (key in source) {
+                if (!_prototypeDefaults[key]) {
+                    extend.call(this, key, source[key]);
+                }
+            }
         }
+
+        return this;
     };
 
-    // initialize
+    // initialise
     Base = Base.extend({
-        constructor: function () {
-            this.extend(arguments[0]);
-        }
+
+        /**
+         * Default static base method
+         *
+         * @method base
+         * @ignore
+         */
+        base: _prototypeDefaults.base
+
     }, {
+
+        /**
+         * Parent object/class
+         *
+         * @property ancestor
+         * @type Object
+         * @static
+         * @ignore
+         */
         ancestor: Object,
+
+        /**
+         * Base.js version
+         *
+         * @property version
+         * @type String
+         * @static
+         * @ignore
+         */
         version: '1.1',
-        forEach: function (object, block, context) {
-            for (var key in object) {
-                if (this.prototype[key] === undefined) {
-                    block.call(context, object[key], key, object);
-                }
-            }
-        },
-        implement: function () {
-            for (var i = 0; i < arguments.length; i++) {
-                if (typeof arguments[i] === 'function') {
-                    // if it's a function, call it
-                    arguments[i](this.prototype);
+
+        /**
+         * Extend current class into another object or class.
+         *
+         * If an object with no prototype is passed, only prototype methods
+         * will be cast EXCEPT for the constructor.
+         *
+         * If an a class (with constructor) is passed, both static and
+         * prototype methods will be cast EXCEPT for the constructor.
+         *
+         * @method cast
+         * @param {Object|Function} class* Classes or objects to cast
+         * @chainable
+         * @static
+         */
+        cast: function() {
+            var i = 0;
+            var length = arguments.length;
+            var extend;
+            var caster;
+
+            for (; i < length; i++) {
+                caster = arguments[i];
+                extend = caster.extend || Base.prototype.extend;
+
+                // cast prototype and static methods
+                if (typeof caster === TYPE_FUNCTION) {
+                    extend = caster.prototype.extend || Base.prototype.extend;
+                    extend.call(caster.prototype, this.prototype);
+                    extend.call(caster, this);
+                    caster.ancestor = this;
+
+                    // cast only prototype methods
                 } else {
-                    // add the interface using the extend method
-                    this.prototype.extend(arguments[i]);
+                    extend.call(caster, this.prototype);
                 }
             }
+
             return this;
         },
-        toString: function () {
-            return String(this.valueOf());
+
+        /**
+         * Implement a class into the current class.
+         *
+         * All prototype and static properties will be extended into
+         * `this` EXCEPT for the constructor.
+         *
+         * @method implement
+         * @param {Object|Function} class* Classes or objects to cast
+         * @chainable
+         * @static
+         */
+        implement: function() {
+            for (var i = 0; i < arguments.length; i++) {
+                this.cast.call(arguments[i], this);
+            }
+
+            return this;
+        },
+
+        /**
+         * Get string value of class
+         *
+         * @method toString
+         * @return String
+         * @static
+         */
+        toString: function() {
+            return this.valueOf() + '';
         }
+
     });
 
-    // Return Base implementation
     return Base;
-});
+
+
+}));

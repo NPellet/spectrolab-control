@@ -12,7 +12,7 @@ var experiment = {
 		experiment.arduino = parameters.instruments.arduino.instrument;
 
 		experiment.parameters.ledPin = 4;
-		experiment.parameters.pulseTime = 5;
+		experiment.parameters.pulseTime = 0.1;
 		experiment.parameters.delay = 15;
 
 		experiment.lightIntensities = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ];
@@ -61,8 +61,7 @@ var experiment = {
 			self.oscilloscope.setRecordLength( recordLength );
 			self.oscilloscope.setPosition( 3, -4 );
 
-			self.oscilloscope.ready().then( function() {
-
+				var vocDecays = [];
 				function *pulse( ) {
 
 					for( var i = 0; i < self.lightIntensities.length; i += 1 ) {
@@ -70,7 +69,14 @@ var experiment = {
 						var recordedWave;
 
 						self.arduino.setWhiteLightLevel( self.lightIntensities[ i ] );
+						self.oscilloscope.clear();
+						self.oscilloscope.ready().then( function() {
+							p.next();
+						});
+						yield;
 
+						setTimeout( function() { p.next(); }, 2000 );
+						yield;
 
 						self.pulse( timeBase, 1 ).then( function( w ) {
 
@@ -84,14 +90,18 @@ var experiment = {
 
 						});
 
-						yield;
 
-						recordedWave.subset( ( recordLength - 1 ) * preTrigger, recordLength - 1 );
-						recordedWave = recordedWave.degradeExp( 10000 );
+						yield;
+						recordedWave = recordedWave.subset( ( recordLength - 1 ) * preTrigger, recordLength - 1 );
+						recordedWave = recordedWave.degradeExp( 1000, 0.05 );
+						recordedWave.shiftXToMin( 1e-6 );
+
 
 						vocDecays[ i ] = recordedWave
 
 						experiment.progress( vocDecays, self.lightIntensities );
+
+
 					}
 
 					experiment.done( vocDecays, self.lightIntensities );
@@ -100,8 +110,6 @@ var experiment = {
 				var p = pulse();
 				experiment.iterator = p;
 				p.next( );
-
-			}); // End oscilloscope ready
 
 
 		}); // End returned promise
@@ -124,6 +132,7 @@ var experiment = {
 			return self.oscilloscope.getWaves().then( function( allWaves ) {
 
 				var voltageWave = allWaves[ "3" ];
+				console.log('done');
 				return voltageWave;
 			});
 		});

@@ -24,7 +24,30 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 	module.prototype.makeGraph = function( options ) {
 
 		var dom = $("#graph-" + this.getId() );
-		g = new Graph( "graph-" + this.getId() );
+		g = new Graph( "graph-" + this.getId(), {
+
+			dblclick: {
+				type: 'plugin',
+				plugin: 'graph.plugin.zoom',
+				options: {
+					mode: 'total'
+				}
+			},
+
+			plugins: {
+				'graph.plugin.zoom': {
+					zoomMode: 'xy'
+				}
+			},
+
+			pluginAction: {
+				'graph.plugin.zoom': {
+					shift: false,
+					ctrl: false
+				}
+			}
+		} );
+
 		g.setSize( dom.width(), dom.height() );
 
 		this.graph = g;

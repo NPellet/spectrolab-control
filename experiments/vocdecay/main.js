@@ -15,7 +15,6 @@ experiment.addInstrumentConnectModules();
 var proc = experiment.getDeviceProcedure('VocDecay');
 
 proc.on("progress", function( response ) {
-console.log( response );
 	var vocDecayWave = response;
 	var i = 1;
 

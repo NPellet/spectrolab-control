@@ -73,6 +73,40 @@
             return selectedType;
         },
 
+        resolveContainerItemTemplateType: function()
+        {
+            // we assume the field type and then check the view to see if there is a template for this view
+            // if not, we walk the parent chain until we find a template type
+
+            var finished = false;
+            var selectedType = null;
+
+            var b = this;
+            do
+            {
+                if (!b.getFieldType)
+                {
+                    finished = true;
+                }
+                else
+                {
+                    var d = this.view.getTemplateDescriptor("container-" + b.getFieldType() + "-item", this);
+                    if (d)
+                    {
+                        selectedType = b.getFieldType();
+                        finished = true;
+                    }
+                    else
+                    {
+                        b = b.constructor.ancestor.prototype;
+                    }
+                }
+            }
+            while (!finished);
+
+            return selectedType;
+        },
+
         /**
          * @see Alpaca.Field#setup
          */
@@ -127,15 +161,6 @@
             this.children = [];
             this.childrenById = {};
             this.childrenByPropertyId = {};
-            // style icons
-            this.commonIcon = this.view.getStyle("commonIcon");
-            this.addIcon = this.view.getStyle("addIcon");
-            this.removeIcon = this.view.getStyle("removeIcon");
-            this.upIcon = this.view.getStyle("upIcon");
-            this.downIcon = this.view.getStyle("downIcon");
-            this.expandedIcon = this.view.getStyle("expandedIcon");
-            this.collapsedIcon = this.view.getStyle("collapsedIcon");
-            this.buttonClass = this.view.getStyle("button");
         },
 
         /**
@@ -221,7 +246,9 @@
             var model = {
                 "id": this.getId(),
                 "name": this.name,
-                "options": this.options
+                "schema": this.schema,
+                "options": this.options,
+                "view": this.view
             };
 
             // load items into array and store on model for future use
@@ -230,6 +257,14 @@
                 if (!items)
                 {
                     items = [];
+                }
+
+                // legacy support: assume containerItemEl = fieldEl
+                for (var i = 0; i < items.length; i++)
+                {
+                    if (!items[i].containerItemEl) {
+                        items[i].containerItemEl = items[i].getFieldEl();
+                    }
                 }
 
                 model.items = items;
@@ -286,12 +321,11 @@
         {
             var self = this;
 
-            self.applyCreatedItems(model, function() {
-
-                self.afterApplyCreatedItems(model, function() {
-
-                    callback();
-
+            self.beforeApplyCreatedItems(model, function() {
+                self.applyCreatedItems(model, function () {
+                    self.afterApplyCreatedItems(model, function () {
+                        callback();
+                    });
                 });
             });
         },
@@ -340,6 +374,11 @@
             callback();
         },
 
+        beforeApplyCreatedItems: function(model, callback)
+        {
+            callback();
+        },
+
         applyCreatedItems: function(model, callback)
         {
             var self = this;
@@ -380,12 +419,12 @@
                 var item = model.items[i];
 
                 // find the insertion point
-                var insertionPoint = $(self.container).find("[" + Alpaca.MARKER_DATA_CONTAINER_FIELD_ITEM_KEY + "='" + item.name + "']");
+                var insertionPoint = $(self.container).find("." + Alpaca.MARKER_CLASS_CONTAINER_FIELD_ITEM + "[" + Alpaca.MARKER_DATA_CONTAINER_FIELD_ITEM_KEY + "='" + item.name + "']");
                 if (!layoutBindings)
                 {
                     var holder = $(insertionPoint).parent();
 
-                    $(insertionPoint).replaceWith(item.field);
+                    $(insertionPoint).replaceWith(item.containerItemEl);
 
                     // reset domEl to allow for refresh
                     item.domEl = holder;
@@ -406,7 +445,7 @@
                         }
                         if (holder.length > 0)
                         {
-                            $(item.field).appendTo(holder);
+                            $(item.containerItemEl).appendTo(holder);
 
                             // reset domEl to allow for refresh
                             item.domEl = holder;
@@ -417,20 +456,21 @@
                     $(insertionPoint).remove();
                 }
 
-                $(item.field).addClass("alpaca-container-item");
+                $(item.containerItemEl).addClass("alpaca-container-item");
 
                 if (i === 0)
                 {
-                    $(item.field).addClass("alpaca-container-item-first");
+                    $(item.containerItemEl).addClass("alpaca-container-item-first");
                 }
 
                 if (i + 1 === model.items.length)
                 {
-                    $(item.field).addClass("alpaca-container-item-last");
+                    $(item.containerItemEl).addClass("alpaca-container-item-last");
                 }
 
-                $(item.field).attr("data-alpaca-container-item-index", i);
-                $(item.field).attr("data-alpaca-container-item-name", item.name);
+                $(item.containerItemEl).attr("data-alpaca-container-item-index", i);
+                $(item.containerItemEl).attr("data-alpaca-container-item-name", item.name);
+                $(item.containerItemEl).attr("data-alpaca-container-item-parent-field-id", self.getId());
 
                 // register the child
                 self.registerChild(item, i);
@@ -534,73 +574,32 @@
                 {
                     var child = self.children[i];
 
-                    var field = child.getFieldEl();
-
                     // reset path and name
                     child.path = self.path + "[" + i + "]";
                     child.calculateName();
 
-                    //$(field).removeClass("alpaca-container-item");
-                    $(field).removeClass("alpaca-container-item-first");
-                    $(field).removeClass("alpaca-container-item-last");
-                    $(field).removeClass("alpaca-container-item-index");
-                    $(field).removeClass("alpaca-container-item-key");
+                    $(child.containerItemEl).removeClass("alpaca-container-item-first");
+                    $(child.containerItemEl).removeClass("alpaca-container-item-last");
+                    $(child.containerItemEl).removeClass("alpaca-container-item-index");
+                    $(child.containerItemEl).removeClass("alpaca-container-item-key");
 
-                    $(field).addClass("alpaca-container-item");
+                    $(child.containerItemEl).addClass("alpaca-container-item");
 
                     if (i === 0)
                     {
-                        $(field).addClass("alpaca-container-item-first");
+                        $(child.containerItemEl).addClass("alpaca-container-item-first");
                     }
                     if (i + 1 === self.children.length)
                     {
-                        $(field).addClass("alpaca-container-item-last");
+                        $(child.containerItemEl).addClass("alpaca-container-item-last");
                     }
 
-                    $(field).attr("data-alpaca-container-item-index", i);
-                    $(field).attr("data-alpaca-container-item-name", child.name);
+                    $(child.containerItemEl).attr("data-alpaca-container-item-index", i);
+                    $(child.containerItemEl).attr("data-alpaca-container-item-name", child.name);
+                    $(child.containerItemEl).attr("data-alpaca-container-item-parent-field-id", self.getId());
                 }
             }
         },
-
-        /**
-         * @see Alpaca.Field#setDefault
-         */
-            /*
-        setDefault: function()
-        {
-            if (Alpaca.isEmpty(this.schema['default']))
-            {
-                Alpaca.each(this.children, function() {
-                    this.setDefault();
-                });
-            }
-            else
-            {
-                this.setValue(this.schema['default']);
-            }
-        },
-        */
-
-        /**
-         * Clears the field and resets the field to its original value.
-         *
-         * @param stopUpdateTrigger If false, triggers the update event of this event.
-         */
-            /*
-        clear: function(stopUpdateTrigger)
-        {
-            // clear all the kiddies
-            Alpaca.each(this.children, function() {
-                this.clear(false);
-            });
-
-            // trigger update all at once
-            if (!stopUpdateTrigger) {
-                this.triggerUpdate();
-            }
-        },
-        */
 
         /**
          * Propagates signal down to all children.

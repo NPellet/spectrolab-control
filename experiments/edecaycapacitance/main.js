@@ -22,8 +22,8 @@ proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay
 
 experiment.renderer.getModule("lastJDecay").clear();
 
-experiment.renderer.getModule("lastJDecay").newSerie("jdecay", recordedWaves[ "2" ], { lineColor: "#CC0000" } );
-experiment.renderer.getModule("lastVDecay").newSerie("vdecay", recordedWaves[ "3" ], { lineColor: "#009933" } );
+experiment.renderer.getModule("lastJDecay").newSerie("jdecay", recordedWaves[ "2" ].degrade( 1000 ), { lineColor: "#CC0000" } );
+experiment.renderer.getModule("lastVDecay").newSerie("vdecay", recordedWaves[ "3" ].degrade( 1000 ), { lineColor: "#009933" } );
 
 	//experiment.renderer.getModule("lastJDecay").newSerie("jdecay1", recordedWaves[ 1 ] ? recordedWaves[ 1 ][ "2" ] : recordedWaves[ 0 ][ "2" ] , { } );
 	//experiment.renderer.getModule("lastJDecay2").newSerie("jdecay2", recordedWaves[ 1 ][ "2"], { } );
@@ -62,12 +62,6 @@ experiment.renderer.getModule("focus").on("clicked", function() {
 	}
 
 });
-/*
-experiment.renderer.getModule("formConfig").on("validated", function( value ) {
-
-	proc.config("pulses", value.timebase );
-})
-*/
 
 
 function reprocess( chargesGlobal, vocsGlobal, delaysGlobal ) {
@@ -93,28 +87,42 @@ function reprocess( chargesGlobal, vocsGlobal, delaysGlobal ) {
 	        stroke: colors[ l ]
     	};
 
+
+		var style2 = {
+			shape: 'circle',
+	        r: 2,
+	        fill: colors2[ l ],
+	        stroke: colors2[ l ]
+    	};
+
 		var vocs = vocsGlobal[ l ];
 		var charges = chargesGlobal[ l ];
 		var timeDelays = delaysGlobal[ l ];
 
 
-		var vocvstime = [], chargesvstime = [], chargesvsvoc = [];
+		var vocvstime = [], chargesvstime = [], chargesvsvoc = new Waveform();
 
 		for( var i = 0; i < vocs.getDataLength(); i ++ ) {
 
 			vocvstime.push( [ timeDelays.get( i ), vocs.get( i ) ] );
 			chargesvstime.push( [ timeDelays.get( i ), charges.get( i ) ] );
-			chargesvsvoc.push( [ vocs.get( i ), charges.get( i ) ] );
+			chargesvsvoc.push( charges.get( i ), vocs.get( i ) );
 
 		}
 
+		chargesvsvoc2 = chargesvsvoc.loess( 0.3 );
+		var CV = chargesvsvoc2.differentiate();
+
 		experiment.renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, vocvstime, { }, false, style );
 		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, chargesvstime, { }, false, style );
+		experiment.renderer.getModule("chargesvsvoc").newScatterSerie("chargesvsvoc_smth_" + l, chargesvsvoc2, { }, false, style2 );
 		experiment.renderer.getModule("chargesvsvoc").newScatterSerie("chargesvsvoc_" + l, chargesvsvoc, { }, false, style );
+		experiment.renderer.getModule("CV").newScatterSerie("CV_" + l, CV, { }, false, style );
 
 		experiment.renderer.getModule("vocvstime").autoscale();
 		experiment.renderer.getModule("chargesvstime").autoscale();
 		experiment.renderer.getModule("chargesvsvoc").autoscale();
+		experiment.renderer.getModule("CV").autoscale();
 
 
 		var itxw = itx.newWave( "voc_" + l );
@@ -126,6 +134,9 @@ function reprocess( chargesGlobal, vocsGlobal, delaysGlobal ) {
 
 		var itxw = itx.newWave( "timedelays_" + l );
 		itxw.setWaveform( timeDelays );
+
+		var itxw = itx.newWave( "capacitance_" + l );
+		itxw.setWaveform( CV );
 
 	}
 

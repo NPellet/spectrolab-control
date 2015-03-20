@@ -191,6 +191,8 @@ called life.
 + [@picsoung](https://github.com/picsoung)
 + [@jmcgdz](https://github.com/jmcgdz)
 + [@ytaka](https://github.com/ytaka)
++ [@jflowers45](https://github.com/jflowers45)
++ [@paierh](https://github.com/paierh)
 
 ...and many others via the [Alpaca Web Site](http://www.alpacajs.org), the [Alpaca Forums](http://www.cloudcms.org) and
 [Alpaca Issues](https://github.com/gitana/alpaca/issues)!

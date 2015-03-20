@@ -198,7 +198,6 @@ function query( module, query ) {
         resolver();
       }
 
-  //    console.log('Query: ' + query );
 
     } ).then( function( data ) {
       if( data ) {
@@ -253,7 +252,6 @@ TektronixOscilloscope.prototype.getErrors = function() {
 
 TektronixOscilloscope.prototype.setTriggerRefPoint = function( ref ) {
   ref = getInt( ref );
-  console.log( "HORizontal:MAIn:DELay:POSition " + ref  );
   return this.command("HORizontal:MAIn:DELay:POSition " + ref );
 }
 
@@ -277,7 +275,11 @@ TektronixOscilloscope.prototype.setTriggerSlope = function( channel, slope ) {
   slope = getMnemonic( slope, [ 'RISe', 'FALL', 'EITher' ] );
   return this.command("TRIGGER:A:EDGE:SLOPE:" + channel + " " + slope );
 }
-
+/*
+TektronixOscilloscope.prototype.setTriggerMode = function( mode ) {
+  TRIGger:MODe NORMal
+}
+*/
 TektronixOscilloscope.prototype.disableAveraging = function() {
   return this.setAcquisitionMode( "SAMPLE" );
 }
@@ -288,7 +290,6 @@ TektronixOscilloscope.prototype.enableAveraging = function() {
 
 TektronixOscilloscope.prototype.setAcquisitionMode = function( aqMode ) {
   aqMode = getMnemonic( aqMode, ['SAMple', 'PEAKdetect', 'HIRes', 'AVErage', 'WFMDB', 'ENVelope'] );
-  console.log( aqMode );
   return this.command("ACQUIRE:MODE " + aqMode );
 }
 
@@ -356,12 +357,6 @@ TektronixOscilloscope.prototype.stopAfterSequence = function( bln ) {
   return this.command("ACQUIRE:STOPAfter " + ( bln ? "SEQuence" : "RUNStop" ) );
 }
 
-
-TektronixOscilloscope.prototype.clear = function(  ) {
-
-  return this.command("CLEAR ALL");
-}
-
 TektronixOscilloscope.prototype.getAcquisitionDuration = function() { // time
   return this.command("HORizontal:ACQDURATION?");
 }
@@ -374,7 +369,6 @@ TektronixOscilloscope.prototype.getAcquisitionLength = function() { // time
 
 TektronixOscilloscope.prototype.setRecordLength = function( l ) { // time
   var l = getInt( l );
-  console.log( "HORizontal:MODE:RECOrdlength " + l  );
   return this.command("HORizontal:MODE:RECOrdlength " + l );
 }
 
@@ -382,17 +376,19 @@ TektronixOscilloscope.prototype.getRecordLength = function() {
   return this.command("HORizontal:MODE:RECOrdlength?" );
 }
 
+
 TektronixOscilloscope.prototype.setHorizontalScale = function( scale ) {
 
   var self = this;
 
   this.getHorizontalMode().then( function( mode ) {
-    console.log( mode );
+
 
     switch( mode ) {
       case 'MANUAL':
 
           self.getRecordLength().then( function( rlength ) {
+            console.log( rlength, scale );
             self.setSampleRate( rlength / ( scale * 10 ) );
           } );
 
@@ -405,7 +401,6 @@ TektronixOscilloscope.prototype.setHorizontalScale = function( scale ) {
 
   });
 }
-
 TektronixOscilloscope.prototype.getHorizontalScale = function() {
   return this.command("HORizontal:MODE:SCAle?");
 }
@@ -414,7 +409,6 @@ TektronixOscilloscope.prototype.setHorizontalMode = function() {
   mode = getMnemonic( mode, [ 'AUTO', 'CONStant', 'MANual' ] );
   return this.command("HORizontal:MODE " + mode );
 }
-
 
 TektronixOscilloscope.prototype.getHorizontalMode = function() {
   return this.command("HORizontal:MODE?");
@@ -493,8 +487,8 @@ TektronixOscilloscope.prototype.setCoupling = function( channel, coupling ) {
 
 TektronixOscilloscope.prototype.getCoupling = function( channel ) {
   channel = getChannel( channel );
-  return this.query( channel + ":COUPLING", true ).then( function( value ) {
-
+  return this.command( channel + ":COUPLING", true ).then( function( value ) {
+    val
     console.log( value );
   });
 }
@@ -524,6 +518,7 @@ TektronixOscilloscope.prototype.getPosition = function( channel ) {
   channel = getChannel( channel );
   return this.command( channel + ":POSITION?" );
 }
+
 
 TektronixOscilloscope.prototype.getChannel = function( channel ) {
 
@@ -607,11 +602,138 @@ TektronixOscilloscope.prototype.getWaves = function() {
   } );
 }
 
+
+
+
+/* MEASUREMENT GROUP */
+
+TektronixOscilloscope.prototype.enableMeasurement = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":STATE ON" );
+}
+
+TektronixOscilloscope.prototype.disableMeasurement = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":STATE ON" );
+}
+
+TektronixOscilloscope.prototype.setMeasurementType = function( measNum, type ) {
+  type = getMnemonic( type, "AMPlitude|AREa| BURst|CARea|CMEan|CRMs|DELay|DISTDUty| EXTINCTDB|EXTINCTPCT|EXTINCTRATIO|EYEHeight| EYEWIdth|FALL|FREQuency|HIGH|HITs|LOW| MAXimum|MEAN|MEDian|MINImum|NCROss|NDUty| NOVershoot|NWIdth|PBASe|PCROss|PCTCROss|PDUty| PEAKHits|PERIod|PHAse|PK2Pk|PKPKJitter| PKPKNoise|POVershoot|PTOP|PWIdth|QFACtor| RISe|RMS|RMSJitter|RMSNoise|SIGMA1|SIGMA2| SIGMA3|SIXSigmajit|SNRatio|STDdev|UNDEFINED|WAVEFORMS")
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":TYPE " + type );
+}
+
+TektronixOscilloscope.prototype.setMeasurementSource = function( measNum, channel ) {
+  channel = getChannel( channel );
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":SOURCE1 " + channel );
+}
+
+TektronixOscilloscope.prototype.setMeasurementReference = function( measNum, channel ) {
+  channel = getChannel( channel );
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":SOURCE2 " + channel );
+}
+
+TektronixOscilloscope.prototype.setMeasurementMethod = function( measNum, method ) {
+  method = getMnemonic( method, ["HIStogram", "MINMax", "MEAN"] );
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":METHod " + method );
+}
+
+TektronixOscilloscope.prototype.getMeasurementMethod = function( measNum, method ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":METHod?");
+}
+
+TektronixOscilloscope.prototype.getMeasurementMean = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":MEAN?");
+}
+
+TektronixOscilloscope.prototype.getMeasurementMin = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":MIN?");
+}
+
+TektronixOscilloscope.prototype.getMeasurementMax = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":MAX?");
+}
+
+TektronixOscilloscope.prototype.getMeasurementMax = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":MAX?");
+}
+
+TektronixOscilloscope.prototype.getMeasurementCount = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":COUNT?");
+}
+
+
+TektronixOscilloscope.prototype.getMeasurementStdDev = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":STDdev?");
+}
+
+TektronixOscilloscope.prototype.getMeasurementUntilStdDev = function( measNum, stdDevLimit, maxTime, minTime, settlingTime ) {
+
+  var scope = this,
+    n = 0;
+
+  minTime = minTime || 0;
+  settlingTime = settlingTime || 0.1;
+
+  return new Promise( function( resolver, rejecter ) {
+
+    function *stdDevGen() {
+
+      var t = Date.now(),
+        stdDev;
+      setTimeout( function() { iterator.next(); }, minTime * 1000 );
+      yield;
+
+      while( true ) {
+
+        scope.getMeasurementStdDev( measNum ).then( function( stdDevVal ) {
+          stdDev = stdDevVal;
+          n++;
+          iterator.next();
+        });
+        yield;
+
+        if( ( ( Date.now() - t > maxTime * 1000 && maxTime ) || stdDev < stdDevLimit ) ) {
+          scope.getMeasurementMean( measNum ).then( function( mean ) {
+            resolver( { mean: mean, stdDev: stdDev, time: Date.now() - t, nbIterations: n } );
+          });
+        //  iterator.close();
+        // nodejs 0.12 ?
+          yield; // Generator closing ?
+        }
+
+        setTimeout( function( ) { iterator.next(); }, settlingTime * 1000 ); // Settling time in between two measurements
+        yield;
+      }
+
+      }
+
+      var iterator = stdDevGen();
+      iterator.next();
+    });
+
+}
+
+
 TektronixOscilloscope.prototype.ready = function() {
   this.command( "*OPC" );
   return this.command( "*OPC?" );
 }
 
+TektronixOscilloscope.prototype.clear = function(  ) {
+
+  return this.command("CLEAR ALL");
+}
 
 
 function processData( data ) {
@@ -691,6 +813,25 @@ function getChannel( channel, number ) {
 }
 
 
+function getMeasurementNumber( measurementNumber ) {
+
+  if( typeof measurementNumber == "number" ) {
+    measurementNumber = Math.round( measurementNumber );
+    if( measurementNumber > 8 || measurementNumber < 1 ) {
+      console.trace();
+      throw "Measurement must be between 1 and 8";
+    }
+
+    //return "CHAN" + channel;
+  } else if( measurementNumber.length == 1) {
+    measurementNumber = parseInt( measurementNumber );
+  } else if( ( v = ( /^MEAS([0-8])$/.exec( measurementNumber ) ) ) ) {
+    measurementNumber = parseInt( v[ 1 ] );
+  }
+
+  return "MEAS" + measurementNumber;
+}
+
 
 function checkCoupling( coupling ) {
 
@@ -743,6 +884,10 @@ function getFloat( val ) {
 function getMnemonic( needle, haystack ) {
 
   needle = needle.toLowerCase();
+
+  if( typeof haystack == "string" ) {
+    haystack = haystack.split("|").map( function( a ) { return a.trim(); } );
+  }
 
   for( var i = 0, l = haystack.length; i < l ; i ++ ) {
 

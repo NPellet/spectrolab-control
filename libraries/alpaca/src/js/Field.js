@@ -554,6 +554,22 @@
             });
         },
 
+        renderFieldDomElement: function(data)
+        {
+            var templateDescriptor = this.getTemplateDescriptor();
+
+            // render the field
+            return Alpaca.tmpl(templateDescriptor, {
+                "id": this.getId(),
+                "options": this.options,
+                "schema": this.schema,
+                "data": data,
+                "view": this.view,
+                "path": this.path,
+                "name": this.name
+            });
+        },
+
         /**
          * Renders the "field" outer element.  This is usually the control or container.
          *
@@ -564,8 +580,6 @@
         {
             var self = this;
 
-            var templateDescriptor = this.getTemplateDescriptor();
-
             // the data we'll render
             var theData = this.data;
 
@@ -575,16 +589,35 @@
                 theData = JSON.stringify(theData);
             }
 
-            // render the field
-            var renderedDomElement = Alpaca.tmpl(templateDescriptor, {
-                "id": this.getId(),
-                "options": this.options,
-                "schema": this.schema,
-                "data": theData,
-                "view": this.view,
-                "path": this.path,
-                "name": this.name
-            });
+            var renderedDomElement = self.renderFieldDomElement(theData);
+
+            // if we got back multiple elements, try to pick at the first DIV
+            if ($(renderedDomElement).length > 0)
+            {
+                var single = null;
+                for (var i = 0; i < $(renderedDomElement).length; i++)
+                {
+                    var name = $(renderedDomElement)[i].nodeName;
+                    if (name)
+                    {
+                        name = name.toLowerCase();
+
+                        if ("div" === name || "span" === name)
+                        {
+                            single = $($(renderedDomElement)[i]);
+                            break;
+                        }
+                    }
+                }
+                if (!single)
+                {
+                    single = $($(renderedDomElement).last());
+                }
+                if (single)
+                {
+                    renderedDomElement = single;
+                }
+            }
 
             // remove the previous "field" element if it exists
             self._oldFieldEl = self.field;

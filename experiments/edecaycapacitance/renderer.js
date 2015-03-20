@@ -60,19 +60,24 @@ renderer.init = function() {
       wrapper: 'status',
       path: 'display/status',
     },
+/*
+    formConfig: {
+      wrapper: 'formConfig',
+      path: 'display/form',
+    },
+*/
 
 
+    lastJDecay: {
+      wrapper: 'lastPulse',
+      path: 'display/graph'
+    },
 
-        lastJDecay: {
-          wrapper: 'lastPulse',
-          path: 'display/graph'
-        },
 
-
-            lastVDecay: {
-              wrapper: 'lastPulse',
-              path: 'display/graph'
-            },
+    lastVDecay: {
+      wrapper: 'lastPulse',
+      path: 'display/graph'
+    },
 
 
     vocvstime: {
@@ -86,6 +91,11 @@ renderer.init = function() {
     },
 
     chargesvsvoc: {
+      wrapper: 'summary2',
+      path: 'display/graph'
+    },
+
+    CV: {
       wrapper: 'summary2',
       path: 'display/graph'
     }
@@ -122,58 +132,33 @@ renderer.init = function() {
     .setYAxisLabel("Charges (C)")
     .setYScientificTicks( true );
 
-  renderer.getModule("chargesvsvoc")
-    .setTitle("Q-V plot")
-    .setHeight( 400 )
-    .setXAxisLabel("Voltage (V)")
-    .setYAxisLabel("Charges (C)")
-    .setYScientificTicks( true );
+    renderer.getModule("chargesvsvoc")
+      .setTitle("Q-V plot")
+      .setHeight( 400 )
+      .setXAxisLabel("Voltage (V)")
+      .setYAxisLabel("Charges (C)")
+      .setYScientificTicks( true );
+
+      renderer.getModule("CV")
+        .setTitle("C-V plot")
+        .setHeight( 400 )
+        .setXAxisLabel("Voltage (V)")
+        .setYAxisLabel("Capacitance (F)")
+        .setYScientificTicks( true );
 
     var schema = {
         "type": "object",
         "properties": {
-            "timebase": {
-                "type": "array",
-
-                "items": {
-                "title": "Timebase for current",
-                "type": "object",
-                "properties": {
-                    "timebase": {
-                        "title": "Pulse width",
-                        "type": "select",
-                        "enum": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesNb().map( function( val ) { return val.toString(); } ),
-
-                    },
-                    "voltscale": {
-                        "title": "Voltage scale of CH2",
-                        "type": "select",
-                        "enum": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleNb().map( function( val ) { return val.toString(); } )
-                    }
-                }
-            }
+            "loess_smooth": {
+                "type": "number"
             }
         }
     };
 
-
     var options = {
         "fields": {
-            "timebase": {
-              "type": "array",
-              "fields": {
-                "item": {
-                  "fields": {
-                    "timebase": {
-                      "optionLabels": renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableTimebasesTxt()
-                    },
-
-                    "voltscale": {
-                      optionLabels: renderer.experiment.getInstruments()[ "gould-oscilloscope" ].instrument.getAvailableVoltScaleTxt()
-                    }
-                  }
-                }
-              }
+            "loess_smooth": {
+              "type": "number"
             }
         }
     };

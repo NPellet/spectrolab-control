@@ -3,6 +3,12 @@ var extend = require('extend');
 
 var Waveform = function() {
 	this.data = [];
+
+	this.xScaling = {
+		type: 'delta',
+		x0: 0,
+		xDelta: 1
+	};
 };
 
 Waveform.prototype = {
@@ -32,6 +38,10 @@ Waveform.prototype = {
 		return this.data[ index ];
 	},
 
+	set: function( index, value ) {
+		this.data[ index ] = value;
+	},
+
 	getMax: function() {
 		return Math.max.apply( null, this.data )
 	},
@@ -40,26 +50,23 @@ Waveform.prototype = {
 		return Math.min.apply( null, this.data )
 	},
 
-	set: function( index, value ) {
-		this.data[ index ] = value;
-	},
 
-	push: function( value ) {
+	push: function( value, valueX ) {
 
 		if( Array.isArray( value ) ) {
 
 			this.data = this.data.concat( value );
 
-		} else if( value instanceof Waveform ) { // This has to kill the x delta scaling
+		} else if( value instanceof Waveform || valueX !== undefined ) { // This has to kill the x delta scaling
 
 			switch( this.getXScalingMode() ) {
 
 				case 'delta':
 
-						this.xScaling = {
-							type: 'wave',
-							wave: this.getXWave()
-						};
+				this.xScaling = {
+					type: 'wave',
+					wave: this.getXWave()
+				};
 
 				break;
 
@@ -67,10 +74,15 @@ Waveform.prototype = {
 				break;
 			}
 
-			this.data = this.data.concat( value.getData( ) );
+			if( value instanceof Waveform ) {
+				this.data = this.data.concat( value.getData( ) );
 
-			if( this.xScaling ) {
-				this.xScaling.wave.push( value.getXWave().getData() );
+				if( this.xScaling ) {
+					this.xScaling.wave.push( value.getXWave().getData() );
+				}
+			} else {
+				this.data.push( value );
+				this.xScaling.wave.push( valueX );
 			}
 
 		} else {
@@ -90,7 +102,7 @@ Waveform.prototype = {
 
 	setXScaling: function( x0, xDelta ) {
 		this.xScaling = {
-			mode: 'delta',
+			type: 'delta',
 			x0: x0,
 			xDelta: xDelta
 		};
@@ -111,20 +123,21 @@ Waveform.prototype = {
 			w = new Waveform();
 		}
 
-		if( ! w instanceof Waveform ) {
+		if( ! ( w instanceof Waveform ) ) {
 
 			if( Array.isArray( w ) ) {
 
-					var wave = new Waveform();
-					wave.setData( w );
-					w = wave;
-			}
+				var wave = new Waveform();
+				wave.setData( w );
+				w = wave;
+			} else {
 
-			throw "X wave must be a waveform"
+				throw "X wave must be a waveform"
+			}
 		}
 
 		this.xScaling = {
-			mode: 'wave',
+			type: 'wave',
 			wave: w
 		}
 	},
@@ -165,7 +178,7 @@ Waveform.prototype = {
 	},
 
 	getXScalingMode: function() {
-		return this.xScaling ? this.xScaling.mode : false
+		return this.xScaling ? this.xScaling.type : false
 	},
 
 	getData: function() {
@@ -179,11 +192,11 @@ Waveform.prototype = {
 	searchBinary: function( val, interpolate ) {
 
 		var k1 = 0,
-			k2 = this.data.length - 1,
-			kint,
-			asc = this.data[ k1 ] < val;
+		k2 = this.data.length - 1,
+		kint,
+		asc = this.data[ k1 ] < val;
 
-		if( this.hasXScaling() && this.xScaling.mode !== 'delta' ) {
+		if( this.hasXScaling() && this.xScaling.type !== 'delta' ) {
 			this.error("Cannot perform binary search on a non linearly increasing x axis");
 		}
 
@@ -247,11 +260,11 @@ Waveform.prototype = {
 		switch( this.getXScalingMode() ) {
 
 			case 'delta':
-				return Math.round( ( x - this.xScaling.x0 ) / ( this.xScaling.xDelta ) );
+			return Math.round( ( x - this.xScaling.x0 ) / ( this.xScaling.xDelta ) );
 			break;
 
 			case 'wave':
-				return this.xScaling.wave.searchBinary( x );
+			return this.xScaling.wave.searchBinary( x );
 			break;
 		}
 	},
@@ -261,11 +274,11 @@ Waveform.prototype = {
 		switch( this.getXScalingMode() ) {
 
 			case 'delta':
-				return ( p * this.xScaling.xDelta + this.xScaling.x0 );
+			return ( p * this.xScaling.xDelta + this.xScaling.x0 );
 			break;
 
 			case 'wave':
-				return this.xScaling.wave.getValueAt( p );
+			return this.xScaling.wave.getValueAt( p );
 			break;
 		}
 	},
@@ -275,17 +288,17 @@ Waveform.prototype = {
 		switch( this.getXScalingMode() ) {
 
 			case 'delta':
-				if( p1 >= 0 && p2 >= 0 && p1 < this.data.length && p2 < this.data.length ) {
-					return this.getXFromIndex( p1 ) - this.getXFromIndex( p2 );
-				}
+			if( p1 >= 0 && p2 >= 0 && p1 < this.data.length && p2 < this.data.length ) {
+				return this.getXFromIndex( p1 ) - this.getXFromIndex( p2 );
+			}
 
-				return false;
+			return false;
 			break;
 
 
 			case 'wave':
 
-				return this.xScaling.wave.getXFromIndex( p1 ) - this.xScaling.wave.getXFromIndex( p2 );
+			return this.xScaling.wave.getXFromIndex( p1 ) - this.xScaling.wave.getXFromIndex( p2 );
 			break;
 		}
 	},
@@ -305,20 +318,22 @@ Waveform.prototype = {
 
 	subset: function( p0, p1 ) {
 		var w = new Waveform();
+		p0 = Math.round( p0 );
+		p1 = Math.round( p1 );
 		for( var i = p0; i <= p1; i+= 1 ) {
 			w.push( this.data[ i ] );
 		}
 
 		switch( this.getXScalingMode() ) {
 
-				case 'delta':
-					var start = this.getXFromIndex( p0 );
-					w.setXScaling( start, this.xScaling.xDelta );
-				break;
+			case 'delta':
+			var start = this.getXFromIndex( p0 );
+			w.setXScaling( start, this.xScaling.xDelta );
+			break;
 
-				case 'wave':
-					w.setXWave( this.xScaling.wave.subset( p0, p1 ) );
-				break;
+			case 'wave':
+			w.setXWave( this.xScaling.wave.subset( p0, p1 ) );
+			break;
 		}
 
 		w.setXUnit( this.getXUnit() );
@@ -332,15 +347,15 @@ Waveform.prototype = {
 		switch( this.getXScalingMode() ) {
 
 			case 'delta':
-				var w = new Waveform();
-				for( var i = 0; i < this.getDataLength(); i += 1 ) {
-					w.push( this.xScaling.x0 + i * this.xScaling.xDelta );
-				}
-				return w;
+			var w = new Waveform();
+			for( var i = 0; i < this.getDataLength(); i += 1 ) {
+				w.push( this.xScaling.x0 + i * this.xScaling.xDelta );
+			}
+			return w;
 			break;
 
 			case 'wave':
-				return this.xScaling.wave;
+			return this.xScaling.wave;
 			break;
 		}
 	},
@@ -351,15 +366,30 @@ Waveform.prototype = {
 		switch( this.getXScalingMode() ) {
 
 			case 'delta':
-				this.xScaling.x0 += shift;
+			this.xScaling.x0 += shift;
 			break;
 
 			case 'wave':
-				this.xScaling.wave.subtract( - shift );
+			this.xScaling.wave.add( shift );
 			break;
 		}
 	},
 
+	shiftXToMin: function( target ) {
+
+		switch( this.getXScalingMode() ) {
+
+			case 'delta':
+			var t = this.xScaling.x0 - target;
+			break;
+
+			case 'wave':
+			var t = this.xScaling.wave.get( 0 ) - target;
+			break;
+		}
+
+		this.shiftX( - t );
+	},
 
 	average: function( p0, p1 ) {
 		if( p0 == undefined ) {
@@ -427,6 +457,39 @@ Waveform.prototype = {
 			}
 		}
 	},
+
+
+	add: function( val ) {
+
+
+		if( typeof val == "function" ) {
+
+			for( var i = 0; i < this.data.length; i ++ ) {
+
+				this.data[ i ] += val( this.getXFromIndex( i ), this.data[ i ] );
+			}
+
+		}	else if( val instanceof Waveform ) {
+
+			if( val.getDataLength() == this.getDataLength() ) {
+
+				for( var i = 0; i < this.data.length; i ++ ) {
+					this.data[ i ] += val.get( i );
+				}
+
+			} else {
+				throw "Cannot subtract two waves with unequal number of points";
+			}
+
+		} else {
+
+			for( var i = 0; i < this.data.length; i ++ ) {
+
+				this.data[ i ] += val;
+			}
+		}
+	},
+
 
 	_integrateX: function( xFrom, xTo ) {
 
@@ -617,7 +680,7 @@ Waveform.prototype = {
 		}
 
 		var value,
-			below;
+		below;
 
 		var box = options.box;
 
@@ -673,23 +736,50 @@ Waveform.prototype = {
 		}
 	},
 
-	degradeExp: function( nbPoints ) {
+	degradeExp: function( nbPoints, stepAvg ) {
 
 		var d = this.getData();
 		var x = this.getXWave().getData();
 		var dl = this.getDataLength();
-
+		var e = 2.71828;
 		var y0 = -1,
-				b = Math.log( dl ) / ( nbPoints - 1 ),
-				index,
-				dFinal = [],
-				xFinal = [];
+		b = Math.log( dl ) / ( nbPoints - 1 ),
+		index,
+		dFinal = [],
+		xFinal = [];
+
+		function getIndex( i ) {
+			return Math.floor( -1 + Math.pow( e, ( b * i ) ) );
+		}
 
 		for( var i = 0; i < nbPoints; i ++ ) {
 
-			index = -1 + Math.pow( e, ( b * i ) );
-			dFinal.push( d[ index ] );
-			xFinal.push( x[ index ] );
+			index = getIndex( i );
+
+			if( i > 0 ) {
+				var nextIndex = getIndex( i - 1 );
+				var diff = Math.floor( ( index - nextIndex ) * stepAvg );
+				diff = Math.min( 1000, diff );
+
+				var sumX = 0;
+				var sum = 0;
+				var k = 0;
+
+				for( var j = index - diff; j <= index; j ++ ) {
+
+					sum += d[ index ];
+					sumX += x[ index ];
+					k ++;
+				}
+
+				dFinal.push( sum / k );
+				xFinal.push( sumX / k );
+
+			} else {
+
+				dFinal.push( d[ index ] );
+				xFinal.push( x[ index ] );
+			}
 		}
 
 		var w = new Waveform();
@@ -697,8 +787,253 @@ Waveform.prototype = {
 		w.setXWave( xFinal );
 
 		return w;
-	}
+	},
 
+	degrade: function( nbPoints ) {
+
+		var d = this.getData();
+		var x = this.getXWave().getData();
+		var dl = this.getDataLength();
+
+		var		index,
+		dFinal = [],
+		xFinal = [],
+		step = Math.floor( dl / nbPoints );
+
+
+		for( var i = 0; i < dl; i += step ) {
+			
+			dFinal.push( d[ i ] );
+			xFinal.push( x[ i ] );
+		}
+		
+		var w = new Waveform();
+		w.setData( dFinal );
+		w.setXWave( xFinal );
+		return w;
+	},
+
+	loess: function( bandwidth, robustness, accuracy ) {
+
+// https://github.com/jasondavies/science.js/blob/master/science.v1.js
+// Based on org.apache.commons.math.analysis.interpolation.LoessInterpolator
+// from http://commons.apache.org/math/
+
+		function science_stats_loessFiniteReal(values) {
+			var n = values.length,
+			i = -1;
+
+			while (++i < n) if (!isFinite(values[i])) return false;
+
+			return true;
+		}
+
+		function science_stats_loessStrictlyIncreasing(xval) {
+			var n = xval.length,
+			i = 0;
+
+			while (++i < n) if (xval[i - 1] >= xval[i]) return false;
+
+			return true;
+		}
+
+		// Compute the tricube weight function.
+		// http://en.wikipedia.org/wiki/Local_regression#Weight_function
+		function science_stats_loessTricube(x) {
+			return (x = 1 - x * x * x) * x * x;
+		}
+
+		// Given an index interval into xval that embraces a certain number of
+		// points closest to xval[i-1], update the interval so that it embraces
+		// the same number of points closest to xval[i], ignoring zero weights.
+		function science_stats_loessUpdateBandwidthInterval( xval, weights, i, bandwidthInterval) {
+
+			var left = bandwidthInterval[0],
+			right = bandwidthInterval[1];
+
+		  // The right edge should be adjusted if the next point to the right
+		  // is closer to xval[i] than the leftmost point of the current interval
+		  var nextRight = science_stats_loessNextNonzero(weights, right);
+		  if ((nextRight < xval.length) && (xval[nextRight] - xval[i]) < (xval[i] - xval[left])) {
+		  	var nextLeft = science_stats_loessNextNonzero(weights, left);
+		  	bandwidthInterval[0] = nextLeft;
+		  	bandwidthInterval[1] = nextRight;
+		  }
+		}
+
+		function science_stats_loessNextNonzero(weights, i) {
+			var j = i + 1;
+			while (j < weights.length && weights[j] === 0) j++;
+			return j;
+		}
+
+
+		var bandwidth = bandwidth || 0.3,
+		robustnessIters = robustness || 1,
+		accuracy = accuracy || 1e-12;
+
+		var xval = this.getXWave().getData();
+		var yval = this.getData();
+		var weights = undefined;
+
+
+		var n = xval.length,
+		i;
+
+		if (n !== yval.length) throw {error: "Mismatched array lengths"};
+		if (n == 0) throw {error: "At least one point required."};
+
+		if (! weights) {
+			weights = [];
+			i = -1; while (++i < n) weights[i] = 1;
+		}
+
+		science_stats_loessFiniteReal(xval);
+		science_stats_loessFiniteReal(yval);
+		science_stats_loessFiniteReal(weights);
+		science_stats_loessStrictlyIncreasing(xval);
+
+		if (n == 1) return [yval[0]];
+		if (n == 2) return [yval[0], yval[1]];
+
+		var bandwidthInPoints = Math.floor(bandwidth * n);
+
+		if (bandwidthInPoints < 2) throw {error: "Bandwidth too small."};
+
+		var res = [],
+		residuals = [],
+		robustnessWeights = [];
+
+	    // Do an initial fit and 'robustnessIters' robustness iterations.
+	    // This is equivalent to doing 'robustnessIters+1' robustness iterations
+	    // starting with all robustness weights set to 1.
+	    i = -1; while (++i < n) {
+	    	res[i] = 0;
+	    	residuals[i] = 0;
+	    	robustnessWeights[i] = 1;
+	    }
+
+	    var iter = -1;
+	    while (++iter <= robustnessIters) {
+	    	var bandwidthInterval = [0, bandwidthInPoints - 1];
+	      // At each x, compute a local weighted linear regression
+	      var x;
+	      i = -1; while (++i < n) {
+	      	x = xval[i];
+
+	        // Find out the interval of source points on which
+	        // a regression is to be made.
+	        if (i > 0) {
+	        	science_stats_loessUpdateBandwidthInterval(xval, weights, i, bandwidthInterval);
+	        }
+
+	        var ileft = bandwidthInterval[0],
+	        iright = bandwidthInterval[1];
+
+	        // Compute the point of the bandwidth interval that is
+	        // farthest from x
+	        var edge = (xval[i] - xval[ileft]) > (xval[iright] - xval[i]) ? ileft : iright;
+
+	        // Compute a least-squares linear fit weighted by
+	        // the product of robustness weights and the tricube
+	        // weight function.
+	        // See http://en.wikipedia.org/wiki/Linear_regression
+	        // (section "Univariate linear case")
+	        // and http://en.wikipedia.org/wiki/Weighted_least_squares
+	        // (section "Weighted least squares")
+	        var sumWeights = 0,
+	        sumX = 0,
+	        sumXSquared = 0,
+	        sumY = 0,
+	        sumXY = 0,
+	        denom = Math.abs(1 / (xval[edge] - x));
+
+	        for (var k = ileft; k <= iright; ++k) {
+	        	var xk   = xval[k],
+	        	yk   = yval[k],
+	        	dist = k < i ? x - xk : xk - x,
+	        	w    = science_stats_loessTricube(dist * denom) * robustnessWeights[k] * weights[k],
+	        	xkw  = xk * w;
+	        	sumWeights += w;
+	        	sumX += xkw;
+	        	sumXSquared += xk * xkw;
+	        	sumY += yk * w;
+	        	sumXY += yk * xkw;
+	        }
+
+	        var meanX = sumX / sumWeights,
+	        meanY = sumY / sumWeights,
+	        meanXY = sumXY / sumWeights,
+	        meanXSquared = sumXSquared / sumWeights;
+
+	        var beta = (Math.sqrt(Math.abs(meanXSquared - meanX * meanX)) < accuracy)
+	        ? 0 : ((meanXY - meanX * meanY) / (meanXSquared - meanX * meanX));
+
+	        var alpha = meanY - beta * meanX;
+
+	        res[i] = beta * x + alpha;
+	        residuals[i] = Math.abs(yval[i] - res[i]);
+	    }
+
+	      // No need to recompute the robustness weights at the last
+	      // iteration, they won't be needed anymore
+	      if (iter === robustnessIters) {
+	      	break;
+	      }
+
+	      // Recompute the robustness weights.
+
+	      // Find the median residual.
+	      var sortedResiduals = residuals.slice();
+	      sortedResiduals.sort();
+	      var medianResidual = sortedResiduals[Math.floor(n / 2)];
+
+	      if (Math.abs(medianResidual) < accuracy)
+	      	break;
+
+	      var arg,
+	      w;
+	      i = -1; while (++i < n) {
+	      	arg = residuals[i] / (6 * medianResidual);
+	      	robustnessWeights[i] = (arg >= 1) ? 0 : ((w = 1 - arg * arg) * w);
+	      }
+	  }
+
+
+	  w2 = this.duplicate();
+	  w2.setData( res );
+	  return w2;	
+	}
 }
 
-module.exports = Waveform;
+	Waveform.sort = function( keyWave, wavesToSort ) {
+
+		var dataKey = keyWave.getData().slice( 0 );
+
+		var global = [],
+		arrZipped
+
+		for( var i = 0; i < dataKey.length; i ++ ) {
+			arrZipped = [ dataKey[ i ] ];
+
+			for( var j = 0; j < wavesToSort.length; j ++ ) {
+				arrZipped.push( wavesToSort[ j ].get( i ) );
+			}
+			global.push( arrZipped );
+		}
+
+		global.sort( function( a, b ) {
+			return a[ 0 ] - b[ 0 ];
+		});
+
+
+		for( var i = 0; i < dataKey.length; i ++ ) {
+
+			for( var j = 0; j < wavesToSort.length; j ++ ) {
+
+				wavesToSort[ j ].set( i, global[ i ][ j + 1 ] );
+			}
+		}
+	}
+
+	module.exports = Waveform;

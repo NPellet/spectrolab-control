@@ -97,7 +97,7 @@ def main():
 
     v = vxi11.Instrument(host, name)
     v.open()
-    
+
     print("IO:connected");
     sys.stdout.flush();
 
@@ -123,9 +123,11 @@ def main():
                 esr = int(v.ask('*ESR?').strip())
                 if esr != 0:
                     print('Warning: ESR was %d' % esr)
-        except Vxi11Exception:
+        except Exception:
             e = sys.exc_info()[1]
             print('ERROR: %s' % e)
+            sys.stdout.flush()
+
 
     v.close()
 
