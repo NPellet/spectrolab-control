@@ -102,6 +102,11 @@ TektronixOscilloscope.prototype.connect = function(  ) {
             module.getErrors().then( function() {
 
               resolver( module );
+              module.disableMeasurements();
+              module.disableChannels();
+              module.setTriggerRefPoint( 50 ); // Set pre-trigger, 10%
+              module.disableDelayMode();
+
               module.emit("connected");
 
             });
@@ -250,8 +255,40 @@ TektronixOscilloscope.prototype.getErrors = function() {
   } );
 }
 
+TektronixOscilloscope.prototype.enableChannel = function( channel ) {
+  channel = getChannel( channel );
+  return this.command("SELect:" + channel + " ON" );
+}
+
+TektronixOscilloscope.prototype.disableChannel = function( channel ) {
+  channel = getChannel( channel );
+  return this.command("SELect:" + channel + " OFF" );
+}
+
+TektronixOscilloscope.prototype.disableChannels = function( ) {
+  var self = this;
+  [ 1, 2, 3, 4 ].map( function( i ) {
+      self.disableChannel( i );
+  });
+}
+
+TektronixOscilloscope.prototype.enableChannels = function( ) {
+  var self = this;
+  [ 1, 2, 3, 4 ].map( function( i ) {
+      self.enableChannel( i );
+  });
+}
+
+TektronixOscilloscope.prototype.disableDelayMode = function( ) {
+  return this.command("HORizontal:MAIn:DELay:MODe OFF");
+}
+TektronixOscilloscope.prototype.enableDelayMode = function( ) {
+  return this.command("HORizontal:MAIn:DELay:MODe ON");
+}
+
 TektronixOscilloscope.prototype.setTriggerRefPoint = function( ref ) {
   ref = getInt( ref );
+  this.enableDelayMode();
   return this.command("HORizontal:MAIn:DELay:POSition " + ref );
 }
 
@@ -275,11 +312,12 @@ TektronixOscilloscope.prototype.setTriggerSlope = function( channel, slope ) {
   slope = getMnemonic( slope, [ 'RISe', 'FALL', 'EITher' ] );
   return this.command("TRIGGER:A:EDGE:SLOPE:" + channel + " " + slope );
 }
-/*
+
 TektronixOscilloscope.prototype.setTriggerMode = function( mode ) {
-  TRIGger:MODe NORMal
+  mode = getMnemonic( mode, [ "NORMal", "AUTo" ] );
+  return this.command("TRIGGER:MODe " + mode );
 }
-*/
+
 TektronixOscilloscope.prototype.disableAveraging = function() {
   return this.setAcquisitionMode( "SAMPLE" );
 }
@@ -614,8 +652,17 @@ TektronixOscilloscope.prototype.enableMeasurement = function( measNum ) {
 
 TektronixOscilloscope.prototype.disableMeasurement = function( measNum ) {
   measNum = getMeasurementNumber( measNum );
-  return this.command("MEASUrement:" + measNum + ":STATE ON" );
+  return this.command("MEASUrement:" + measNum + ":STATE OFF" );
 }
+
+
+TektronixOscilloscope.prototype.disableMeasurements = function(  ) {
+  var self = this;
+  [ 1, 2, 3, 4, 5, 6, 7, 8 ].map( function( i ) {
+    self.disableMeasurement( i );
+  });
+}
+
 
 TektronixOscilloscope.prototype.setMeasurementType = function( measNum, type ) {
   type = getMnemonic( type, "AMPlitude|AREa| BURst|CARea|CMEan|CRMs|DELay|DISTDUty| EXTINCTDB|EXTINCTPCT|EXTINCTRATIO|EYEHeight| EYEWIdth|FALL|FREQuency|HIGH|HITs|LOW| MAXimum|MEAN|MEDian|MINImum|NCROss|NDUty| NOVershoot|NWIdth|PBASe|PCROss|PCTCROss|PDUty| PEAKHits|PERIod|PHAse|PK2Pk|PKPKJitter| PKPKNoise|POVershoot|PTOP|PWIdth|QFACtor| RISe|RMS|RMSJitter|RMSNoise|SIGMA1|SIGMA2| SIGMA3|SIXSigmajit|SNRatio|STDdev|UNDEFINED|WAVEFORMS")
@@ -646,9 +693,20 @@ TektronixOscilloscope.prototype.getMeasurementMethod = function( measNum, method
   return this.command("MEASUrement:" + measNum + ":METHod?");
 }
 
-TektronixOscilloscope.prototype.getMeasurementMean = function( measNum ) {
-  measNum = getMeasurementNumber( measNum );
-  return this.command("MEASUrement:" + measNum + ":MEAN?");
+TektronixOscilloscope.prototype.getMeasurementMean = function( ) {
+
+  return this.all( "MEASUrement:%s:MEAN?", Array.prototype.map.call( arguments, getMeasurementNumber ) );
+}
+
+TektronixOscilloscope.prototype.all = function( method, args ) {
+
+  var self = this;
+
+
+  return Promise.all( args.map( function( a ) {
+    console.log( method.replace( "%s", a ) );
+    return self.command( method.replace( "%s", a ) );
+  }));
 }
 
 TektronixOscilloscope.prototype.getMeasurementMin = function( measNum ) {

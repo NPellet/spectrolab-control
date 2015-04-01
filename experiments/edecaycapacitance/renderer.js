@@ -68,6 +68,12 @@ renderer.init = function() {
 */
 
 
+    IV: {
+      wrapper: 'lastPulse',
+      path: 'display/graph'
+    },
+
+
     lastJDecay: {
       wrapper: 'lastPulse',
       path: 'display/graph'
@@ -102,12 +108,20 @@ renderer.init = function() {
 
   } );
 
-  renderer.getModule("lastJDecay")
-    .setTitle("Current pulse")
-    .setHeight( 300 )
-    .setXAxisLabel("Time (s)")
-    .setXLogScale( false )
-    .setYAxisLabel("Current (A)");
+    renderer.getModule("IV")
+      .setTitle("IV measurement")
+      .setHeight( 300 )
+      .setXAxisLabel("Voltage (V)")
+      .setXLogScale( false )
+      .setYAxisLabel("Current (A)");
+  
+
+        renderer.getModule("lastJDecay")
+          .setTitle("Current pulse")
+          .setHeight( 300 )
+          .setXAxisLabel("Time (s)")
+          .setXLogScale( false )
+          .setYAxisLabel("Current (A)");
 
 
     renderer.getModule("lastVDecay")

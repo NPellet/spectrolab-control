@@ -136,8 +136,8 @@ Arduino.prototype.setWhiteLightLevelVoltage = function( whiteLightLevel ) {
 
 Arduino.prototype.setColorLightLevelVoltage = function( voltage ) {
 
-	if( voltage > 2000 ) {
-		voltage = 2000;
+	if( voltage > 5000 ) {
+		voltage = 5000;
 	}
 
 	if( voltage < 0 ) {

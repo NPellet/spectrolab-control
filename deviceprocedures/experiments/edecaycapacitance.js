@@ -19,9 +19,7 @@ var experiment = {
 		experiment.focus = false;
 
 		experiment.parameters.lightIntensities = [ 0 ];
-		experiment.parameters.pulseTimes = [ 0.01, 0.1, 5 ];
-
-		experiment.parameters.pulseTimes = [ 0.5 ];
+		experiment.parameters.pulseTimes = [ 3 ];
 	},
 
 
@@ -60,10 +58,10 @@ var experiment = {
 
 			var recordedWaves = [];
 
-			var timeBase = 50e-6;
+			var timeBase = 300e-6;
 			var yScales = 40e-3;
-			var yScales = 60e-3;
-			var timeBase = 200e-6;
+			var yScales = 80e-3;
+	//		var timeBase = 200e-6;
 
 			// Calculate delays
 			var nbPoints = 40,
@@ -76,7 +74,7 @@ var experiment = {
 			}
 
 			var blankWaves = [];
-
+			var blankWavesV;
 			// Oscilloscope functions
 
 			var preTrigger = 10;
@@ -110,6 +108,7 @@ var experiment = {
 			self.oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
 			self.oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
 
+			self.oscilloscope.enableChannels();
 
 			self.oscilloscope.setPosition( 2, -4 );
 			self.oscilloscope.setPosition( 3, -4 );
@@ -136,10 +135,25 @@ var experiment = {
 					var k = 0;
 					var j = 0;
 					var l;
+/*
+					self.arduino.setWhiteLightLevel( 0 );
+					self.keithley.setDigioPin( 4, 1 );
 
+					console.log( "Measuring IV ");
+					self.keithley.sweepIV( { channel: 'smub', hysteresis: true, settlingTime: 0.5, nbPoints: 20, startV: 1.2, stopV: 0 }).then( function( iv ) {
+						console.log( iv );
+						self.progress( "iv", [ iv ] );
+						console.log( "End IV" );
+						self.keithley.setDigioPin( 4, 0 );
+
+						p.next();
+					});
+					yield;
+*/
 					console.log('blank');
 					self.pulseBlank( timeBase, yScales, recordLength ).then( function( w ) {
-						blankWaves = w;
+						blankWaves = w[ 0 ];
+						blankWavesV = w[ 1 ];
 //console.log( w );
 						if( ! self._paused ) {
 							p.next();
@@ -151,6 +165,8 @@ var experiment = {
 					yield;
 
 					self.arduino.setWhiteLightLevel( 0 );
+
+
 
 					while( true ) {
 
@@ -208,6 +224,7 @@ var experiment = {
 						self.pulse( timeBase, yScales, timeDelays[ i ], recordLength ).then( function( w ) {
 
 							w[ 2 ].subtract( blankWaves );
+							w[ 3 ].subtract( blankWavesV );
 
 							recordedWaves = w;
 
@@ -246,7 +263,6 @@ var experiment = {
 							var voc = recordedWaves[ "3" ].get( recordLength * 0.09 );
 							var m = 0;
 							var charges = 0;
-							console.log("CHarge avg: " + recordedWaves[ 2 ].average( recordLength - 100, recordLength - 1 ) );
 							recordedWaves[ 2 ].subtract( recordedWaves[ 2 ].average( recordLength - 100, recordLength - 1 ) );
 
 							charges = recordedWaves[ 2 ].integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
@@ -257,8 +273,8 @@ var experiment = {
 
 							Waveform.sort( waveVoc[ l ], [ waveVoc[ l ], waveCharges[ l ], waveDelays[ l ] ] );
 
-console.log( "Lead delay: " + timeDelays[ i ] + ". Index: " + i  );
-							self.progress( recordedWaves, j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveDelays );
+							self.progress( "QV", [ recordedWaves, j, timeDelays[ i ], self.parameters.lightIntensities[ l ], timeDelays, waveCharges, waveVoc, waveDelays ] );
+
 						} else {
 
 							if( l == 0 ) {
@@ -277,12 +293,12 @@ console.log( "Lead delay: " + timeDelays[ i ] + ". Index: " + i  );
 		//		}
 
 				resolver( [ waveCurrent, waveVoltage ] );
+				self.oscilloscope.disableChannels();
 			}
 
 			var p = pulse( timeDelays.length, 8 );
 			p.next( );
 			self.iterator = p;
-
 
 			}); // End oscilloscope ready
 
@@ -329,6 +345,9 @@ console.log( "Lead delay: " + timeDelays[ i ] + ". Index: " + i  );
 				currentWave.divide( 50 );
 				currentWave.subtract( currentWave.average( 0, recordLength * 0.08 ) );
 
+				var voltageWave = allWaves[ "3" ];
+				voltageWave.subtract( currentWave.average( 0, recordLength * 0.08 ) );
+
 
 				return allWaves;
 			});
@@ -338,7 +357,7 @@ console.log( "Lead delay: " + timeDelays[ i ] + ". Index: " + i  );
 	},
 
 
-		pulseBlank: function( timeBase, yScale, recordLength ) {
+	pulseBlank: function( timeBase, yScale, recordLength ) {
 
 			var self = experiment;
 			self.oscilloscope.setHorizontalScale( timeBase );
@@ -381,7 +400,7 @@ console.log( "Lead delay: " + timeDelays[ i ] + ". Index: " + i  );
 							currentWave.divide( 50 );
 							currentWave.subtract( currentWave.average( 0, recordLength * 0.08 ) );
 
-							return currentWave;
+							return [ currentWave, allWaves["3"] ];
 
 
 						});

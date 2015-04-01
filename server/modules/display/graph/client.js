@@ -1,6 +1,6 @@
 
 
-define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
+define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 	var module = function() {}
 
@@ -60,7 +60,7 @@ define( [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 		if( serie = g.getSerie( data.name ) ) {
 
 			serie.setData( data.data );
-			serie.options = data.options || {};
+			serie.setOptions( data.options );
 
 			switch( type ) {
 

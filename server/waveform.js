@@ -50,6 +50,47 @@ Waveform.prototype = {
 		return Math.min.apply( null, this.data )
 	},
 
+	getXMax: function( interpolate ) {
+
+		var max = - Infinity;
+		var maxX = false;
+
+		for( var i = 0; i < this.data.length; i ++ ) {
+				if( this.data[ i ] > max ) {
+					max = this.data[ i ];
+					maxX = i;
+				}
+		}
+
+		if( ! interpolate ) {
+			return maxX;
+		} else {
+			var xWave = this.getXWave();
+			var interpolation = interpolate( xWave.get( maxX - 1 ), xWave.get( maxX ), xWave.get( maxX + 1 ), this.get( maxX - 1 ), this.get( maxX ), this.get( maxX + 1 ) );
+			return - interpolation[ 1 ] / ( 2 * interpolation[ 0 ] );
+		}
+	},
+
+	getXMin: function( interpolate ) {
+
+		var min = - Infinity;
+		var minX = false;
+
+		for( var i = 0; i < this.data.length; i ++ ) {
+				if( this.data[ i ] < min ) {
+					min = this.data[ i ];
+					minX = i;
+				}
+		}
+
+		if( ! interpolate ) {
+			return minX;
+		} else {
+			var xWave = this.getXWave();
+			var interpolation = interpolate( xWave.get( minX - 1 ), xWave.get( minX ), xWave.get( minX + 1 ), this.get( minX - 1 ), this.get( minX ), this.get( minX + 1 ) );
+			return - interpolation[ 1 ] / ( 2 * interpolation[ 0 ] );
+		}
+	},
 
 	push: function( value, valueX ) {
 
@@ -663,6 +704,30 @@ Waveform.prototype = {
 		return this.multiplyBy.apply( this, arguments );
 	},
 
+	findLevels: function( level, options ) {
+
+			options = extend( {
+
+				box: 1,
+				edge: 'ascending',
+				rounding: 'before',
+				rangeP: [ 0, this.data.length ],
+
+			}, options );
+
+			var lastLvlIndex = options.rangeP[ 0 ];
+			var lvlIndex;
+			var indices = [];
+
+			while( lvlIndex = this.findLevel( level, extend( true, {}, options, { rangeP: [ lastLvlIndex, options.rangeP[ 1 ] ] } ) ) ) {
+					indices.push( lvlIndex );
+					lastLvlIndex = Math.ceil( lvlIndex );
+			}
+
+			return indices;
+	},
+
+
 	// Find the first level in the specified range
 	findLevel: function( level, options ) {
 
@@ -671,7 +736,7 @@ Waveform.prototype = {
 			box: 1,
 			edge: 'ascending',
 			rounding: 'before',
-			rangeP: [ 0, this.data.length ]
+			rangeP: [ 0, this.data.length ],
 
 		}, options );
 
@@ -715,8 +780,19 @@ Waveform.prototype = {
 
 						if( this.data[ j ] > level && this.data[ j - 1 ] < level ) { // Find a crossing
 
-							return options.rounding == "before" ? j - 1 : j;
-						}
+							switch( options.rounding ) {
+									case 'before':
+											return j - 1;
+									break;
+
+									case 'after':
+											return j;
+									break;
+
+									case 'interpolate':
+										return getIndexInterpolate( level, this.data[ j ], this.data[ j - 1 ], j, j - 1 );
+									break;
+							}						}
 					}
 				}
 
@@ -728,7 +804,21 @@ Waveform.prototype = {
 
 					for( j = i + ( box - 1 ) / 2 ; j >= i - ( box - 1 ) / 2 ; j -- ) {
 						if( this.data[ j ] < level && this.data[ j - 1 ] > level ) { // Find a crossing
-							return options.rounding == "before" ? j - 1 : j;
+
+							switch( options.rounding ) {
+									case 'before':
+											return j - 1;
+									break;
+
+									case 'after':
+											return j;
+									break;
+
+									case 'interpolate':
+										return getIndexInterpolate( level, this.data[ j ], this.data[ j - 1 ], j, j - 1 );
+									break;
+							}
+
 						}
 					}
 				}
@@ -802,11 +892,11 @@ Waveform.prototype = {
 
 
 		for( var i = 0; i < dl; i += step ) {
-			
+
 			dFinal.push( d[ i ] );
 			xFinal.push( x[ i ] );
 		}
-		
+
 		var w = new Waveform();
 		w.setData( dFinal );
 		w.setXWave( xFinal );
@@ -1002,7 +1092,19 @@ Waveform.prototype = {
 
 	  w2 = this.duplicate();
 	  w2.setData( res );
-	  return w2;	
+	  return w2;
+	},
+
+	math: function( fct ) {
+		
+		var i = 0;
+
+		this.data = this.data.map( function() {
+
+			i++;
+			return fct( this.get( i ), this.getXFromIndex( i - 1 ) );
+
+		} );
 	}
 }
 
@@ -1035,5 +1137,22 @@ Waveform.prototype = {
 			}
 		}
 	}
+
+function getIndexInterpolate( value, valueBefore, valueAfter, indexBefore, indexAfter ) {
+		return ( value - valueBefore ) / ( valueAfter - valueBefore ) * ( indexAfter - indexBefore ) + indexBefore;
+}
+
+
+function interpolate( x1, x2, x3, y1, y2, y3 ) {
+	var x12 = x1 * x2;
+	var x22 = x2 * x2;
+	var x32 = x3 * x3;
+
+	var a = ( y1 - y2 - ( ( y1 - y3 ) / ( x1 - x3 ) ) * ( x1 - x2 ) )  / (  ( x12 - x22 )  -  (x12 - x32)  * ( x1 - x2 ) / ( x1 - x3 ) )
+	var b = ( y1 - y3 - a * ( x12 - x32 ) ) / ( x1 - x3 );
+	var c = y3 - a * x32 - b * x3;
+
+	return [ a, b, c ];
+}
 
 	module.exports = Waveform;

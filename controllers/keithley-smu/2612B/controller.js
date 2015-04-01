@@ -7,7 +7,8 @@ var net = require('net'),
 	events = require("events"),
 	path = require("path"),
 	promise = require("bluebird"),
-	Waveform = require("../../../server/waveform");
+	Waveform = require("../../../server/waveform"),
+	IV = require("../../../server/iv");
 
 
 
@@ -43,31 +44,70 @@ var methods = {
 
 			method: 'LinVSweepMeasureI',
 			parameters: function( options ) {
-console.log([ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ]);
-				return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ]
+
+				if( options.scanRate ) {
+						options.settlingTime = Math.abs( options.stopV - options.startV ) / options.scanRate / options.nbPoints;
+				}
+
+				return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ? 1 : 0 ]
 			},
 
 			processing: function( data, options ) {
 
-				var w = new Waveform();
-				var waveX = new Waveform();
+				var iv = new IV();
 
-				var current, voltage, dataFinal = [], dataFinalX = [];
+				var current, voltage;
 				data = data.split(/,[\t\r\s\n]*/);
-				for( var i = 0; i < data.length; i += 2 ) {
-					dataFinal.push( parseFloat( data[ i ] ) );
-					dataFinalX.push( parseFloat( data[ i + 1 ] ) );
+
+console.log( data );
+				function getIv( from, to ) {
+					var w = new Waveform();
+					var waveX = new Waveform();
+
+					var dataFinal = [], dataFinalX = [];
+
+					for( var i = from; i < to; i += 2 ) {
+						dataFinal.push( parseFloat( data[ i ] ) );
+						dataFinalX.push( parseFloat( data[ i + 1 ] ) );
+					}
+
+					w.setData( dataFinal );
+					waveX.setData( dataFinalX );
+					w.setXWave( waveX );
+
+					iv.setBackward( w );
+					return w;
 				}
 
-				w.setData( dataFinal );
+				if( options.hysteresis ) {
 
-				waveX.setData( dataFinalX );
-				w.setXWave( waveX );
+					var iv1 = getIv( 0, data.length / 2 );
+					var iv2 = getIv( data.length / 2, data.length );
 
-				//w.setXScaling( options.startV, ( ( options.stopV - options.startV ) / ( options.nbPoints - 1 ) ) );
+					if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
 
+						iv.setBackward( iv1 );
+						iv.setForward( iv2 );
 
-				return w;
+					} else {
+
+						iv.setForward( iv1 );
+						iv.setBackward( iv2 );
+
+					}
+
+				} else {
+
+					var iv1 = getIv( 0, data.length );
+					if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
+						iv.setBackward( iv1 );
+					} else {
+						iv.setForward( iv1 );
+					}
+				}
+
+				return iv;
+
 			}
 		},
 
@@ -75,12 +115,13 @@ console.log([ options.channel, options.startV, options.stopV, options.settlingTi
 	'measureVoc': {
 		defaults: {
 			channel: 'smua',
-			settlingTime: 0.02
+			settlingTime: 0.02,
+			current: 0
 		},
 
 		method: 'measurevoc',
 		parameters: function( options ) {
-			return [ options.channel, options.settlingTime ]
+			return [ options.channel, options.settlingTime, options.current ]
 		},
 
 		processing: function( data ) {
@@ -93,13 +134,14 @@ console.log([ options.channel, options.startV, options.stopV, options.settlingTi
 	'measureIsc': {
 		defaults: {
 			channel: 'smua',
-			settlingTime: 0.02
+			settlingTime: 0.02,
+			voltage: 0
 		},
 
 		method: 'measurejsc',
 		parameters: function( options ) {
 
-			return [ options.channel, options.settlingTime ]
+			return [ options.channel, options.settlingTime, options.voltage ]
 		},
 
 		processing: function( data ) {
@@ -117,6 +159,24 @@ console.log([ options.channel, options.startV, options.stopV, options.settlingTi
 		method: 'applyvoltage',
 		parameters: function( options ) {
 			return [ options.channel, options.bias ]
+		},
+		processing: function( data ) {
+			return parseFloat( data );
+		}
+	},
+
+	'applyCurrent': {
+		defaults: {
+			bias: 0,
+			channel: 'smua'
+		},
+
+		method: 'applycurrent',
+		parameters: function( options ) {
+			return [ options.channel, options.bias ]
+		},
+		processing: function( data ) {
+			return parseFloat( data );
 		}
 	},
 
@@ -142,6 +202,7 @@ console.log([ options.channel, options.startV, options.stopV, options.settlingTi
 			w.setXScalingDelta( 0, options.settlingtime );
 			w.setXUnit( 's' );
 			w.setYUnit( 'V' );
+
 
 			var dataFinal = [];
 			data = data.split(/,[\t\r\s\n]*/);
@@ -438,6 +499,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			function end( data ) {
+				data = data.replace("\n", "");
 				if( method.processing ) {
 					data = method.processing( data, options );
 				}

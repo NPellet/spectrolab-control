@@ -16,23 +16,37 @@ var proc = experiment.getDeviceProcedure('eDecayCapacitance');
 
 var Waveform = require('../../server/waveform');
 
+var iv;
+
+proc.on("progress", function( method, args ) {
+
+	if( method == 'iv' ) {
+
+		iv = args[ 0 ];
+		experiment.renderer.getModule("IV").newSerie("iv", iv ).autoscale();
+
+	} else {
+
+		var recordedWaves = args[ 0 ];
+		var pulseNb = args[ 1 ];
+		var lightLevel = args[ 2 ];
+		var lastPulseDelay = args[ 3 ];
+		var allDelays = args[ 4 ];
+		var charges = args[ 5 ];
+		var voc = args[ 6 ];
+		var delays = args[ 7 ];
 
 
-proc.on("progress", function( recordedWaves, pulseNb, lightLevel, lastPulseDelay, allDelays, charges, voc, delays ) {
+		experiment.renderer.getModule("lastJDecay").clear();
 
-experiment.renderer.getModule("lastJDecay").clear();
+		experiment.renderer.getModule("lastJDecay").newSerie("jdecay", recordedWaves[ "2" ].degrade( 1000 ), { lineColor: "#CC0000" } );
+		experiment.renderer.getModule("lastVDecay").newSerie("vdecay", recordedWaves[ "3" ].degrade( 1000 ), { lineColor: "#009933" } );
 
-experiment.renderer.getModule("lastJDecay").newSerie("jdecay", recordedWaves[ "2" ].degrade( 1000 ), { lineColor: "#CC0000" } );
-experiment.renderer.getModule("lastVDecay").newSerie("vdecay", recordedWaves[ "3" ].degrade( 1000 ), { lineColor: "#009933" } );
+		experiment.renderer.getModule("lastJDecay").autoscale();
+		experiment.renderer.getModule("lastVDecay").autoscale();
 
-	//experiment.renderer.getModule("lastJDecay").newSerie("jdecay1", recordedWaves[ 1 ] ? recordedWaves[ 1 ][ "2" ] : recordedWaves[ 0 ][ "2" ] , { } );
-	//experiment.renderer.getModule("lastJDecay2").newSerie("jdecay2", recordedWaves[ 1 ][ "2"], { } );
-
-	experiment.renderer.getModule("lastJDecay").autoscale();
-	experiment.renderer.getModule("lastVDecay").autoscale();
-	//experiment.renderer.getModule("lastJDecay2").autoscale();
-
-	reprocess( charges, voc, delays );
+		reprocess( charges, voc, delays );
+	}
 //	status.update("Measuring pulse n°: " + pulseNb + " with time delay " + lastPulseDelay + "s.", "process");
 });
 
@@ -110,19 +124,25 @@ function reprocess( chargesGlobal, vocsGlobal, delaysGlobal ) {
 
 		}
 
-		chargesvsvoc2 = chargesvsvoc.loess( 0.3 );
-		var CV = chargesvsvoc2.differentiate();
+	//	chargesvsvoc2 = chargesvsvoc.loess( 0.3 );
+	//	var CV = chargesvsvoc2.differentiate();
+
 
 		experiment.renderer.getModule("vocvstime").newScatterSerie("vocvstime_" + l, vocvstime, { }, false, style );
+
 		experiment.renderer.getModule("chargesvstime").newScatterSerie("chargesvstime_" + l, chargesvstime, { }, false, style );
-		experiment.renderer.getModule("chargesvsvoc").newScatterSerie("chargesvsvoc_smth_" + l, chargesvsvoc2, { }, false, style2 );
+//		experiment.renderer.getModule("chargesvsvoc").newScatterSerie("chargesvsvoc_smth_" + l, chargesvsvoc2, { }, false, style2 );
 		experiment.renderer.getModule("chargesvsvoc").newScatterSerie("chargesvsvoc_" + l, chargesvsvoc, { }, false, style );
-		experiment.renderer.getModule("CV").newScatterSerie("CV_" + l, CV, { }, false, style );
+	//	experiment.renderer.getModule("CV").newScatterSerie("CV_" + l, CV, { }, false, style );
 
 		experiment.renderer.getModule("vocvstime").autoscale();
 		experiment.renderer.getModule("chargesvstime").autoscale();
 		experiment.renderer.getModule("chargesvsvoc").autoscale();
 		experiment.renderer.getModule("CV").autoscale();
+
+
+	//	var itxw = itx.newWave( "iv" );
+//		itxw.setWaveform( iv );
 
 
 		var itxw = itx.newWave( "voc_" + l );
@@ -135,8 +155,8 @@ function reprocess( chargesGlobal, vocsGlobal, delaysGlobal ) {
 		var itxw = itx.newWave( "timedelays_" + l );
 		itxw.setWaveform( timeDelays );
 
-		var itxw = itx.newWave( "capacitance_" + l );
-		itxw.setWaveform( CV );
+	//	var itxw = itx.newWave( "capacitance_" + l );
+		//itxw.setWaveform( CV );
 
 	}
 
