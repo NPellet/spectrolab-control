@@ -132,7 +132,9 @@ Arduino.prototype.setWhiteLightLevelVoltage = function( whiteLightLevel ) {
 	return callSerial( this, cmd );
 }
 
-
+Arduino.prototype.getSunFromLevel = function( level ) {
+	return this.params.whiteLioghtLED.sunLevels[ level ];
+}
 
 Arduino.prototype.setColorLightLevelVoltage = function( voltage ) {
 

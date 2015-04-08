@@ -19,7 +19,7 @@ var experiment = {
 		experiment.arduino = parameters.instruments.arduino.instrument;
 		experiment.afg = parameters.instruments["tektronix-functiongenerator"].instrument;
 
-		experiment.parameters.period = 20e-3;
+		experiment.parameters.period = 10e-3;
 		experiment.parameters.pulseTime = 2e-6;
 		experiment.parameters.averaging = 200;
 
@@ -36,7 +36,6 @@ var experiment = {
 
 
 		var lightLevelVoltage = arduino.params.whiteLightLED.lowestSunLevel;
-		experiment.perturbationValue = 0;
 
 		function *perturbation() {
 
@@ -56,6 +55,8 @@ var experiment = {
 				var jsc;
 
 				oscilloscope.disable50Ohms( 3 );
+				oscilloscope.disableChannel( 3 );
+				oscilloscope.disableChannel( 1 );
 
 				experiment.setLight( lightLevelVoltage ).then( function() { experiment.next(); });
 				yield;
@@ -79,10 +80,16 @@ var experiment = {
 				} );
 				yield;
 
+				experiment.progress( "iv", [ iv, voc, jsc, lightLevelVoltage ] );
+
+				oscilloscope.enableChannel( 3 );
+				oscilloscope.enableChannel( 1 );
+
 				oscilloscope.setHorizontalScale( 0.5e-3 );
 				oscilloscope.setVerticalScale( 3, 4e-3 );
 
-				experiment.perturbation( voc, experiment.perturbationValue ).then( function( d ) {
+				experiment.perturbationValue = 0;
+				experiment.perturbation( voc, experiment.perturbationValue, true ).then( function( d ) {
 					vocDecay = d;
 					experiment.next();
 				} );
@@ -93,13 +100,14 @@ var experiment = {
 				oscilloscope.enable50Ohms( 3 );
 				oscilloscope.setPosition( 3, 0 );
 
-				experiment.perturbation( jsc, experiment.perturbationValue, true ).then( function( d ) {
+				experiment.perturbationValue = 0;
+				experiment.perturbation( jsc, experiment.perturbationValue, false ).then( function( d ) {
 					jscDecay = d;
 					experiment.next();
 				} );
 				yield;
 
-				experiment.progress( iv, voc, jsc, vocDecay, jscDecay );
+				experiment.progress( "perturbation", [ vocDecay, jscDecay, lightLevelVoltage ] );
 
 				lightLevelVoltage += 100;
 
@@ -147,7 +155,7 @@ var experiment = {
 		});
 	},
 
-	perturbation: function( DC, arduinoPerturbation, lockPerturbation ) {
+	perturbation: function( DC, arduinoPerturbation, voltage ) {
 
 		var arduino = experiment.arduino;
 		var afg = experiment.afg;
@@ -169,20 +177,18 @@ var experiment = {
 						var perturbation = results[ 0 ];
 						var perturbationPk = results[ 2 ];
 						var mean = results[ 1 ];
-
-						if( perturbation / DC < 0.05 && perturbation < 4e-3 && ! lockPerturbation && experiment.allPerturbations[ arduinoPerturbation + 1 ] ) {
-							experiment.perturbationValue = arduinoPerturbation + 1;
+						if( perturbation / DC < 0.05 && perturbation < 4e-3 && experiment.allPerturbations[ arduinoPerturbation + 1 ] ) {
 							experiment.perturbation( DC, arduinoPerturbation + 1 ).then( function( w ) {
 								resolver( w );
 							} );
 
 						} else {
 
-							if( ! lockPerturbation ) {
-								oscilloscope.setVerticalScale( 3, perturbation / 5 );
+							if( voltage ) {
+								oscilloscope.setVerticalScale( 3, perturbation / 4 );
 								oscilloscope.setPosition( 3, -4 );
 							} else {
-								oscilloscope.setVerticalScale( 3, 1e-3 );
+								oscilloscope.setVerticalScale( 3, 2e-3 );
 								oscilloscope.setOffset( 3, mean );
 								oscilloscope.setPosition( 3, 0 );
 							}
@@ -198,12 +204,11 @@ var experiment = {
 
 							}, 30000 );
 
-
 						}
 
 					} );
 
-				}, lockPerturbation ? 10000 : 3000 );
+				}, ( ! voltage ? 5000 : 2000 ) );
 
 			});
 
@@ -247,6 +252,8 @@ var experiment = {
 			oscilloscope.setCoupling( 2, "GND");
 			oscilloscope.setCoupling( 3, "AC");
 			oscilloscope.setCoupling( 4, "GND");
+
+			oscilloscope.disableChannels( );
 
 			oscilloscope.setRecordLength( 50000 );
 

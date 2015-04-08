@@ -31,6 +31,16 @@ renderer.init = function() {
   } );
 
   renderer.getModule("graph").setHeight( 300 );
+
+  renderer.getModule("graph")
+    .setTitle("Q-Jsc plot")
+    .setHeight( 400 )
+    .setXAxisLabel("Jsc (A)")
+    .setYAxisLabel("Charges (C)")
+    .setYScientificTicks( true )
+    .setXScientificTicks( true );
+
+
 }
 
 module.exports = renderer;

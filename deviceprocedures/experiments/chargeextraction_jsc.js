@@ -18,7 +18,7 @@ var experiment = {
 		experiment.parameters.delay = 2;
 		experiment.focus = false;
 
-		experiment.parameters.pulseTime = 3;
+		experiment.parameters.pulseTime = 1;
 	},
 
 	config: {
@@ -29,9 +29,11 @@ var experiment = {
 
 		var self = experiment;
 		var keithley = experiment.keithley;
+		var oscilloscope = experiment.oscilloscope;
+		var arduino = experiment.arduino;
 
-		var timeBase = 300e-6;
-		var defaultYScale = 200e-3;
+		var timeBase = 10000e-6;
+		var defaultYScale = 2e-3;
 		var preTrigger = 10;
 		var recordLength = 100000;
 
@@ -41,82 +43,90 @@ var experiment = {
 
 			// Oscilloscope functions
 
-			self.oscilloscope.stopAfterSequence( false );
+			oscilloscope.stopAfterSequence( false );
 
-			self.oscilloscope.disable50Ohms( 2 );
-			self.oscilloscope.enable50Ohms( 3 );
-			self.oscilloscope.disable50Ohms( 1 );
-			self.oscilloscope.disable50Ohms( 4 );
-			self.oscilloscope.setRecordLength( recordLength );
+			oscilloscope.disable50Ohms( 2 );
+			oscilloscope.enable50Ohms( 3 );
+			oscilloscope.disable50Ohms( 1 );
+			oscilloscope.disable50Ohms( 4 );
+			oscilloscope.setRecordLength( recordLength );
 
 			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
 			self.keithley.command( "exit()" ); // The off mode of the Keithley should be high impedance
 
-			self.oscilloscope.setVerticalScale( 3, 150e-3 ); // 200mV over channel 3
-			self.oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
+			oscilloscope.setVerticalScale( 3, 150e-3 ); // 200mV over channel 3
+			oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
 
-			self.oscilloscope.setTriggerCoupling( "AC" ); // Trigger coupling should be AC
+			oscilloscope.setTriggerCoupling( "AC" ); // Trigger coupling should be AC
 
-			self.oscilloscope.setCoupling( 1, "DC");
-			self.oscilloscope.setCoupling( 2, "DC");
-			self.oscilloscope.setCoupling( 3, "DC");
-			self.oscilloscope.setCoupling( 4, "DC");
+			oscilloscope.setCoupling( 1, "DC");
+			oscilloscope.setCoupling( 2, "DC");
+			oscilloscope.setCoupling( 3, "DC");
+			oscilloscope.setCoupling( 4, "DC");
 
-			self.oscilloscope.setTriggerToChannel( 4 ); // Set trigger on switch channel
-			self.oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
-			self.oscilloscope.setTriggerSlope( 4, "RISE"); // Trigger on bit going up
-			self.oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
-			self.oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
+			oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel
+			oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
+			oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
+			oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
+			oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
 
-			self.oscilloscope.enableChannels();
+			oscilloscope.enableChannels();
+	//		oscilloscope.disableChannel( 2 );
+	//		oscilloscope.disableChannel( 4 );
 
-			self.oscilloscope.setPosition( 2, -4 );
-			self.oscilloscope.setPosition( 3, -4 );
-			self.oscilloscope.setPosition( 1, 0 );
-			self.oscilloscope.setPosition( 4, 0 );
+			oscilloscope.setPosition( 2, -4 );
+			oscilloscope.setPosition( 3, -4 );
+			oscilloscope.setPosition( 1, 0 );
+			oscilloscope.setPosition( 4, 0 );
 
-			self.oscilloscope.setOffset( 1, 0 );
-			self.oscilloscope.setOffset( 2, 0 );
-			self.oscilloscope.setOffset( 3, 0 );
-			self.oscilloscope.setOffset( 4, 0 );
+			oscilloscope.setOffset( 1, 0 );
+			oscilloscope.setOffset( 2, 0 );
+			oscilloscope.setOffset( 3, 0 );
+			oscilloscope.setOffset( 4, 0 );
 
-			self.oscilloscope.enableAveraging();
+			oscilloscope.enableAveraging();
+
+			oscilloscope.disableCursors( );
 
 			oscilloscope.setMeasurementType( 1, "PK2PK" );
-			oscilloscope.setMeasurementSource( 1, 2 );
+			oscilloscope.setMeasurementSource( 1, 3 );
 			oscilloscope.enableMeasurement( 1 );
+			oscilloscope.setMeasurementGating( "OFF" );
 
-			self.oscilloscope.ready().then( function() {
+			oscilloscope.ready().then( function() {
 
-				self.oscilloscope.setRecordLength( recordLength );
+				oscilloscope.setRecordLength( recordLength );
 
 				function *pulse( totalDelays, totalPulseNb ) {
 
 					var current;
-					var lightLevel = 12;
+					var lightLevel = 8;
 
 					var results = {
 						jscs: [],
 						charges: [],
-						lightLevels: []
+						lightLevels: [],
+						currentWaves: []
 					}
 
 					while( true ) {
 
 						self.arduino.setWhiteLightLevel( lightLevel );
 
-						var yscale = yScales[ lightLevel ] || defaultYScale;
+						yscales[ lightLevel ] = yscales[ lightLevel ] || defaultYScale;//( defaultYScale * arduino.getSunFromLevel( lightLevel ) / arduino.getSunFromLevel( 0 ) );
 						var breakit = false;
 
-						self.pulse( timeBase, yscale, recordLength ).then( function( w ) {
+						self.pulse( timeBase, yscales[ lightLevel ], recordLength ).then( function( w ) {
 
-							self.oscilloscope.getMeasurement( 1 ).then( function( pk2pk ) {
+							oscilloscope.getMeasurementMean( 1 ).then( function( measurements ) {
 
-									if( pk2pk < 2 * yscale ) {
+								if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
 
 										yscales[ lightLevel ] /= 2;
 										breakit = true;
+
+									} else {
 										current = w[ 3 ];
 									}
 
@@ -130,7 +140,7 @@ var experiment = {
 							continue;
 						}
 
-						self.pulseBlank( timeBase, yscale, recordLength ).then( function( w ) {
+						self.pulseBlank( timeBase, yscales[ lightLevel ], recordLength ).then( function( w ) {
 
 							current.subtract( w[ 3 ] );
 							experiment.next();
@@ -145,6 +155,7 @@ var experiment = {
 						results.jscs.push( jsc );
 						results.charges.push( charges );
 						results.lightLevels.push( lightLevel );
+						results.currentWaves.push( current );
 
 						self.progress( "charge", results );
 
@@ -155,10 +166,10 @@ var experiment = {
 						lightLevel--;
 					}
 
-					self.oscilloscope.disableChannels();
+					oscilloscope.disableChannels();
 				}
 
-				var p = pulse( timeDelays.length, 8 );
+				var p = pulse( );
 				p.next( );
 				self.iterator = p;
 
@@ -171,18 +182,15 @@ var experiment = {
 	pulse: function( timeBase, yScale, recordLength ) {
 
 		var self = experiment;
+		nb = 16;
+		var oscilloscope = self.oscilloscope;
 
-		nb = 8;
-		if( delaySwitch > 1 ) {
-			nb = 2;
-		}
-
-		self.oscilloscope.setNbAverage( nb );
-		self.oscilloscope.clear();
-		self.oscilloscope.setHorizontalScale( timeBase );
-		self.oscilloscope.setVerticalScale( 2, yScale ); // 2mV over channel 2
-		self.oscilloscope.startAquisition();
-		self.oscilloscope.setTriggerMode("NORMAL");
+		oscilloscope.setNbAverage( nb );
+		oscilloscope.clear();
+		oscilloscope.setHorizontalScale( timeBase );
+		oscilloscope.setVerticalScale( 3, yScale ); // 2mV over channel 2
+		oscilloscope.startAquisition();
+		oscilloscope.setTriggerMode("NORMAL");
 
 		return self.keithley.longPulse( {
 
@@ -193,9 +201,9 @@ var experiment = {
 
 		} ).then( function( value ) {
 
-			self.oscilloscope.stopAquisition();
+			oscilloscope.stopAquisition();
 
-			return self.oscilloscope.getWaves().then( function( allWaves ) {
+			return oscilloscope.getWaves().then( function( allWaves ) {
 				return allWaves;
 			});
 
@@ -207,23 +215,20 @@ var experiment = {
 	pulseBlank: function( timeBase, yScale, recordLength ) {
 
 		var self = experiment;
+		var oscilloscope = self.oscilloscope;
+		nb = 128;
 
-		nb = 8;
-		if( delaySwitch > 1 ) {
-			nb = 2;
-		}
-
-		self.oscilloscope.setNbAverage( nb );
-		self.oscilloscope.setTriggerMode("AUTO");
-		self.oscilloscope.setHorizontalScale( timeBase );
-		self.oscilloscope.setVerticalScale( 2, yScale ); // 2mV over channel 2
-		self.oscilloscope.startAquisition();
-		self.oscilloscope.clear();
+		oscilloscope.setNbAverage( nb );
+		oscilloscope.setTriggerMode("AUTO");
+		oscilloscope.setHorizontalScale( timeBase );
+		oscilloscope.setVerticalScale( 3, yScale ); // 2mV over channel 2
+		oscilloscope.clear();
+		oscilloscope.startAquisition();
 
 		return new Promise( function( resolver ) {
 
 			setTimeout( function() {
-				self.oscilloscope.getWaves().then( function( allWaves ) {
+				oscilloscope.getWaves().then( function( allWaves ) {
 					resolver( allWaves );
 				});
 			}, 10000 ); // 10 seconds for the blank

@@ -59,7 +59,6 @@ var methods = {
 				var current, voltage;
 				data = data.split(/,[\t\r\s\n]*/);
 
-console.log( data );
 				function getIv( from, to ) {
 					var w = new Waveform();
 					var waveX = new Waveform();
@@ -402,6 +401,7 @@ console.log( data );
 			},
 
 			processing: function( data, options ) {
+
 				return data;
 			}
 		}
@@ -519,7 +519,6 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			listen("");
-console.log("Writing");
 
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});

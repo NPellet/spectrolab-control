@@ -18,14 +18,40 @@ proc.on("progress", function( method, results ) {
 
 	switch( method ) {
 
-		case 'charges':
+		case 'charge':
+
+			var itx = experiment.itx();
+
 
 			var qvoc = new Waveform();
+
+			var itxw = itx.newWave( "lightLevels" );
+			itxw.setWaveform( results.lightLevels );
+
+			var itxw = itx.newWave( "charges" );
+			itxw.setWaveform( results.charges );
+
+			var itxw = itx.newWave( "vocs" );
+			itxw.setWaveform( results.vocs );
+
 			for( var i = 0; i < results.lightLevels.length; i ++ ) {
 				qvoc.push( results.charges[ i ], results.vocs[ i ] );
+
+				var itxw = itx.newWave( "current_" + i );
+				itxw.setWaveform( results.currentWaves[ i ] );
+
+				var itxw = itx.newWave( "voltage_" + i );
+				itxw.setWaveform( results.voltageWaves[ i ] );
 			}
 
 			experiment.renderer.getModule( "graph" ).newScatterSerie( "qvoc", qvoc );
+
+			var fileName = experiment.getFileSaver().save( {
+				contents: itx.getFile(),
+				forceFileName: experiment.getDeviceName() + ".itx",
+				fileExtension: 'itx',
+				dir: './chargeextraction_voc/'
+			} );
 		break;
 	}
 

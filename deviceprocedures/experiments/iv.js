@@ -30,6 +30,7 @@ var experiment = {
     }
   },
 
+
   run: function() {
 
     var self = experiment;
@@ -65,7 +66,7 @@ var experiment = {
         keithley.sweepIV( {
 
           channel: 'smub',
-          scanRate: 0.5,
+          scanRate: 0.1,
           hysteresis: true,
           delay: 1,
           startV: voltage,

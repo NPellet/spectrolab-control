@@ -30,7 +30,15 @@ renderer.init = function() {
     }
   } );
 
-  renderer.getModule("graph").setHeight( 300 );
+  renderer.getModule("graph")
+    .setTitle("Q-Voc plot")
+    .setHeight( 400 )
+    .setXAxisLabel("Voltage (V)")
+    .setYAxisLabel("Charges (C)")
+    .setYScientificTicks( true );
+
+
+
 }
 
 module.exports = renderer;

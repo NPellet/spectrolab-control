@@ -12,7 +12,7 @@ var experiment = {
 		experiment.arduino = parameters.instruments.arduino.instrument;
 
 		experiment.parameters.ledPin = 4;
-		experiment.parameters.pulseTime = 0.1;
+		experiment.parameters.pulseTime = 10;
 		experiment.parameters.delay = 15;
 
 		experiment.lightIntensities = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ];

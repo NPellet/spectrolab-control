@@ -1,4 +1,5 @@
 
+var Waveform = require('../waveform');
 var exports = {};
 
 
@@ -61,6 +62,12 @@ var IgorWave = function( name ) {
 IgorWave.prototype = {
 
 	setWaveform: function( w ) {
+
+		if( ! ( w instanceof Waveform ) ) {
+			var w2 = new Waveform();
+			w2.setData( w );
+			w = w2;
+		}
 		this.waveform = w;
 	},
 

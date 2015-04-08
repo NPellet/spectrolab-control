@@ -102,10 +102,10 @@ TektronixOscilloscope.prototype.connect = function(  ) {
             module.getErrors().then( function() {
 
               resolver( module );
-          //    module.disableMeasurements();
-          //    module.disableChannels();
-        //      module.setTriggerRefPoint( 50 ); // Set pre-trigger, 10%
-        //      module.disableDelayMode();
+              module.disableMeasurements();
+              module.disableChannels();
+              module.setTriggerRefPoint( 50 ); // Set pre-trigger, 10%
+              module.disableDelayMode();
 
               module.emit("connected");
 
@@ -695,15 +695,14 @@ TektronixOscilloscope.prototype.getMeasurementMethod = function( measNum, method
 
 TektronixOscilloscope.prototype.getMeasurementMean = function( ) {
 
-  return this.all( "MEASUrement:%s:MEAN?", Array.prototype.map.call( arguments, getMeasurementNumber ), function( val ) { return parseFloat( val ); } );
+  return this.all( "MEASUrement:%s:MEAN?", Array.prototype.map.call( arguments, getMeasurementNumber ) );
 }
 
-TektronixOscilloscope.prototype.all = function( method, args, processing ) {
+TektronixOscilloscope.prototype.all = function( method, args ) {
   var self = this;
-  processing = processing || function( val ) { return val; };
   return Promise.all( args.map( function( a ) {
     console.log( method.replace( "%s", a ) );
-    return self.command( method.replace( "%s", a ) ).then( processing );
+    return self.command( method.replace( "%s", a ) );
   }));
 }
 
@@ -727,11 +726,6 @@ TektronixOscilloscope.prototype.getMeasurementCount = function( measNum ) {
 TektronixOscilloscope.prototype.getMeasurementStdDev = function( measNum ) {
   measNum = getMeasurementNumber( measNum );
   return this.command("MEASUrement:" + measNum + ":STDdev?").then( function( val ) { return parseFloat( val ); });
-}
-
-TektronixOscilloscope.prototype.setMeasurementGating = function( gating ) {
-  gating = getMnemonic( gating, [ "ON", "OFF", "ZOOM1", "ZOOM2", "ZOOM3", "ZOOM4", "CURSor" ] );
-  return this.command("MEASUrement:GATing " + gating );
 }
 
 TektronixOscilloscope.prototype.getMeasurementUntilStdDev = function( measNum, stdDevLimit, maxTime, minTime, settlingTime ) {
@@ -785,34 +779,12 @@ TektronixOscilloscope.prototype.getMeasurementUntilStdDev = function( measNum, s
 
 /* CURSOR GROUP */
 
-TektronixOscilloscope.prototype.setCursors = function( type ) {
-  type = getMnemonic( type, [ "OFF", "HBArs", "VBArs", "SCREEN", "WAVEform" ] );
-  return this.command("CURSor:FUNCtion " + type );
+TektronixOscilloscope.prototype.setCursor = function( type ) {
+  type = getMnemonic( )
+  return this.command("MEASUrement:" + measNum + ":STATE ON" );
 }
 
-TektronixOscilloscope.prototype.setCursorsMode = function( mode ) {
-  mode = getMnemonic( mode, [ "TRACk", "INDependent" ] );
-  return this.command("CURSor:FUNCtion " + mode );
-}
 
-TektronixOscilloscope.prototype.setCursorsSource = function( channel ) {
-  channel = getChannel( channel );
-  return this.command("CURSor:SOUrce " + channel );
-}
-
-TektronixOscilloscope.prototype.enableCursors = function() {
-  return this.command("CURSor:STATE ON");
-}
-
-TektronixOscilloscope.prototype.disableCursors = function() {
-  return this.command("CURSor:STATE OFF");
-}
-
-TektronixOscilloscope.prototype.setVCursorsPosition = function( cursorNumber, pos ) {
-  cursorNumber = getInt( cursorNumber );
-  pos = getFloat( pos );
-  return this.command("CURSor:VBArs:POSITION" + cursorNumber + " " + pos );
-}
 
 
 

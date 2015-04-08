@@ -58,15 +58,15 @@ var experiment = {
 
 			var recordedWaves = [];
 
-			var timeBase = 300e-6;
+			var timeBase = 40e-6;
 			var yScales = 40e-3;
-			var yScales = 80e-3;
-	//		var timeBase = 200e-6;
+			var yScales = 3e-3;
+			var timeBase = 10000e-6;
 
 			// Calculate delays
-			var nbPoints = 40,
-				b = ( Math.log( 15 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
-				a = 10e-6 / Math.pow( 10, ( b * 0 ) ),
+			var nbPoints = 30,
+				b = ( Math.log( 15 / 10e-5 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
+				a = 10e-5 / Math.pow( 10, ( b * 0 ) ),
 				timeDelays = [];
 
 			for( var i = 0; i < nbPoints; i += 1 ) {
@@ -129,6 +129,8 @@ var experiment = {
 
 
 				self.oscilloscope.setRecordLength( recordLength );
+				self.oscilloscope.setHorizontalScale( timeBase );
+				self.oscilloscope.setVerticalScale( 2, yScales ); // 2mV over channel 2
 
 				function *pulse( totalDelays, totalPulseNb ) {
 
@@ -261,6 +263,8 @@ var experiment = {
 
 							//var voc = recordedWaves[ 0 ][ "3" ].get( level - 2 );
 							var voc = recordedWaves[ "3" ].get( recordLength * 0.09 );
+							var voc = recordedWaves[ "3" ].average( recordLength * 0.09, recordLength * 0.1 );
+
 							var m = 0;
 							var charges = 0;
 							recordedWaves[ 2 ].subtract( recordedWaves[ 2 ].average( recordLength - 100, recordLength - 1 ) );
@@ -314,10 +318,12 @@ var experiment = {
 		if( delaySwitch > 1 ) {
 			nb = 2;
 		}
+		self.oscilloscope.enableAveraging();
+
 		self.oscilloscope.setNbAverage( nb );
 		self.oscilloscope.clear();
-		self.oscilloscope.setHorizontalScale( timeBase );
-		self.oscilloscope.setVerticalScale( 2, yScale ); // 2mV over channel 2
+//		self.oscilloscope.setHorizontalScale( timeBase );
+//		self.oscilloscope.setVerticalScale( 2, yScale ); // 2mV over channel 2
 		self.oscilloscope.startAquisition();
 
 		return self.keithley.pulseAndSwitchDigio( {
@@ -360,8 +366,6 @@ var experiment = {
 	pulseBlank: function( timeBase, yScale, recordLength ) {
 
 			var self = experiment;
-			self.oscilloscope.setHorizontalScale( timeBase );
-			self.oscilloscope.setVerticalScale( 2, yScale ); // 2mV over channel 2
 
 			function nearestPow2(n) {
 				var m = n;
@@ -401,9 +405,8 @@ var experiment = {
 							currentWave.subtract( currentWave.average( 0, recordLength * 0.08 ) );
 
 							return [ currentWave, allWaves["3"] ];
-
-
 						});
+
 					}) );
 
 
