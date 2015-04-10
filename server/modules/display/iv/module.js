@@ -10,6 +10,7 @@ var IV = function( graphOptions ) {
 	this.status = {};
 	this.status.xAxisLabel = "Voltage (V)";
 	this.status.yAxisLabel = "Current (mA)";
+	this.status.height = 300;
 
 	this.series = {};
 	this.ivs = {};

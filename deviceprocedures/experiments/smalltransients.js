@@ -20,10 +20,62 @@ var experiment = {
 		experiment.afg = parameters.instruments["tektronix-functiongenerator"].instrument;
 
 		experiment.parameters.period = 10e-3;
-		experiment.parameters.pulseTime = 2e-6;
+		experiment.parameters.pulseTime = 15e-6;
 		experiment.parameters.averaging = 200;
+	},
 
-		experiment.allPerturbations = [ 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500 ];
+	config: {
+
+		'setConfig': function( cfg ) {
+			experiment.cfg = cfg;
+		},
+
+		'tuneVoltage': function( sunLevel ) {
+
+			var arduino = experiment.arduino;
+			var afg = experiment.afg;
+			var oscilloscope = experiment.oscilloscope;
+			arduino.setWhiteLightLevel( sunLevel );
+			arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].voltage.perturbation );
+
+			oscilloscope.setCoupling( 3, "AC");
+			oscilloscope.setOffset( 3, 0 );
+			oscilloscope.setPosition( 3, -4 );
+			oscilloscope.disable50Ohms( 3 );
+			oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].voltage.xscale );
+			oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].voltage.yscale );
+			oscilloscope.setNbAverage( 16 );
+			oscilloscope.stopAfterSequence( false );
+
+			oscilloscope.clear();
+			oscilloscope.startAquisition();
+
+			afg.enableChannel( 1 );
+		},
+
+		'tuneCurrent': function( sunLevel ) {
+
+				var arduino = experiment.arduino;
+				var afg = experiment.afg;
+				var oscilloscope = experiment.oscilloscope;
+
+				arduino.setWhiteLightLevel( sunLevel );
+				arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
+
+				oscilloscope.setCoupling( 3, "DC");
+				oscilloscope.setOffset( 3, 0 );
+				oscilloscope.setPosition( 3, 0 );
+				oscilloscope.enable50Ohms( 3 );
+				oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
+				oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
+				oscilloscope.setNbAverage( 16 );
+				oscilloscope.stopAfterSequence( false );
+
+				oscilloscope.clear();
+				oscilloscope.startAquisition();
+
+				afg.enableChannel( 1 );
+		}
 	},
 
 	run: function() {
@@ -33,35 +85,26 @@ var experiment = {
 		var oscilloscope = experiment.oscilloscope;
 		var arduino = experiment.arduino;
 
-
-
-		var lightLevelVoltage = arduino.params.whiteLightLED.lowestSunLevel;
+		sunLevel = arduino.lowestSun();
 
 		function *perturbation() {
 
 			while( true ) {
-
 				experiment.setup().then( function() {
-
 					experiment.next();
-
 				} );
 				yield;
-
 				var iv;
 				var vocDecay;
 				var jsDecay;
 				var voc;
 				var jsc;
 
+				sunLevel = arduino.getSunLevel();
 				oscilloscope.disable50Ohms( 3 );
 				oscilloscope.disableChannel( 3 );
 				oscilloscope.disableChannel( 1 );
-
-				experiment.setLight( lightLevelVoltage ).then( function() { experiment.next(); });
-				yield;
-
-
+/*
 				experiment.iv().then( function( ivCurve ) {
 					iv = ivCurve;
 					experiment.next();
@@ -80,40 +123,54 @@ var experiment = {
 				} );
 				yield;
 
-				experiment.progress( "iv", [ iv, voc, jsc, lightLevelVoltage ] );
-
+				experiment.progress( "iv", [ iv, voc, jsc, arduino.getSunLevel() ] );
+*/
 				oscilloscope.enableChannel( 3 );
 				oscilloscope.enableChannel( 1 );
 
-				oscilloscope.setHorizontalScale( 0.5e-3 );
-				oscilloscope.setVerticalScale( 3, 4e-3 );
+				oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].voltage.xscale );
+				oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].voltage.yscale );
+				oscilloscope.setPosition( 3, -4 );
+				oscilloscope.setOffset( 3, 0 );
 
 				experiment.perturbationValue = 0;
-				experiment.perturbation( voc, experiment.perturbationValue, true ).then( function( d ) {
+				experiment.perturbation( voc, sunLevel, true ).then( function( d ) {
 					vocDecay = d;
 					experiment.next();
 				} );
 				yield;
 
-				oscilloscope.setHorizontalScale( 0.01e-3 );
-				oscilloscope.setVerticalScale( 3, 10e-3 );
+				oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
+				oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
 				oscilloscope.enable50Ohms( 3 );
 				oscilloscope.setPosition( 3, 0 );
 
 				experiment.perturbationValue = 0;
-				experiment.perturbation( jsc, experiment.perturbationValue, false ).then( function( d ) {
+				experiment.perturbation( jsc, sunLevel, false ).then( function( d ) {
 					jscDecay = d;
 					experiment.next();
 				} );
 				yield;
 
-				experiment.progress( "perturbation", [ vocDecay, jscDecay, lightLevelVoltage ] );
+				experiment.progress( "perturbation", [ vocDecay, jscDecay, arduino.getSunLevel() ] );
 
-				lightLevelVoltage += 100;
+				var breakExperiment = false;
+				arduino.increaseSun().then( function( sun ) {
+					sunLevel = sun;
+					experiment.next();
+				}, function() {
+					breakExperiment = true;
+					experiment.next();
+				});
 
-				if( lightLevelVoltage > arduino.params.whiteLightLED.highestSunLevel ) {
-					break;
+
+//				experiment.setLight( lightLevelVoltage ).then( function() { experiment.next(); });
+				yield;
+
+				if( breakExperiment ) {
+					return;
 				}
+
 			}
 
 		}
@@ -155,62 +212,64 @@ var experiment = {
 		});
 	},
 
-	perturbation: function( DC, arduinoPerturbation, voltage ) {
+	perturbation: function( DC, whiteLightLevel, voltage ) {
 
 		var arduino = experiment.arduino;
 		var afg = experiment.afg;
 		var oscilloscope = experiment.oscilloscope;
 
-		experiment.perturbationValue = arduinoPerturbation;
-
 		oscilloscope.clear();
 		afg.enableChannel( 1 );
 		return new Promise( function( resolver, rejecter ) {
 
-			arduino.setColorLightLevelVoltage( experiment.allPerturbations[ arduinoPerturbation ] );
-			oscilloscope.setNbAverage( 16 );
+			if( voltage ) {
+				arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].voltage.perturbation );
+			} else {
+				arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
+			}
 
-				setTimeout( function() {
+			experiment.wait( 2 ).then( function() {
 
-					oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
+					oscilloscope.setNbAverage( 16 );
+					oscilloscope.startAquisition();
 
-						var perturbation = results[ 0 ];
-						var perturbationPk = results[ 2 ];
-						var mean = results[ 1 ];
-						if( perturbation / DC < 0.05 && perturbation < 4e-3 && experiment.allPerturbations[ arduinoPerturbation + 1 ] ) {
-							experiment.perturbation( DC, arduinoPerturbation + 1 ).then( function( w ) {
-								resolver( w );
-							} );
+					oscilloscope.ready().then( function() {
+							oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
 
-						} else {
+								var perturbation = results[ 0 ];
+								var perturbationPk = results[ 2 ];
+								var mean = results[ 1 ];
 
-							if( voltage ) {
-								oscilloscope.setVerticalScale( 3, perturbation / 4 );
-								oscilloscope.setPosition( 3, -4 );
-							} else {
-								oscilloscope.setVerticalScale( 3, 2e-3 );
-								oscilloscope.setOffset( 3, mean );
-								oscilloscope.setPosition( 3, 0 );
-							}
+								if( voltage ) {
+									oscilloscope.setPosition( 3, -4 );
+									oscilloscope.setOffset( 3, 0 );
+								} else {
+									oscilloscope.setOffset( 3, mean );
+									oscilloscope.setPosition( 3, 0 );
+								}
 
-							oscilloscope.setNbAverage( 800 );
-							setTimeout( function() {
+								oscilloscope.clear();
+								oscilloscope.setNbAverage( 200 );
+								oscilloscope.startAquisition();
+								console.log("Avg to 800");
 
-								afg.disableChannel( 1 );
+								oscilloscope.ready().then( function() {
+									console.log("Aq 800 ?");
+									afg.disableChannel( 1 );
 
-								oscilloscope.getChannel( 3 ).then( function( wave3 ) {
-									resolver( wave3 );
-								} );
+									oscilloscope.getChannel( 3 ).then( function( wave3 ) {
+										resolver( wave3 );
+									} );
 
-							}, 30000 );
+								});
+							});
+				});
 
-						}
-
-					} );
-
-				}, ( ! voltage ? 5000 : 2000 ) );
 
 			});
+
+
+		});
 
 	},
 
@@ -255,7 +314,7 @@ var experiment = {
 
 			oscilloscope.disableChannels( );
 
-			oscilloscope.setRecordLength( 50000 );
+			oscilloscope.setRecordLength( 100000 );
 
 			oscilloscope.setOffset( 3, 0 );
 			oscilloscope.setPosition( 3, -4 );
@@ -264,6 +323,8 @@ var experiment = {
 			oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
 			oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
 			oscilloscope.setTriggerLevel( 0.7 ); // TTL down
+
+			oscilloscope.setTriggerMode("NORMAL");
 
 			oscilloscope.setMeasurementType( 1, "AMPLITUDE" );
 			oscilloscope.setMeasurementSource( 1, 3 );
@@ -280,6 +341,8 @@ var experiment = {
 			oscilloscope.setMeasurementType( 4, "Pk2Pk" );
 			oscilloscope.setMeasurementSource( 4, 3 );
 			oscilloscope.enableMeasurement( 4 );
+
+			oscilloscope.stopAfterSequence( true );
 
 			return oscilloscope.ready();
 		}

@@ -1,6 +1,8 @@
 
 
 var experiment = require('app/experiment');
+var cfgHtml = require("./cfgform.js");
+var cfgData = require("./cfgdata.js");
 
 experiment.renderer = require('./renderer');
 experiment.config = require('./config');
@@ -14,6 +16,28 @@ var proc = experiment.getDeviceProcedure('smalltransients');
 var Waveform = require('../../server/waveform');
 
 var itx = experiment.itx();
+
+experiment.renderer.getModule("config").setFormHtml( cfgHtml );
+experiment.renderer.getModule("config").setFormData( cfgData );
+
+proc.config( "setConfig", [ cfgData.config ] );
+
+experiment.renderer.getModule("config").on("submitClicked", function( data ) {
+
+	proc.config( "setConfig", [ data.form.config ] );
+
+	switch( data.submit.perturbationtype ) {
+
+		case 'voltage':
+			proc.config( "tuneVoltage", [ data.submit.lightintensity ] );
+		break;
+
+		case 'current':
+			proc.config( "tuneCurrent", [ data.submit.lightintensity ] );
+		break;
+	}
+} );
+
 
 proc.on("progress", function( method, args ) {
 

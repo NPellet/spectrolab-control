@@ -30,6 +30,10 @@ define( [ 'js/io' ], function( io )  {
 		return this._dom;
 	}
 
+	Module.prototype.getInnerDom = function() {
+		return this.getDom().children().eq( 0 );
+	}
+
 
 	Module.prototype.ready = function() {
 		this._isReady();

@@ -24,7 +24,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 		this.locks = {};
 		this.type = type;
 		this.name = name;
-		this.status = {};
+		this.status = this.status || {};
 
 		this.assignId();
 

@@ -4,6 +4,7 @@ var methods = {};
 var currentMethod;
 
 var EventEmitter = require('events').EventEmitter;
+var Promise = require("bluebird");
 
 Device = new EventEmitter();
 
@@ -36,6 +37,20 @@ Device.method = function( methodName, methodOptions ) {
 		} else {
 			experiment.paused();
 		}
+	}
+
+	experiment.waitAndNext = function( time ) {
+
+		experiment.wait( time ).then( function() {
+			experiment.next();
+		} );
+	}
+
+	experiment.wait = function( time ) {
+
+		return new Promise( function( resolver, rejecter ) {
+			setTimeout( resolver, time * 1000 );
+		} );
 	}
 
 	currentMethod = methodName;
@@ -82,7 +97,7 @@ Device.abort = function( ) {
 Device.config = function( cfgName, cfg ) {
 
 	if( methods[ currentMethod ].config && methods[ currentMethod ].config[ cfgName ] ) {
-		methods[ currentMethod ].config[ cfgName ]( cfg );
+		methods[ currentMethod ].config[ cfgName ].apply( methods[ currentMethod ], cfg );
 	}
 
 

@@ -17,6 +17,13 @@ renderer.init = function() {
         left: 3,
         top: 1,
         width: 10 // 500px
+      },
+
+      config: {
+        title: "Config",
+        left: 13,
+        top: 1,
+        width: 10 // 500px
       }
 
   } );
@@ -37,6 +44,11 @@ renderer.init = function() {
       vocDecay: {
         wrapper: 'results',
         path: 'display/graph'
+      },
+
+      config: {
+        wrapper: 'config',
+        path: 'display/form2'
       }
 
   } );

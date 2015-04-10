@@ -37,11 +37,11 @@ var TektronixOscilloscope = function( params ) {
 
             element.promiseResolve( data );
 
-          }/*, function( error ) {
-            console.log('sdf');
-            element.promiseReject();
+          }, function( data ) {
 
-          } */).finally( function() {
+            element.promiseReject( data );
+
+          } ).finally( function() {
 
             running = false;
             self.commandRunner.next();
@@ -106,7 +106,7 @@ TektronixOscilloscope.prototype.connect = function(  ) {
           //    module.disableChannels();
         //      module.setTriggerRefPoint( 50 ); // Set pre-trigger, 10%
         //      module.disableDelayMode();
-
+              module.stopAquisition();
               module.emit("connected");
 
             });
@@ -174,21 +174,13 @@ function query( module, query ) {
         function listen( prevData ) {
 
           module.shellInstance.once( 'message', function( data ) {
-
             data = prevData + data.toString('ascii');
-
-          /*	if( data.indexOf("\n") == -1 ) {
-              console.log('NThr');
-              listen( data );
-            } else {*/
-
-              //if( data.indexOf( query	 ) == 0 ) { // The response is exactly what has been requested
-                resolver( data );
-              //} else {
-              //	console.log( 'Rejection');
-              //	rejecter("The oscilloscope response was unexpected. Message : " + data);
-              //}
-            //}
+            data = data.replace("\n", "");
+            if( data.indexOf( "ERROR" ) > -1 ) {
+              rejecter( data );
+            } else {
+              resolver( data );
+            }
 
           } );
         }
@@ -204,10 +196,6 @@ function query( module, query ) {
       }
 
 
-    } ).then( function( data ) {
-      if( data ) {
-        return data.replace("\n", "");
-      }
     } );
 }
 
@@ -217,9 +205,8 @@ TektronixOscilloscope.prototype.getErrors = function() {
 
   return new Promise( function( resolver ) {
 
-
     var errorQueue;
-  var i = 0;
+    var i = 0;
     function *errors() {
 
       while( true ) {
@@ -387,6 +374,7 @@ TektronixOscilloscope.prototype.isAquiring = function() {
     return true;
   });
 }
+
 
 TektronixOscilloscope.prototype.stopAfterSequence = function( bln ) {
   if( bln === undefined ) {
@@ -817,8 +805,23 @@ TektronixOscilloscope.prototype.setVCursorsPosition = function( cursorNumber, po
 
 
 TektronixOscilloscope.prototype.ready = function() {
-  this.command( "*OPC" );
-  return this.command( "*OPC?" );
+  //this.command( "*OPC" );
+  var self = this;
+
+  return this.command("BUSY?").then( function( data ) {
+
+
+    if( data == 0 ) {
+      return true;
+    }
+    return self.command( "*OPC?" ).then( function( data ) {
+      return 1;
+    }, function( data ) {
+      return self.ready();
+    });
+
+  })
+
 }
 
 TektronixOscilloscope.prototype.clear = function(  ) {

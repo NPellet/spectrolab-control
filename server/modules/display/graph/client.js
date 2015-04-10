@@ -218,7 +218,7 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 		var g = this.checkGraph();
 		var self = this;
-
+console.log( status );
 		if( status.height ) {
 			g.setHeight( status.height );
 		}

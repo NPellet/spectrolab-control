@@ -115,9 +115,33 @@ Arduino.prototype.connect = function( ) {
 };
 
 
+Arduino.prototype.getSunLevel = function() {
+	return this.currentWhiteLightLevel;
+}
+
+Arduino.prototype.lowestSun = function( ) {
+		this.setWhiteLightLevel( this.params.whiteLightLED.arduinoAnalogValue.length - 1 );
+		return this.params.whiteLightLED.arduinoAnalogValue.length - 1;
+}
+
+Arduino.prototype.increaseSun = function( ) {
+	this.currentWhiteLightLevel = this.currentWhiteLightLevel || this.params.whiteLightLED.arduinoAnalogValue.length - 1;
+
+	if( this.currentWhiteLightLevel - 1 >= this.params.whiteLightLED.arduinoAnalogValue.length ) {
+		return new Promise( function( resolver, rejecter ) {
+			rejecter();
+		} );
+	}
+
+	return this.setWhiteLightLevel( this.currentWhiteLightLevel - 1 );
+}
+
 Arduino.prototype.setWhiteLightLevel = function( whiteLightLevel ) {
 	var cmd = "5," + this.params.whiteLightLED.arduinoAnalogPin + "," + this.params.whiteLightLED.arduinoAnalogValue[ whiteLightLevel ] + ";";
-	return callSerial( this, cmd );
+	this.currentWhiteLightLevel = whiteLightLevel;
+	return callSerial( this, cmd ).then( function() {
+		return whiteLightLevel;
+	});
 }
 
 

@@ -1,0 +1,15 @@
+{
+  "name": "jquery.populate",
+  "_cacheHeaders": {
+    "ETag": "\"aa8554d-1864-500984bdd22bc\"",
+    "Last-Modified": "Thu, 14 Aug 2014 15:09:51 GMT",
+    "Content-Length": "6244",
+    "Content-Type": "application/javascript"
+  },
+  "_release": "e-tag:aa8554d-1",
+  "main": "index.js",
+  "_source": "http://davestewart.io/resources/javascript/jQuery/populate/jquery.populate.js",
+  "_target": "*",
+  "_originalSource": "http://davestewart.io/resources/javascript/jQuery/populate/jquery.populate.js",
+  "_direct": true
+}
