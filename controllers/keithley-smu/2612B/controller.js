@@ -4,12 +4,12 @@
 var net = require('net'),
 	extend = require('extend'),
 	fs = require('fs'),
-	events = require("events"),
 	path = require("path"),
 	promise = require("bluebird"),
 	Waveform = require("../../../server/waveform"),
 	IV = require("../../../server/iv");
 
+var InstrumentController = require("controllers/instrumentcontroller");
 
 
 var methods = {
@@ -30,85 +30,85 @@ var methods = {
 	},
 
 
-		'sweepIV': {
-			defaults: {
-				channel: 'smua',
-				startV: 0,
-				stopV: 1,
-				settlingTime: 0.02,
-				timeDelay: 0,
-				complianceI: 1,
-				nbPoints: 100,
-				hysteresis: false
-			},
+	'sweepIV': {
+		defaults: {
+			channel: 'smua',
+			startV: 0,
+			stopV: 1,
+			settlingTime: 0.02,
+			timeDelay: 0,
+			complianceI: 1,
+			nbPoints: 100,
+			hysteresis: false
+		},
 
-			method: 'LinVSweepMeasureI',
-			parameters: function( options ) {
+		method: 'LinVSweepMeasureI',
+		parameters: function( options ) {
 
-				if( options.scanRate ) {
-						options.settlingTime = Math.abs( options.stopV - options.startV ) / options.scanRate / options.nbPoints;
+			if( options.scanRate ) {
+					options.settlingTime = Math.abs( options.stopV - options.startV ) / options.scanRate / options.nbPoints;
+			}
+
+			return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ? 1 : 0 ]
+		},
+
+		processing: function( data, options ) {
+
+			var iv = new IV();
+
+			var current, voltage;
+			data = data.split(/,[\t\r\s\n]*/);
+
+			function getIv( from, to ) {
+				var w = new Waveform();
+				var waveX = new Waveform();
+
+				var dataFinal = [], dataFinalX = [];
+
+				for( var i = from; i < to; i += 2 ) {
+					dataFinal.push( parseFloat( data[ i ] ) );
+					dataFinalX.push( parseFloat( data[ i + 1 ] ) );
 				}
 
-				return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ? 1 : 0 ]
-			},
+				w.setData( dataFinal );
+				waveX.setData( dataFinalX );
+				w.setXWave( waveX );
 
-			processing: function( data, options ) {
+				iv.setBackward( w );
+				return w;
+			}
 
-				var iv = new IV();
+			if( options.hysteresis ) {
 
-				var current, voltage;
-				data = data.split(/,[\t\r\s\n]*/);
+				var iv1 = getIv( 0, data.length / 2 );
+				var iv2 = getIv( data.length / 2, data.length );
 
-				function getIv( from, to ) {
-					var w = new Waveform();
-					var waveX = new Waveform();
+				if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
 
-					var dataFinal = [], dataFinalX = [];
-
-					for( var i = from; i < to; i += 2 ) {
-						dataFinal.push( parseFloat( data[ i ] ) );
-						dataFinalX.push( parseFloat( data[ i + 1 ] ) );
-					}
-
-					w.setData( dataFinal );
-					waveX.setData( dataFinalX );
-					w.setXWave( waveX );
-
-					iv.setBackward( w );
-					return w;
-				}
-
-				if( options.hysteresis ) {
-
-					var iv1 = getIv( 0, data.length / 2 );
-					var iv2 = getIv( data.length / 2, data.length );
-
-					if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
-
-						iv.setBackward( iv1 );
-						iv.setForward( iv2 );
-
-					} else {
-
-						iv.setForward( iv1 );
-						iv.setBackward( iv2 );
-
-					}
+					iv.setBackward( iv1 );
+					iv.setForward( iv2 );
 
 				} else {
 
-					var iv1 = getIv( 0, data.length );
-					if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
-						iv.setBackward( iv1 );
-					} else {
-						iv.setForward( iv1 );
-					}
+					iv.setForward( iv1 );
+					iv.setBackward( iv2 );
+
 				}
 
-				return iv;
+			} else {
 
+				var iv1 = getIv( 0, data.length );
+				if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
+					iv.setBackward( iv1 );
+				} else {
+					iv.setForward( iv1 );
+				}
 			}
-		},
+
+			return iv;
+
+		}
+	},
 
 
 	'measureVoc': {
@@ -385,28 +385,29 @@ var methods = {
 	},
 
 
-		'longPulse': {
+	'longPulse': {
 
-			defaults: {
-				diodePin: 1,
-				pulseWidth: 1,
-				numberOfPulses: 1,
-				delay: 5
-			},
+		defaults: {
+			diodePin: 1,
+			pulseWidth: 1,
+			numberOfPulses: 1,
+			delay: 5
+		},
 
 
-			method: 'longPulse',
-			parameters: function( options ) {
-				return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ];
-			},
+		method: 'longPulse',
+		parameters: function( options ) {
+			return [ options.diodePin, options.pulseWidth, options.numberOfPulses, options.delay ];
+		},
 
-			processing: function( data, options ) {
+		processing: function( data, options ) {
 
-				return data;
-			}
+			return data;
 		}
+	}
 
 }
+
 
 var Keithley = function( params ) {
 	this.params = params;
@@ -414,7 +415,7 @@ var Keithley = function( params ) {
 	this.queue = [];
 };
 
-Keithley.prototype = new events.EventEmitter;
+Keithley.prototype = new InstrumentController();
 
 Keithley.prototype.connect = function( callback ) {
 
@@ -450,15 +451,60 @@ Keithley.prototype.connect = function( callback ) {
 			var self = module,
 
 
-				socket = net.createConnection( {
-					port: module.params.port,
-					host: module.params.host,
-					allowHalfOpen: true
-				});
+			socket = net.createConnection( {
+				port: module.params.port,
+				host: module.params.host,
+				allowHalfOpen: true
+			});
 
 			module.connecting = true;
 			module.socket = socket;
-			module.setEvents( );
+			
+			var timeout = setTimeout( function() {
+				self.emit("connectionerror");
+				rejecter();
+				self.socket.destroy(); // Kills the socket
+
+			}, module.params.timeout || 10000 );
+
+
+			this.socket.on('connect', function() {
+				
+				// It's connected...
+				clearTimeout( timeout );
+
+				self.uploadScripts();
+				self.connected = true;
+				self.connecting = false;
+
+				self.socket.removeAllListeners( 'data' );
+
+				self.command("exit()"); // Reset keithley
+				self.flushErrors();
+				self.command("*RST"); // Reset keithley
+				self.command("*CLS"); // Reset keithley
+				self.command("digio.writeport(0)");
+			//	self.command("format.data=format.REAL32");
+				self.command("format.byteorder=format.LITTLEENDIAN");
+
+				self.socket.write("SpetroscopyScripts();\r\n");
+
+				self.emit("connected");
+
+				self.queue.map( function( resolver ) {
+					resolver();
+				});
+
+				self.queue = [];
+			});
+
+			this.socket.on('end', function() {
+				console.log('Keithley is being disconnected');
+				module.socket.removeAllListeners( 'data' );
+				self.emit("disconnected");
+			});
+
+
 			module.queue.push( resolver );
 
 		} catch( error ) {
@@ -556,56 +602,20 @@ Keithley.prototype.flushErrors = function() {
 Keithley.prototype.checkConnection = function() {
 
 	if( ! this.socket && this.connected ) {
-
 		throw "Socket is not alive";
 	}
 }
 
 
-Keithley.prototype.setEvents = function() {
-
-	this.checkConnection();
-
-	var self = this;
-
-	this.socket.on('connect', function() {
-		self.uploadScripts();
-		self.connected = true;
-		self.connecting = false;
-
-		self.socket.removeAllListeners( 'data' );
-
-		self.command("exit()"); // Reset keithley
-		self.flushErrors();
-		self.command("*RST"); // Reset keithley
-		self.command("*CLS"); // Reset keithley
-		self.command("digio.writeport(0)");
-	//	self.command("format.data=format.REAL32");
-		self.command("format.byteorder=format.LITTLEENDIAN");
-
-		self.socket.write("SpetroscopyScripts();\r\n");
-		self.emit("connected");
-
-		self.socket.on("data", function(d) {
-			console.log("Constant Keithley SMU Listener: " + d );
-		})
-		self.queue.map( function( resolver ) {
-			resolver();
-		});
-
-		self.queue = [];
-	});
-
-	this.socket.on('end', function() {
-		console.log('Keithley is being disconnected');
-		module.socket.removeAllListeners( 'data' );
-		self.emit("disconnected");
-	});
-}
-
 Keithley.prototype.uploadScripts = function() {
 
-	this.checkConnection();
+	try {
+		this.checkConnection();	
+	} catch( e ) {
+
+		return false;
+	}
+	
 
 	this.socket.write("loadscript SpetroscopyScripts\r\n");
 
