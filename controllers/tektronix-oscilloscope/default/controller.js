@@ -80,6 +80,16 @@ TektronixOscilloscope.prototype.connect = function(  ) {
 
       console.log( "Trying to connect to host " + module.params.host + " via VXI11" );
 
+
+      var timeout = setTimeout( function() {
+        module.shellInstance.end( function() {
+          module.emit("connectionerror");  
+        });
+
+        
+      }, module.params.timeout || 10000 );
+
+
       // Launches a python instance which will communicate in VXI11 with the scope
       module.shellInstance = new pythonShell( 'io.py', {
         scriptPath: path.resolve( 'server/util/vxi11/' ),
@@ -92,20 +102,19 @@ TektronixOscilloscope.prototype.connect = function(  ) {
       })
 */
 
-      // At this point we are already connected. No asynchronous behaviour with python
       module.connected = true;
 
       module.shellInstance.once( 'message', function( data ) {
 
           if( data == "IO:connected" ) {
 
+            // Timeout is fine
+            clearTimeout( timeout );
+            timeout = null;
+
             module.getErrors().then( function() {
 
               resolver( module );
-          //    module.disableMeasurements();
-          //    module.disableChannels();
-        //      module.setTriggerRefPoint( 50 ); // Set pre-trigger, 10%
-        //      module.disableDelayMode();
               module.stopAquisition();
               module.emit("connected");
 
@@ -115,19 +124,7 @@ TektronixOscilloscope.prototype.connect = function(  ) {
             rejecter( module );
             module.emit("connectionerror");
           }
-
-
       });
-
-
-
-      module.shellInstance.on( 'message', function( data ) {
-        //console.log("Receiving from AFG: " + data );
-
-      });
-
-
-
     } );
 
   }
