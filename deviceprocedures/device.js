@@ -97,10 +97,8 @@ Device.abort = function( ) {
 Device.config = function( cfgName, cfg ) {
 
 	if( methods[ currentMethod ].config && methods[ currentMethod ].config[ cfgName ] ) {
-		methods[ currentMethod ].config[ cfgName ].apply( methods[ currentMethod ], cfg );
+		return methods[ currentMethod ].config[ cfgName ].apply( methods[ currentMethod ], cfg );
 	}
-
-
 }
 
 

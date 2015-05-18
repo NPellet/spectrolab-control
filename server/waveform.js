@@ -281,7 +281,7 @@ Waveform.prototype = {
 	},
 
 	getValueAt: function( p ) {
-
+console.trace();
 		if( this.data.length - 1 < p ) {
 			throw "Cannot access index " + p + ". Index is out of range";
 		}
@@ -1096,7 +1096,7 @@ Waveform.prototype = {
 	},
 
 	math: function( fct ) {
-		
+
 		var i = 0;
 
 		this.data = this.data.map( function() {

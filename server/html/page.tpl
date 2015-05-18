@@ -6,6 +6,7 @@
 <script data-main="client/js/main" src="client/js/lib/requirejs/require.js" type="text/javascript"></script>
 <!-- Outputs all the modules saved in nodejs memory -->
 <link rel="stylesheet" href="_modules.css" />
+<link rel="stylesheet" href="client/lib/bootstrap/dist/css/bootstrap.min.css" />
 
 <meta name="application-meta" data-serverip="{{ ip }}" />
 

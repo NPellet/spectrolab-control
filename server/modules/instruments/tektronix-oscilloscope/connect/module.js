@@ -3,7 +3,7 @@ var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var oscilloscopeConnect = function() {
-	this.title = "Tektronix Connection";
+	this.title = "Oscilloscope";
 	this.status = {};
 };
 
@@ -21,7 +21,7 @@ oscilloscopeConnect.prototype = extend( oscilloscopeConnect.prototype, {
 		this.oscilloscope.on("connected", function() {
 
 			module.streamOut( "connected" );
-			module.status.connected = true;
+			module.status = "connected";
 			module.emit("connected");
 
 			module.unlock();
@@ -31,14 +31,15 @@ oscilloscopeConnect.prototype = extend( oscilloscopeConnect.prototype, {
 
 			module.unlock();
 			module.streamOut( "disconnected", true );
-			module.status.connected = false;
+			module.status = "disconnected";
 			module.emit("disconnected");
 		});
 
 		this.oscilloscope.on( "connectionerror", function() {
 
 			module.unlock();
-			module.emit("connectionerror");
+			module.status = "error";
+			module.emit("error");
 		})
 
 

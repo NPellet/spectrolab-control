@@ -28,6 +28,11 @@ FormDisplay.prototype = extend( FormDisplay.prototype, {
 
 			this.emit( "submitClicked", data );
 
+		},
+
+		'formChanged': function( data ) {
+			
+			this.emit( "formChanged", data );
 		}
 	}
 

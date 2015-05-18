@@ -18,14 +18,12 @@ var methods = {
 		defaults: {
 			bias: 0,
 			channel: 'smua',
-			complianceV: 1,
-			complianceI: 1,
-			settlingTime: 1
+			complianceV: 1
 		},
 
 		method: 'sourcev',
 		parameters: function( options ) {
-			return [ options.channel, options.bias, options.settlingTime, options.complianceV, options.complianceI ]
+			return [ options.channel, options.bias, options.complianceV ]
 		}
 	},
 
@@ -115,12 +113,13 @@ var methods = {
 		defaults: {
 			channel: 'smua',
 			settlingTime: 0.02,
-			current: 0
+			current: 0,
+			complianceV: 5
 		},
 
 		method: 'measurevoc',
 		parameters: function( options ) {
-			return [ options.channel, options.settlingTime, options.current ]
+			return [ options.channel, options.settlingTime, options.current, options.complianceV ]
 		},
 
 		processing: function( data ) {

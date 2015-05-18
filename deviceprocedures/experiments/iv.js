@@ -62,11 +62,14 @@ var experiment = {
           experiment.next();
         });
         yield;
+      console.log( voltage );
+
+        voltage = Math.max( voltage, 2 );
 
         keithley.sweepIV( {
 
           channel: 'smub',
-          scanRate: 0.1,
+          scanRate: 1,
           hysteresis: true,
           delay: 1,
           startV: voltage,

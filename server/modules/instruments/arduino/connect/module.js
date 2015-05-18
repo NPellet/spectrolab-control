@@ -3,7 +3,7 @@ var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var ArduinoConnect = function() {
-	this.title = "Arduino Connection";
+	this.title = "Arduino";
 	this.status = {};
 };
 
@@ -20,20 +20,14 @@ ArduinoConnect.prototype = extend( ArduinoConnect.prototype, {
 
 			module.streamOut("connecting");
 			module.emit("connecting");
-
-			module.status.connected = false;
-			module.status.connecting = true;
-			module.status.error = false;
+			module.status = "connecting";
 		} );
 
 		this.arduino.on("connected", function() {
 
 			module.streamOut( "connected" );
 			module.emit("connected");
-
-			module.status.connected = true;
-			module.status.connecting = false;
-			module.status.error = false;
+			module.status = "connected";
 
 			module.unlock();
 		} );
@@ -43,21 +37,14 @@ ArduinoConnect.prototype = extend( ArduinoConnect.prototype, {
 			module.unlock();
 			module.streamOut( "disconnected", true );
 			module.emit("disconnected");
-
-			module.status.connected = false;
-			module.status.error = false;
-			module.status.connecting = false;
+			module.status = "disconnected";
 		});
 
 		this.arduino.on( "connectionerror", function() {
 
 			module.unlock();
-			module.emit("connectionerror");
-
-			module.status.connected = false;
-			module.status.error = true;
-			module.status.connecting = false;
-
+			module.emit("error");
+			module.status = "error";
 			module.streamOut("error");
 		});
 

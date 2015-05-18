@@ -3,7 +3,7 @@ var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var AFGConnect = function() {
-	this.title = "AFG Connection";
+	this.title = "AFG";
 	this.status = {};
 };
 
@@ -21,7 +21,7 @@ AFGConnect.prototype = extend( AFGConnect.prototype, {
 		this.afg.on("connected", function() {
 
 			module.streamOut( "connected" );
-			module.status.connected = true;
+			module.status = "connected";
 			module.emit("connected");
 
 			module.unlock();
@@ -31,15 +31,16 @@ AFGConnect.prototype = extend( AFGConnect.prototype, {
 
 			module.unlock();
 			module.streamOut( "disconnected", true );
-			module.status.connected = false;
+			module.status = "disconnected";
 			module.emit("disconnected");
 		});
 
 		this.afg.on( "connectionerror", function() {
 
 			module.unlock();
-			module.emit("connectionerror");
-		})
+			module.emit("error");
+			module.status = "error";
+		});
 
 
 		return this;

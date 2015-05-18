@@ -809,14 +809,17 @@ TektronixOscilloscope.prototype.ready = function() {
   var self = this;
 
   return this.command("BUSY?").then( function( data ) {
-
+    console.log( "Busy: " + data );
 
     if( data == 0 ) {
       return true;
     }
     return self.command( "*OPC?" ).then( function( data ) {
+
+      console.log( "OPC: " + data );
       return 1;
     }, function( data ) {
+      console.log( "Non-ready" );
       return self.ready();
     });
 

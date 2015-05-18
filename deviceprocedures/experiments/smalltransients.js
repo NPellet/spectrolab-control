@@ -19,8 +19,8 @@ var experiment = {
 		experiment.arduino = parameters.instruments.arduino.instrument;
 		experiment.afg = parameters.instruments["tektronix-functiongenerator"].instrument;
 
-		experiment.parameters.period = 10e-3;
-		experiment.parameters.pulseTime = 15e-6;
+		experiment.parameters.period = 18e-3;
+		experiment.parameters.pulseTime = 500e-6;
 		experiment.parameters.averaging = 200;
 	},
 
@@ -31,6 +31,8 @@ var experiment = {
 		},
 
 		'tuneVoltage': function( sunLevel ) {
+
+			experiment.setup();
 
 			var arduino = experiment.arduino;
 			var afg = experiment.afg;
@@ -44,8 +46,11 @@ var experiment = {
 			oscilloscope.disable50Ohms( 3 );
 			oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].voltage.xscale );
 			oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].voltage.yscale );
-			oscilloscope.setNbAverage( 16 );
+			oscilloscope.setNbAverage( 128 );
 			oscilloscope.stopAfterSequence( false );
+
+			oscilloscope.enableChannel( 1 );
+			oscilloscope.enableChannel( 3 );
 
 			oscilloscope.clear();
 			oscilloscope.startAquisition();
@@ -55,26 +60,57 @@ var experiment = {
 
 		'tuneCurrent': function( sunLevel ) {
 
-				var arduino = experiment.arduino;
-				var afg = experiment.afg;
-				var oscilloscope = experiment.oscilloscope;
+			experiment.setup();
 
-				arduino.setWhiteLightLevel( sunLevel );
-				arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
+			var arduino = experiment.arduino;
+			var afg = experiment.afg;
+			var oscilloscope = experiment.oscilloscope;
 
-				oscilloscope.setCoupling( 3, "DC");
-				oscilloscope.setOffset( 3, 0 );
-				oscilloscope.setPosition( 3, 0 );
-				oscilloscope.enable50Ohms( 3 );
-				oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
-				oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
-				oscilloscope.setNbAverage( 16 );
-				oscilloscope.stopAfterSequence( false );
+			arduino.setWhiteLightLevel( sunLevel );
+			arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
 
-				oscilloscope.clear();
-				oscilloscope.startAquisition();
+			oscilloscope.setCoupling( 3, "DC");
+			oscilloscope.setOffset( 3, 0 );
+			oscilloscope.setPosition( 3, 0 );
+			oscilloscope.enable50Ohms( 3 );
+			oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
+			oscilloscope.setVerticalScale( 3, 40e-3 );
+			oscilloscope.setNbAverage( 128 );
+			oscilloscope.stopAfterSequence( false );
 
-				afg.enableChannel( 1 );
+			oscilloscope.enableChannel( 1 );
+			oscilloscope.enableChannel( 3 );
+
+			oscilloscope.clear();
+			oscilloscope.startAquisition();
+			oscilloscope.setNbAverage( 16 );
+
+			afg.enableChannel( 1 );
+
+			experiment.wait( 2 ).then( function() {
+				oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
+
+					var mean = results[ 1 ];
+					oscilloscope.setNbAverage( 128 );
+
+					oscilloscope.setOffset( 3, mean );
+					oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
+				});
+			});
+
+		},
+
+		captureFromScope: function( sunLevel, perturbationType ) {
+
+			return Promise.all( [
+				experiment.oscilloscope.getHorizontalScale().then( function( v ) {
+					experiment.cfg[ sunLevel ][ perturbationType ].xscale = v;
+				})
+				,
+				experiment.oscilloscope.getVerticalScale( 3 ).then( function( v ) {
+					experiment.cfg[ sunLevel ][ perturbationType ].yscale = v;
+				})
+			] );
 		}
 	},
 
@@ -104,7 +140,7 @@ var experiment = {
 				oscilloscope.disable50Ohms( 3 );
 				oscilloscope.disableChannel( 3 );
 				oscilloscope.disableChannel( 1 );
-/*
+
 				experiment.iv().then( function( ivCurve ) {
 					iv = ivCurve;
 					experiment.next();
@@ -124,7 +160,7 @@ var experiment = {
 				yield;
 
 				experiment.progress( "iv", [ iv, voc, jsc, arduino.getSunLevel() ] );
-*/
+
 				oscilloscope.enableChannel( 3 );
 				oscilloscope.enableChannel( 1 );
 
@@ -141,7 +177,8 @@ var experiment = {
 				yield;
 
 				oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
-				oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
+				oscilloscope.setVerticalScale( 3, 40e-3 ); // experiment.cfg[ sunLevel ].current.yscale
+
 				oscilloscope.enable50Ohms( 3 );
 				oscilloscope.setPosition( 3, 0 );
 
@@ -185,7 +222,10 @@ var experiment = {
 		var keithley = experiment.keithley;
 		return keithley.sweepIV( {
 			channel: 'smub',
-			hysteresis: true
+			hysteresis: true,
+			startV: 1,
+			stopV: -0.2,
+			scanRate: 0.2
 		})
 	},
 
@@ -244,17 +284,16 @@ var experiment = {
 									oscilloscope.setPosition( 3, -4 );
 									oscilloscope.setOffset( 3, 0 );
 								} else {
+									oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale ); //
 									oscilloscope.setOffset( 3, mean );
 									oscilloscope.setPosition( 3, 0 );
 								}
 
 								oscilloscope.clear();
-								oscilloscope.setNbAverage( 200 );
+								oscilloscope.setNbAverage( voltage ? 2000 : 300 );
 								oscilloscope.startAquisition();
-								console.log("Avg to 800");
 
 								oscilloscope.ready().then( function() {
-									console.log("Aq 800 ?");
 									afg.disableChannel( 1 );
 
 									oscilloscope.getChannel( 3 ).then( function( wave3 ) {
@@ -273,79 +312,85 @@ var experiment = {
 
 	},
 
-		setup: function() {
+	setup: function() {
 
-			var afg = experiment.afg;
-			var keithley = experiment.keithley;
-			var oscilloscope = experiment.oscilloscope;
-			var arduino = experiment.arduino;
-
-			/* AFG SETUP */
-			afg.enableBurst( 1 );
-			afg.setShape( 1, "PULSE" );
-			afg.setPulseHold( 1 , "WIDTH" );
-			afg.setBurstTriggerDelay(  1, 0 );
-			afg.setBurstMode( 1, "TRIGGERED");
-			afg.setBurstNCycles( 1, 1 );
-			afg.setVoltageLow( 1, 0 );
-			afg.setVoltageHigh( 1, 1.5 );
-			afg.setPulseLeadingTime( 1, 9e-9 );
-			afg.setPulseTrailingTime( 1, 9e-9 );
-			afg.setPulseDelay( 1, 0 );
-			afg.setPulsePeriod( 1, experiment.parameters.period );
-			afg.setPulseWidth( 1, experiment.parameters.pulseTime );
-			afg.disableChannels( ); // Set the pin LOW
-			afg.getErrors();
-
-			/* KEITHLEY SETUP */
-			keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-			keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
-			keithley.command( "smub.source.highc = smub.ENABLE;" ); // Turn the output off
-			keithley.setDigioPin( 4, 1 ); // Turn white light on
-
-			/* OSCILLOSCOPE SETUP */
-			oscilloscope.enableAveraging();
-			oscilloscope.setNbAverage( experiment.parameters.averaging );
-
-			oscilloscope.setCoupling( 1, "DC");
-			oscilloscope.setCoupling( 2, "GND");
-			oscilloscope.setCoupling( 3, "AC");
-			oscilloscope.setCoupling( 4, "GND");
-
-			oscilloscope.disableChannels( );
-
-			oscilloscope.setRecordLength( 100000 );
-
-			oscilloscope.setOffset( 3, 0 );
-			oscilloscope.setPosition( 3, -4 );
-
-			oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel. Can also use down trigger from Channel 1
-			oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
-			oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
-			oscilloscope.setTriggerLevel( 0.7 ); // TTL down
-
-			oscilloscope.setTriggerMode("NORMAL");
-
-			oscilloscope.setMeasurementType( 1, "AMPLITUDE" );
-			oscilloscope.setMeasurementSource( 1, 3 );
-			oscilloscope.enableMeasurement( 1 );
-
-			oscilloscope.setMeasurementType( 2, "MEAN" );
-			oscilloscope.setMeasurementSource( 2, 3 );
-			oscilloscope.enableMeasurement( 2 );
-
-			oscilloscope.setMeasurementType( 3, "MINImum" );
-			oscilloscope.setMeasurementSource( 3, 3 );
-			oscilloscope.enableMeasurement( 3 );
-
-			oscilloscope.setMeasurementType( 4, "Pk2Pk" );
-			oscilloscope.setMeasurementSource( 4, 3 );
-			oscilloscope.enableMeasurement( 4 );
-
-			oscilloscope.stopAfterSequence( true );
-
-			return oscilloscope.ready();
+		if( experiment.isSetup ) {
+			return new Promise( function( resolver ) { resolver(); });
 		}
+
+		var afg = experiment.afg;
+		var keithley = experiment.keithley;
+		var oscilloscope = experiment.oscilloscope;
+		var arduino = experiment.arduino;
+
+		/* AFG SETUP */
+		afg.enableBurst( 1 );
+		afg.setShape( 1, "PULSE" );
+		afg.setPulseHold( 1 , "WIDTH" );
+		afg.setBurstTriggerDelay(  1, 0 );
+		afg.setBurstMode( 1, "TRIGGERED");
+		afg.setBurstNCycles( 1, 1 );
+		afg.setVoltageLow( 1, 0 );
+		afg.setVoltageHigh( 1, 1.5 );
+		afg.setPulseLeadingTime( 1, 9e-9 );
+		afg.setPulseTrailingTime( 1, 9e-9 );
+		afg.setPulseDelay( 1, 0 );
+		afg.setPulsePeriod( 1, experiment.parameters.period );
+		afg.setPulseWidth( 1, experiment.parameters.pulseTime );
+		afg.disableChannels( ); // Set the pin LOW
+		afg.getErrors();
+
+		/* KEITHLEY SETUP */
+		keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+		keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+		keithley.command( "smub.source.highc = smub.ENABLE;" ); // Turn the output off
+		keithley.setDigioPin( 4, 1 ); // Turn white light on
+
+		/* OSCILLOSCOPE SETUP */
+		oscilloscope.enableAveraging();
+		oscilloscope.setNbAverage( experiment.parameters.averaging );
+
+		oscilloscope.setCoupling( 1, "DC");
+		oscilloscope.setCoupling( 2, "GND");
+		oscilloscope.setCoupling( 3, "AC");
+		oscilloscope.setCoupling( 4, "GND");
+
+		oscilloscope.disableChannels( );
+
+		oscilloscope.setRecordLength( 100000 );
+
+		oscilloscope.setOffset( 3, 0 );
+		oscilloscope.setPosition( 3, -4 );
+
+		oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel. Can also use down trigger from Channel 1
+		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
+		oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
+		oscilloscope.setTriggerLevel( 0.7 ); // TTL down
+
+		oscilloscope.setTriggerMode("NORMAL");
+
+		oscilloscope.setMeasurementType( 1, "AMPLITUDE" );
+		oscilloscope.setMeasurementSource( 1, 3 );
+		oscilloscope.enableMeasurement( 1 );
+
+		oscilloscope.setMeasurementType( 2, "MEAN" );
+		oscilloscope.setMeasurementSource( 2, 3 );
+		oscilloscope.enableMeasurement( 2 );
+
+		oscilloscope.setMeasurementType( 3, "MINImum" );
+		oscilloscope.setMeasurementSource( 3, 3 );
+		oscilloscope.enableMeasurement( 3 );
+
+		oscilloscope.setMeasurementType( 4, "Pk2Pk" );
+		oscilloscope.setMeasurementSource( 4, 3 );
+		oscilloscope.enableMeasurement( 4 );
+
+		oscilloscope.stopAfterSequence( true );
+
+		return oscilloscope.ready().then( function( ) {
+			experiment.isSetup = true;
+		});
+	}
 }
 
 module.exports = experiment;

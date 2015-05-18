@@ -1,8 +1,13 @@
-<div class="module {{ class }}" data-path="{{ path }}" data-moduleid="{{ id }}">
 
-{% if title %}
-	<div class="title">{{ title }}</div>
-{% endif %}
+<div data-path="{{ path }}" data-moduleid="{{ id }}" class="panel panel-primary {{ class }} module">
 
-{{ content }}
+	{% if title %}
+	<div class="panel-heading">
+			<h3 class="panel-title">{{ title }}</h3>
+	</div>
+	{% endif %}
+
+	<div class="panel-body">
+		{{ content }}
+	</div>
 </div>

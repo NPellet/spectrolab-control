@@ -3,7 +3,7 @@ var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var KeithleyConnect = function() {
-	this.title = "Keithley Connection";
+	this.title = "Keithley SMU";
 	this.status = {};
 };
 
@@ -21,7 +21,7 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 		this.keithley.on("connected", function() {
 
 			module.streamOut( "connected" );
-			module.status.connected = true;
+			module.status = "connected";
 			module.emit("connected");
 
 			module.unlock();
@@ -31,14 +31,15 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 
 			module.unlock();
 			module.streamOut( "disconnected", true );
-			module.status.connected = false;
+			module.status = "disconnected";
 			module.emit("disconnected");
 		});
 
 		this.keithley.on( "connectionerror", function() {
 
 			module.unlock();
-			module.emit("connectionerror");
+			module.status = "error";
+			module.emit("error");
 		})
 
 

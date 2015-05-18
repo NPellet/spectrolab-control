@@ -1,2 +1,1 @@
-
-	<input type="button" value="Connect to AFG" id="connect-{{ module.id }}" />
+{% include instruments/connect.tpl %}

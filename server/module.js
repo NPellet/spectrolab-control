@@ -9,8 +9,17 @@ var stream = require("./stream"),
 	Promise = require('bluebird');
 
 var liquid = require("liquid-node"),
-	lengine = new liquid.Engine
+	lengine = new liquid.Engine;
 
+	//console.log( liquid );
+
+	lengine.fileSystem = new liquid.LocalFileSystem
+	lengine.fileSystem.readTemplateFile = function( v ) {
+		
+		var readFile = Promise.promisify( fs.readFile );
+		return readFile( "server/modules/" + v + ".tpl");
+
+	}
 
 var modulePrototype = function() {};
 

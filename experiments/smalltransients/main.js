@@ -1,5 +1,6 @@
 
 
+var fs = require('fs');
 var experiment = require('app/experiment');
 var cfgHtml = require("./cfgform.js");
 var cfgData = require("./cfgdata.js");
@@ -26,16 +27,57 @@ experiment.renderer.getModule("config").on("submitClicked", function( data ) {
 
 	proc.config( "setConfig", [ data.form.config ] );
 
-	switch( data.submit.perturbationtype ) {
+	var cfg = data.form.config;
+	data.form.config = {};
+	for( var i = 0; i < cfg.length; i ++ ) {
+		data.form.config[ i ] = cfg[ i ];
+	}
 
-		case 'voltage':
-			proc.config( "tuneVoltage", [ data.submit.lightintensity ] );
+	switch( data.submit.action ) {
+
+		case 'testIt':
+
+			switch( data.submit.perturbationtype ) {
+
+				case 'voltage':
+					proc.config( "tuneVoltage", [ data.submit.lightintensity ] );
+				break;
+
+				case 'current':
+					proc.config( "tuneCurrent", [ data.submit.lightintensity ] );
+				break;
+			}
+
 		break;
 
-		case 'current':
-			proc.config( "tuneCurrent", [ data.submit.lightintensity ] );
+		case 'captureFromScope':
+
+			proc.config( "captureFromScope", [ data.submit.lightintensity, data.submit.perturbationtype ] ).then( function() {
+
+				experiment.renderer.getModule("config").setFormData( data.form );
+
+			});
+
+		break;
+
+		case 'save':
+			fs.writeFile( __dirname + '/pulsecfg/' + data.form.cfgname + ".json", JSON.stringify( data.form ), function (err) {
+			  if (err) throw err;
+			  console.log('It\'s saved!');
+			});
+
+		break;
+
+		case 'load':
+
+			var val = JSON.parse( fs.readFileSync( __dirname + '/pulsecfg/' + data.form.cfgname + ".json" ) );
+			experiment.renderer.getModule("config").setFormData( val );
+
+
+			proc.config( "setConfig", [ val.config  ] );
 		break;
 	}
+
 } );
 
 

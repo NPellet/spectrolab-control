@@ -60,13 +60,13 @@ var experiment = {
 
 			var timeBase = 40e-6;
 			var yScales = 40e-3;
-			var yScales = 3e-3;
-			var timeBase = 10000e-6;
+			var yScales = 40e-3;
+			var timeBase = 1000e-6;
 
 			// Calculate delays
 			var nbPoints = 30,
-				b = ( Math.log( 15 / 10e-5 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
-				a = 10e-5 / Math.pow( 10, ( b * 0 ) ),
+				b = ( Math.log( 15 / 10e-6 ) / Math.log( 10 ) ) / ( nbPoints - 1 ),
+				a = 10e-6 / Math.pow( 10, ( b * 0 ) ),
 				timeDelays = [];
 
 			for( var i = 0; i < nbPoints; i += 1 ) {
@@ -89,6 +89,9 @@ var experiment = {
 			self.oscilloscope.setRecordLength( recordLength );
 			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
+
+			self.keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+			self.keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
 
 			self.keithley.command( "exit()" ); // The off mode of the Keithley should be high impedance
 
@@ -126,7 +129,7 @@ var experiment = {
 
 
 			self.oscilloscope.ready().then( function() {
-
+console.log("DONE");
 
 				self.oscilloscope.setRecordLength( recordLength );
 				self.oscilloscope.setHorizontalScale( timeBase );
@@ -314,7 +317,7 @@ var experiment = {
 
 		var self = experiment;
 
-		nb = 8;
+		nb = 2;
 		if( delaySwitch > 1 ) {
 			nb = 2;
 		}
@@ -396,14 +399,14 @@ var experiment = {
 						delay: timeBase2 * 15
 
 					} ).then( function( value ) {
-
+console.log("LONG PULSE DONE");
 						return self.oscilloscope.getWaves().then( function( allWaves ) {
 							// Zeroing current wave
 							var currentWave = allWaves[ "2" ];
 							currentWave.multiply( 1 );
 							currentWave.divide( 50 );
 							currentWave.subtract( currentWave.average( 0, recordLength * 0.08 ) );
-
+console.log("GOTTEN WAVES");
 							return [ currentWave, allWaves["3"] ];
 						});
 

@@ -30,8 +30,8 @@ var experiment = {
 		var keithley = experiment.keithley;
 		var oscilloscope = experiment.oscilloscope;
 
-		var timeBase = 10000e-6;
-		var defaultYScale = 10e-3;
+		var timeBase = 5000e-6;
+		var defaultYScale = 80e-3;
 		var preTrigger = 10;
 		var recordLength = 100000;
 
@@ -52,6 +52,11 @@ var experiment = {
 
 			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
+
+			self.keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+			self.keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+
+
 			self.keithley.command( "exit()" ); // The off mode of the Keithley should be high impedance
 
 			oscilloscope.setVerticalScale( 3, 150e-3 ); // 200mV over channel 3
@@ -90,7 +95,7 @@ var experiment = {
 			oscilloscope.setCursorsSource( 2 );
 			oscilloscope.enableCursors( 2 );
 			oscilloscope.setVCursorsPosition( 2, timeBase * 8 );
-			oscilloscope.setVCursorsPosition( 1, 200e-9 ); // 5%
+			oscilloscope.setVCursorsPosition( 1, 900e-9 ); // 5%
 
 
 			oscilloscope.setMeasurementType( 1, "PK2PK" );
@@ -123,17 +128,16 @@ var experiment = {
 					while( true ) {
 
 						self.arduino.setWhiteLightLevel( lightLevel );
-						yscales[ lightLevel ] = yscales[ lightLevel ] || defaultYScale;
+						yscales[ lightLevel ] = yscales[ lightLevel ] || yscales[ lightLevel - 1 ] || defaultYScale;
 						var breakit = false;
 
 						self.pulse( timeBase, yscales[ lightLevel ], recordLength ).then( function( w ) {
 
 							oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
-
 									if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
 										oscilloscope.setOffset( 2, measurements[ 1 ] );
 
-										yscales[ lightLevel ] /= 2;
+										yscales[ lightLevel ] = measurements[ 0 ] / 7;
 										breakit = true;
 
 									} else {

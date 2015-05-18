@@ -16,7 +16,7 @@ define( [ 'jquery' ], function( $ ) {
     parseDom: function( global ) {
 
       var requiring = 0;
-
+console.log('1234');
       $( global )
       .find( '.module' )
       .each( function( ) {
@@ -36,8 +36,9 @@ define( [ 'jquery' ], function( $ ) {
             modules[ id ] = module;
 
             requiring--;
+            console.log(requiring);
             if( requiring == 0) {
-
+console.log('all');
               exports.allModules( function( module ) {
                 module.onDomReady();
               } );
@@ -47,7 +48,7 @@ define( [ 'jquery' ], function( $ ) {
         } );
 
       } );
-      
+
     },
 
     allModules: function( callback ) {
@@ -56,7 +57,7 @@ define( [ 'jquery' ], function( $ ) {
         callback( modules[ i ] );
         modules[ i ].getStatus();
       }
-      
+
     }
   };
 

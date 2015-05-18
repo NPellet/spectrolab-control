@@ -1,6 +1,6 @@
 
 
-define(  [ 'js/module', 'lib/jquery.populate/index', 'lib/jquery-serialize-object/dist/jquery.serialize-object.min'], function( defaultModule ) {
+define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-serialize-object/dist/jquery.serialize-object.min'], function( defaultModule ) {
 
 	var module = function() {}
 
@@ -8,19 +8,36 @@ define(  [ 'js/module', 'lib/jquery.populate/index', 'lib/jquery-serialize-objec
 
 	module.prototype.onDomReady = function() {
 		var self = this;
+
 		this.getInnerDom().on("click", "input[type=button]", function( ) {
 
 			var d = $( this ).data();
-
-			var formData = self.getInnerDom().serializeObject();
+			var formData = self.getFormData();
 			self.out( "submitClicked", { submit: d, form: formData } );
-		});
+		} );
+
+		this.getInnerDom().on("change keyup", ':input', function() {
+			
+			var formData = self.getFormData();
+			self.out( "formChanged", { form: formData } );
+		} );
+
+		this.setExtraEvents();
 	}
+
+	module.prototype.getFormData = function() {
+		return this.getInnerDom().serializeObject();
+	};
+
+	module.prototype.setExtraEvents = function() {};
 
 	module.prototype.fill = function( data ) {
-		this.getInnerDom().populate( data );
+		this.populate( data );
 	}
 
+	module.prototype.populate = function( data ) {
+		this.getInnerDom().populate( data );
+	}
 	module.prototype.setHtml = function( html ) {
 		this.getInnerDom().html( html );
 	}
@@ -37,7 +54,7 @@ define(  [ 'js/module', 'lib/jquery.populate/index', 'lib/jquery-serialize-objec
 	};
 
 	module.prototype.setStatus = function( status ) {
-console.log( status );
+
 		if( status.formHtml ) {
 			this.setHtml( status.formHtml );
 		}

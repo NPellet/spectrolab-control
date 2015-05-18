@@ -31,7 +31,7 @@ define( [ 'js/io' ], function( io )  {
 	}
 
 	Module.prototype.getInnerDom = function() {
-		return this.getDom().children().eq( 0 );
+		return this.getDom().children().children().eq( 0 );
 	}
 
 

@@ -1,2 +1,1 @@
-
-	<input type="button" value="Connect to Tek Oscilloscope" id="connect-{{ module.id }}" />
+{% include instruments/connect.tpl %}

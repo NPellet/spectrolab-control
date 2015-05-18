@@ -5,7 +5,9 @@ requirejs.config({
 	paths: {
 		'jquery': 'js/lib/jquery.min',
 		'jsgraph': 'js/lib/jsgraph.min',
-		'jquery-ui': 'lib/jquery-ui/jquery-ui.min'
+		'jquery-ui': 'lib/jquery-ui/jquery-ui.min',
+		'bootstrap': 'lib/bootstrap/dist/js/bootstrap.min'
+
 	}
 });
 

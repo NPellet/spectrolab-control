@@ -33,13 +33,28 @@ var experiment = {
 		var arduino = experiment.arduino;
 
 		var timeBase = 10000e-6;
-		var defaultYScale = 2e-3;
+		var defaultYScale = 40e-3;
 		var preTrigger = 10;
 		var recordLength = 100000;
 
 		return new Promise( function( resolver, rejecter ) {
 
-			var yscales = {};
+			var yscales = {
+				8: 1e-3,
+				7: 2e-3,
+				6: 2e-3,
+				5: 5e-3,
+				4: 2e-3,
+				3: 5e-3,
+				2: 10e-3,
+				1: 20e-3,
+				0: 40e-3
+			};
+
+			var yscalesAdjusted = {};
+			for( var i in yscales ) {
+				yscalesAdjusted[ i ] = false;
+			}
 
 			// Oscilloscope functions
 
@@ -53,6 +68,10 @@ var experiment = {
 
 			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
 			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
+
+			self.keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+			self.keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+
 			self.keithley.command( "exit()" ); // The off mode of the Keithley should be high impedance
 
 			oscilloscope.setVerticalScale( 3, 150e-3 ); // 200mV over channel 3
@@ -115,15 +134,18 @@ var experiment = {
 						self.arduino.setWhiteLightLevel( lightLevel );
 
 						yscales[ lightLevel ] = yscales[ lightLevel ] || defaultYScale;//( defaultYScale * arduino.getSunFromLevel( lightLevel ) / arduino.getSunFromLevel( 0 ) );
+						yscalesAdjusted[ lightLevel ] = yscalesAdjusted[ lightLevel ] || false;
 						var breakit = false;
 
 						self.pulse( timeBase, yscales[ lightLevel ], recordLength ).then( function( w ) {
 
 							oscilloscope.getMeasurementMean( 1 ).then( function( measurements ) {
 
-								if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
+								if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 && ! yscalesAdjusted[ lightLevel ] ) {
 
-										yscales[ lightLevel ] /= 2;
+										yscales[ lightLevel ] = measurements[ 0 ] / 6;
+										yscalesAdjusted[ lightLevel ] = true;
+
 										breakit = true;
 
 									} else {
@@ -182,7 +204,13 @@ var experiment = {
 	pulse: function( timeBase, yScale, recordLength ) {
 
 		var self = experiment;
-		nb = 16;
+
+		if( yScale < 3e-3 )
+			nb = 64;
+		else
+			nb = 16;
+
+
 		var oscilloscope = self.oscilloscope;
 
 		oscilloscope.setNbAverage( nb );

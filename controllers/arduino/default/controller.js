@@ -127,7 +127,7 @@ Arduino.prototype.lowestSun = function( ) {
 Arduino.prototype.increaseSun = function( ) {
 	this.currentWhiteLightLevel = this.currentWhiteLightLevel || this.params.whiteLightLED.arduinoAnalogValue.length - 1;
 
-	if( this.currentWhiteLightLevel - 1 >= this.params.whiteLightLED.arduinoAnalogValue.length ) {
+	if( this.currentWhiteLightLevel - 1 < 0 ) {
 		return new Promise( function( resolver, rejecter ) {
 			rejecter();
 		} );
