@@ -1,58 +1,52 @@
 
-var Waveform = require('../../server/waveform');
-var _ = require('lodash');
+/**
+ *  Measures IV at different scans, different speeds
+ *  Author: Norman Pellet
+ *  Date: Mai 19, 2015
+ */
 
-var experiment = {
+var defaultExperiment = require("../experiment"),
+  extend = require("extend");
+
+var keithley, arduino;
+
+var experiment = function() {};
+experiment.prototype = new defaultExperiment();
+
+
+
+extend( experiment.prototype, { 
+
+  defaults: {
+    lights: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ],
+    speeds: [ 1, 0.1, 0.01 ]
+  },
 
   init: function( parameters ) {
-
     experiment.parameters = parameters;
-
-    experiment.keithley = parameters.instruments["keithley-smu"].instrument;
-    experiment.arduino = parameters.instruments["arduino"].instrument;
-
-    experiment.parameters.lightIntensities = [ 0 ];
+    keithley = parameters.instruments["keithley-smu"].instrument;
+    arduino = parameters.instruments.arduino.instrument;
   },
 
+  makeLoop: function() {
 
-  focusOn: function( id ) {
-    experiment.focus = id;
-  },
+    var self = this;
 
-  config: {
+    return function *iv( ) {
 
-    pulses: function( val ) {
+      var lights = experiment.config.lightlevels;
+      var speeds = experiment.config.scanrates;
+      var voltage;
 
-    },
+      for( var light = 0, llights = lights.length; light < llights; light ++ ) {
 
-    focus: function( focusid ) {
-      experiment.focus = focusid;
-    }
-  },
-
-
-  run: function() {
-
-    var self = experiment;
-    var keithley = experiment.keithley,
-      arduino = experiment.arduino;
-
-    keithley.setDigioPin( 4, 1 );
-
-    function *ivs() {
-
-      var lightLevel = 0;
-
-      while( true ) {
-
-        arduino.setWhiteLightLevel( lightLevel );
+        arduino.setWhiteLightLevel( lights[ light ] );
 
         setTimeout( function() {
           experiment.next();
         }, 1000 );
         yield;
 
-        var voltage;
         keithley.measureVoc( {
           channel: 'smub',
           current: 0.002, // +2mA current
@@ -62,45 +56,40 @@ var experiment = {
           experiment.next();
         });
         yield;
-      console.log( voltage );
 
         voltage = Math.max( voltage, 2 );
 
-        keithley.sweepIV( {
+        for( var speed = 0, lspeeds = speeds.length; speed < lspeeds; speed ++ ) {
 
-          channel: 'smub',
-          scanRate: 1,
-          hysteresis: true,
-          delay: 1,
-          startV: voltage,
-          stopV: -0.2
+          keithley.sweepIV( {
 
-        }).then( function( iv ) {
+            channel: 'smub',
+            scanRate: speeds[ speed ],
+            hysteresis: true,
+            delay: 1,
+            startV: voltage,
+            stopV: -0.2
 
-            self.progress( "iv", [ iv, lightLevel ] );
+          }).then( function( iv ) {
 
-            experiment.next();
-        } );
-        yield;
+              experiment.progress( "iv", {
 
-        if( lightLevel >= 13 ) {
-          break;
+                iv: iv,
+                scanRate: speeds[ speed ],
+                lightLevel: arduino.getLightLevel( lights[ light ] )
+
+              } );
+
+              experiment.next();
+          } );
+
+          yield;
         }
-
-        if( lightLevel == 5 ) {
-          lightLevel = 13;
-        }
-
-        lightLevel += 1;
       }
-      arduino.setWhiteLightLevel( 13 );
-      keithley.setDigioPin( 4, 0 );
     }
 
-    experiment.iterator = new ivs();
-    experiment.iterator.next();
   }
-}
+});
 
 
 module.exports = experiment;

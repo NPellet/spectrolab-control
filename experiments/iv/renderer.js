@@ -17,6 +17,13 @@ renderer.init = function() {
         left: 3,
         top: 1,
         width: 15 // 500px
+      },
+
+      'iv-right': {
+        title: "IV",
+        left: 18,
+        top: 1,
+        width: 15 // 500px
       }
 
   } );
@@ -28,6 +35,16 @@ renderer.init = function() {
     IV: {
       wrapper: 'iv',
       path: 'display/iv'
+    },
+
+    ivsetup: {
+      wrapper: 'iv',
+      path: 'display/form2'
+    },
+
+    ivview: {
+      wrapper: 'iv-right',
+      path: 'display/form2'
     }
 
   } );

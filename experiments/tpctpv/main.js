@@ -13,7 +13,7 @@ experiment.loadInstruments();
 experiment.renderer.init();
 experiment.addInstrumentConnectModules();
 
-var proc = experiment.getDeviceProcedure('smalltransients');
+var proc = experiment.loadProcedure('TPCTPV');
 var Waveform = require('../../server/waveform');
 
 var itx = experiment.itx();
@@ -21,7 +21,20 @@ var itx = experiment.itx();
 experiment.renderer.getModule("config").setFormHtml( cfgHtml );
 experiment.renderer.getModule("config").setFormData( cfgData );
 
-proc.config( "setConfig", [ cfgData.config ] );
+var mainConfig;
+
+experiment.onLoadConfig( function() {
+	experiment.getModule("pulse").setConfig( experiment.config.pulse );
+} );
+
+
+proc.loadConfig( cfgData.config );
+
+experiment.getModule("pulse").on("configChanged", function( cfg ) {
+
+	experiment.config.pulse = cfg;
+});
+
 
 experiment.renderer.getModule("config").on("submitClicked", function( data ) {
 

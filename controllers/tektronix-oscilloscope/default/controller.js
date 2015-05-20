@@ -679,6 +679,10 @@ TektronixOscilloscope.prototype.getMeasurementMethod = function( measNum, method
 }
 
 TektronixOscilloscope.prototype.getMeasurementMean = function( ) {
+  
+  if( arguments.length == 1 ) {
+    return this.command("MEASUrement:" + arguments[ 0 ] + ":MEAN?");
+  }
 
   return this.all( "MEASUrement:%s:MEAN?", Array.prototype.map.call( arguments, getMeasurementNumber ), function( val ) { return parseFloat( val ); } );
 }
@@ -766,6 +770,87 @@ TektronixOscilloscope.prototype.getMeasurementUntilStdDev = function( measNum, s
 
 }
 
+TektronixOscilloscope.prototype.optimizeMeasurement = function( measurementNumber, idealValue, tolerance, triggerFrequency, changeUp, changeDown ) {
+
+  var self = this;
+  this.setNbAverage( 16 );
+
+  return new Promise( function( resolver, rejecter ) {
+
+    function *runner() {
+
+      var pass = -1;
+      var direction = null;
+      var currentDirection = null;
+
+      while( true ) {
+
+        setTimeout( function() {
+
+          self.getMeasurementMean( measurementNumber ).then( function( mean ) {
+
+            if( mean > idealValue + tolerance * idealValue ) { // Too high
+
+              if( pass == -1 ) {
+                direction = "down";
+                pass = 0;
+              }
+
+              if( currentDirection == "up" ) {
+                currentDirection = "down";
+
+                if( direction == "down" ) {
+                  pass++;
+                }
+              }
+
+              if( pass > 2 ) {
+                resolver();                
+              }
+
+            } else if( mean < idealValue - tolerance * idealValue ) { // Too low
+
+              if( pass == -1 ) {
+                direction = "up";
+                pass = 0;
+              }
+
+              if( currentDirection == "down" ) {
+                currentDirection = "up";
+
+                if( direction == "up" ) {
+                  pass++;
+                }
+              }
+
+              if( pass > 2 ) {
+                resolver();
+              }
+
+              changeUp( pass ).then( function() {
+               run.next(); 
+              } );
+
+            } else {
+
+              resolver();
+            }
+
+          } );
+          
+
+        }, Math.min( 1 / triggerFrequency, 0.1 ) * 1000 ); // min 0.1s
+
+        yield;
+      }
+    }
+
+    var run = runner();
+    run.next();
+
+  });
+
+}
 
 
 /* CURSOR GROUP */

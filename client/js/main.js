@@ -6,12 +6,18 @@ requirejs.config({
 		'jquery': 'js/lib/jquery.min',
 		'jsgraph': 'js/lib/jsgraph.min',
 		'jquery-ui': 'lib/jquery-ui/jquery-ui.min',
-		'bootstrap': 'lib/bootstrap/dist/js/bootstrap.min'
+		'bootstrap': 'lib/bootstrap/dist/js/bootstrap.min',
+		'bootstrap-treeview': 'lib/bootstrap-treeview/src/js/bootstrap-treeview'
 
+	},
+
+	shim: {
+		'bootstrap': [ 'jquery' ],
+		'bootstrap-treeview': [ 'bootstrap', 'jquery' ]
 	}
 });
 
-require( [ 'jquery', 'js/modulefactory', 'js/io' ] , function( $, ModuleFactory, IO ) {
+require( [ 'jquery', 'js/modulefactory', 'js/io', 'bootstrap', 'bootstrap-treeview' ] , function( $, ModuleFactory, IO ) {
 
 
 	ModuleFactory.parseDom( document );
@@ -34,61 +40,62 @@ function loadCss(url) {
 
 function global( IO ) {
 
+	var cfgSelected;
 	var experimentStatus = "stopped";
 
-		var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
-		var deviceName = $("#device-name .name input");
+	var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
+	var deviceName = $("#device-name .name input");
 
-		deviceName.on('keyup blur change', function() {
+	deviceName.on('keyup blur change', function() {
 
-				var value = $( this ).prop( 'value' );
-				IO.writeGlobal( "deviceName", value );
-				console.log( value );
-		});
-
-
-		$("#experiment-run .run input").on('click', function() {
-
-			btns.prop( 'disabled', true );
-
-			switch( experimentStatus ) {
-
-				case 'stopped':
-
-					IO.writeGlobal( "experiment-run" );
-
-				break;
-
-				case 'paused':
-
-					IO.writeGlobal( "experiment-resume" );
-
-				break;
-
-				case 'running':
-
-					IO.writeGlobal( "experiment-pause" );
-
-				break;
-			}
-		});
+			var value = $( this ).prop( 'value' );
+			IO.writeGlobal( "deviceName", value );
+			console.log( value );
+	});
 
 
+	$("#experiment-run .run input").on('click', function() {
 
-		$("#experiment-run .abort input").on('click', function() {
+		btns.prop( 'disabled', true );
 
-			btns.prop( 'disabled', true );
+		switch( experimentStatus ) {
 
-			switch( experimentStatus ) {
+			case 'stopped':
+
+				IO.writeGlobal( "experiment-run" );
+
+			break;
+
+			case 'paused':
+
+				IO.writeGlobal( "experiment-resume" );
+
+			break;
+
+			case 'running':
+
+				IO.writeGlobal( "experiment-pause" );
+
+			break;
+		}
+	});
 
 
-				case 'running':
 
-						IO.writeGlobal( "experiment-abort" );
+	$("#experiment-run .abort input").on('click', function() {
 
-				break;
-			}
-		});
+		btns.prop( 'disabled', true );
+
+		switch( experimentStatus ) {
+
+
+			case 'running':
+
+					IO.writeGlobal( "experiment-abort" );
+
+			break;
+		}
+	});
 
 
 
@@ -133,5 +140,56 @@ function global( IO ) {
 		$("#experiment-abort .abort input").prop( "disabled", true ).addClass('input-grey').removeClass('input-red');
 		deviceName.prop('disabled', false );
 	} );
+
+	IO.onGlobal( "cfg-list", function( cfgList ) {
+	
+		cfgSelected = cfgList[ 0 ].path;
+
+		$("#cfg-tree").treeview( {
+
+			data: cfgList,
+			onNodeSelected: function( event, data ) {
+				
+				$("#cfg-name").prop( 'value', data.text );
+				cfgSelected = data.path;
+			},
+
+			onNodeExpanded: function( event, data ) {
+
+				$("#cfg-name").prop( 'value', data.text );
+				cfgSelected = data.path;
+			}
+		} );
+	} );
+
+
+
+	IO.writeGlobal('domReady');
+
+	$("#cfg-load").on( 'click', function() {
+		
+		IO.writeGlobal( "cfg-load", cfgSelected );
+	});
+
+
+	$("#cfg-save").on( 'click', function() {
+		
+		IO.writeGlobal( "cfg-save", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+	});
+
+	$("#cfg-newfolder").on( 'click', function() {
+		
+		IO.writeGlobal( "cfg-newfolder", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+	});
+
+	$("#cfg-remove").on( 'click', function() {
+		
+		IO.writeGlobal( "cfg-remove", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+	});
+
+	$("#more-cfg").on( 'click', function() {
+
+		$("#more-cfg-pannel").slideToggle();
+	});
 
 }

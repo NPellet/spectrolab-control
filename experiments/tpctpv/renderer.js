@@ -46,14 +46,9 @@ renderer.init = function() {
         path: 'display/graph'
       },
 
-      pulseConfig: {
+      pulse: {
         wrapper: 'config',
         path: 'instruments/tektronix-functiongenerator/pulse'
-      },
-      
-      config: {
-        wrapper: 'config',
-        path: 'display/form2'
       }
 
   } );

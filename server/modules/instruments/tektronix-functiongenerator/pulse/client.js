@@ -52,6 +52,7 @@ define( [ "getmodule-display/form2"], function( defaultModule ) {
 		var form = self.getFormData();
 		var fixed = form.fixed;
 
+		form.duty /= 100;
 
 		switch( fixed ) {
 
@@ -59,16 +60,16 @@ define( [ "getmodule-display/form2"], function( defaultModule ) {
 			case 'pulse':
 
 				if( change == 'duty' ) {
-					form.period = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.duty / 100 ); 
+					form.period = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.duty ); 
 					form.timebase_period = 0;
 					
 				}
 				else {
-					form.duty = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.period * Math.pow( 10, form.timebase_period ) ) * 100;
+					form.duty = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.period * Math.pow( 10, form.timebase_period ) );
 
-					if( form.duty > 99 ) {
-						form.duty = 99;
-						form.period = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.duty / 100 );
+					if( form.duty > 0.99 ) {
+						form.duty = 0.99;
+						form.period = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( 0.99 );
 					}
 
 				}
@@ -78,11 +79,11 @@ define( [ "getmodule-display/form2"], function( defaultModule ) {
 			case 'duty':
 
 				if( change == 'period' ) {
-					form.pulse = form.duty / 100 * ( form.period * Math.pow( 10, form.timebase_period ) ); 
+					form.pulse = form.duty * ( form.period * Math.pow( 10, form.timebase_period ) ); 
 					form.timebase_pulse = 0;
 
 				} else {
-					form.period = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.duty / 100 );
+					form.period = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.duty );
 					form.timebase_period = 0;
 				}
 
@@ -91,15 +92,15 @@ define( [ "getmodule-display/form2"], function( defaultModule ) {
 			case 'period':
 
 				if( change == 'duty' ) {
-					form.pulse = form.duty / 100 * ( form.period * Math.pow( 10, form.timebase_period ) ); 
+					form.pulse = form.duty * ( form.period * Math.pow( 10, form.timebase_period ) ); 
 					form.timebase_pulse = 0;
 				} else {
-					form.duty = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.period * Math.pow( 10, form.timebase_period ) ) * 100;
+					form.duty = ( form.pulse * Math.pow( 10, form.timebase_pulse ) ) / ( form.period * Math.pow( 10, form.timebase_period ) );
 
 
-					if( form.duty > 99 ) {
-						form.duty = 99;
-						form.pulse = form.duty / 100 * ( form.period * Math.pow( 10, form.timebase_period ) ); 
+					if( form.duty > 0.99 ) {
+						form.duty = 0.99;
+						form.pulse = 0.99 * ( form.period * Math.pow( 10, form.timebase_period ) ); 
 					}
 
 				}
@@ -109,7 +110,6 @@ define( [ "getmodule-display/form2"], function( defaultModule ) {
 
 		}
 
-		
 		var val = $( this ).prop('value');
 		self._fixed = val;
 
@@ -141,6 +141,8 @@ define( [ "getmodule-display/form2"], function( defaultModule ) {
 	
 		}
 
+		data.duty = Math.round( data.pulse * Math.pow( 10, data.timebase_pulse ) / data.period / Math.pow( 10, data.timebase_period ) * 10000 ) / 100;
+		console.log( data );
 		this.populate( data );
 	}
 

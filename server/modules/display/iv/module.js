@@ -22,12 +22,12 @@ IV.prototype = extend( IV.prototype, {
 
 	setIV: function( name, iv ) {
 
-			if( ! this.ivs[ name ] ) {
-				this.ivs[ name ] = iv;
-				this.ivsNumber++;
-			}
+		if( ! this.ivs[ name ] ) {
+			this.ivs[ name ] = iv;
+			this.ivsNumber++;
+		}
 
-			this.doivs();
+		this.doivs();
 	},
 
 	doivs: function() {

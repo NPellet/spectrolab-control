@@ -63,7 +63,12 @@ Experiment.prototype.makeLoop = function() {
 }
 
 Experiment.prototype.pause = function() {
+	
+	var self = this;
 	this._paused = true;
+	return new Promise( function( resolver, rejecter ) {
+		self.on("paused", function() { resovler(); });
+	} );
 }
 
 Experiment.prototype.resume = function() {
@@ -90,6 +95,7 @@ Experiment.prototype.run = function() {
 		self.loopNext();
 	} );
 }
+
 
 Experiment.prototype.abort = function() {
 

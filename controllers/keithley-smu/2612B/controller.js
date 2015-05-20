@@ -9,7 +9,7 @@ var net = require('net'),
 	Waveform = require("../../../server/waveform"),
 	IV = require("../../../server/iv");
 
-var InstrumentController = require("controllers/instrumentcontroller");
+var InstrumentController = require("../../instrumentcontroller");
 
 
 var methods = {

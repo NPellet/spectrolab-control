@@ -27,133 +27,6 @@ extend( experiment.prototype, {
 	},
 
 
-<<<<<<< HEAD:deviceprocedures/experiments/smalltransients.js
-		experiment.parameters.period = 18e-3;
-		experiment.parameters.pulseTime = 500e-6;
-		experiment.parameters.averaging = 200;
-	},
-=======
->>>>>>> origin/master:deviceprocedures/experiments/TPCTPV.js
-
-	'tuneVoltage': function( sunLevel ) {
-
-		var arduino = experiment.arduino;
-		var afg = experiment.afg;
-		var oscilloscope = experiment.oscilloscope;
-		arduino.setWhiteLightLevel( sunLevel );
-		arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].voltage.perturbation );
-
-		oscilloscope.setCoupling( 3, "AC");
-		oscilloscope.setOffset( 3, 0 );
-		oscilloscope.setPosition( 3, -4 );
-		oscilloscope.disable50Ohms( 3 );
-		oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].voltage.xscale );
-		oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].voltage.yscale );
-		oscilloscope.setNbAverage( 16 );
-		oscilloscope.stopAfterSequence( false );
-
-		oscilloscope.clear();
-		oscilloscope.startAquisition();
-
-		afg.enableChannel( 1 );
-	},
-
-	'tuneCurrent': function( sunLevel ) {
-
-			experiment.setup();
-
-			var arduino = experiment.arduino;
-			var afg = experiment.afg;
-			var oscilloscope = experiment.oscilloscope;
-
-			arduino.setWhiteLightLevel( sunLevel );
-			arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
-
-			oscilloscope.setCoupling( 3, "DC");
-			oscilloscope.setOffset( 3, 0 );
-<<<<<<< HEAD:deviceprocedures/experiments/smalltransients.js
-			oscilloscope.setPosition( 3, -4 );
-			oscilloscope.disable50Ohms( 3 );
-			oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].voltage.xscale );
-			oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].voltage.yscale );
-			oscilloscope.setNbAverage( 128 );
-=======
-			oscilloscope.setPosition( 3, 0 );
-			oscilloscope.enable50Ohms( 3 );
-			oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
-			oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
-			oscilloscope.setNbAverage( 16 );
->>>>>>> origin/master:deviceprocedures/experiments/TPCTPV.js
-			oscilloscope.stopAfterSequence( false );
-
-			oscilloscope.enableChannel( 1 );
-			oscilloscope.enableChannel( 3 );
-
-			oscilloscope.clear();
-			oscilloscope.startAquisition();
-
-			afg.enableChannel( 1 );
-<<<<<<< HEAD:deviceprocedures/experiments/smalltransients.js
-		},
-
-		'tuneCurrent': function( sunLevel ) {
-
-			experiment.setup();
-
-			var arduino = experiment.arduino;
-			var afg = experiment.afg;
-			var oscilloscope = experiment.oscilloscope;
-
-			arduino.setWhiteLightLevel( sunLevel );
-			arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
-
-			oscilloscope.setCoupling( 3, "DC");
-			oscilloscope.setOffset( 3, 0 );
-			oscilloscope.setPosition( 3, 0 );
-			oscilloscope.enable50Ohms( 3 );
-			oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].current.xscale );
-			oscilloscope.setVerticalScale( 3, 40e-3 );
-			oscilloscope.setNbAverage( 128 );
-			oscilloscope.stopAfterSequence( false );
-
-			oscilloscope.enableChannel( 1 );
-			oscilloscope.enableChannel( 3 );
-
-			oscilloscope.clear();
-			oscilloscope.startAquisition();
-			oscilloscope.setNbAverage( 16 );
-
-			afg.enableChannel( 1 );
-
-			experiment.wait( 2 ).then( function() {
-				oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
-
-					var mean = results[ 1 ];
-					oscilloscope.setNbAverage( 128 );
-
-					oscilloscope.setOffset( 3, mean );
-					oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale );
-				});
-			});
-
-		},
-
-		captureFromScope: function( sunLevel, perturbationType ) {
-
-			return Promise.all( [
-				experiment.oscilloscope.getHorizontalScale().then( function( v ) {
-					experiment.cfg[ sunLevel ][ perturbationType ].xscale = v;
-				})
-				,
-				experiment.oscilloscope.getVerticalScale( 3 ).then( function( v ) {
-					experiment.cfg[ sunLevel ][ perturbationType ].yscale = v;
-				})
-			] );
-		}
-=======
->>>>>>> origin/master:deviceprocedures/experiments/TPCTPV.js
-	},
-
 	makeLoop: function() {
 
 		var self = this;
@@ -304,39 +177,59 @@ extend( experiment.prototype, {
 
 			experiment.wait( 2 ).then( function() {
 
-					oscilloscope.setNbAverage( 16 );
-					oscilloscope.startAquisition();
+				oscilloscope.setNbAverage( 16 );
+				oscilloscope.startAquisition();
 
-					oscilloscope.ready().then( function() {
+				oscilloscope.ready().then( function() {
 
-							oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
+						oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
 
-								var perturbation = results[ 0 ];
-								var perturbationPk = results[ 2 ];
-								var mean = results[ 1 ];
+							var perturbation = results[ 0 ];
+							var perturbationPk = results[ 2 ];
+							var mean = results[ 1 ];
 
-								if( voltage ) {
-									oscilloscope.setPosition( 3, -4 );
-									oscilloscope.setOffset( 3, 0 );
-								} else {
-									oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale ); //
-									oscilloscope.setOffset( 3, mean );
-									oscilloscope.setPosition( 3, 0 );
-								}
+							if( voltage ) {
+								oscilloscope.setPosition( 3, -4 );
+								oscilloscope.setOffset( 3, 0 );
+							} else {
+								oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale ); //
+								oscilloscope.setOffset( 3, mean );
+								oscilloscope.setPosition( 3, 0 );
+							}
 
-								oscilloscope.clear();
-								oscilloscope.setNbAverage( voltage ? 2000 : 300 );
-								oscilloscope.startAquisition();
 
-								oscilloscope.ready().then( function() {
-									afg.disableChannel( 1 );
 
-									oscilloscope.getChannel( 3 ).then( function( wave3 ) {
-										resolver( wave3 );
-									} );
+							function( measurementNumber, idealValue, tolerance, triggerFrequency, changeUp, changeDown )
+							// Measurement 1
+							// 2mV optimal
+							// 10% deviation ok
+							// 1 / period = frequency
+							oscilloscope.optimizeMeasurement( 1, 0.002, 0.1, 1 / experiment.configuration.period, function( pass ) {
 
-								});
+								arduino.setColorLightLevelVoltage( perturbation + 100 / pass );
+
+							}, function() {
+
+								arduino.setColorLightLevelVoltage( perturbation - 100 / pass );
+								
+
+							} );
+
+
+
+							oscilloscope.clear();
+							oscilloscope.setNbAverage( voltage ? 2000 : 300 );
+							oscilloscope.startAquisition();
+
+							oscilloscope.ready().then( function() {
+								afg.disableChannel( 1 );
+
+								oscilloscope.getChannel( 3 ).then( function( wave3 ) {
+									resolver( wave3 );
+								} );
+
 							});
+						});
 				});
 
 
@@ -358,7 +251,7 @@ extend( experiment.prototype, {
 		var oscilloscope = experiment.oscilloscope;
 		var arduino = experiment.arduino;
 
-<<<<<<< HEAD:deviceprocedures/experiments/smalltransients.js
+
 		/* AFG SETUP */
 		afg.enableBurst( 1 );
 		afg.setShape( 1, "PULSE" );
@@ -427,11 +320,6 @@ extend( experiment.prototype, {
 			experiment.isSetup = true;
 		});
 	}
-}
-=======
-			return oscilloscope.ready();
-		}
 });
->>>>>>> origin/master:deviceprocedures/experiments/TPCTPV.js
 
 module.exports = experiment;

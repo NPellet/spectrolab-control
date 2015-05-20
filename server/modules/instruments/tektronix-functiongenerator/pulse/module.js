@@ -21,9 +21,12 @@ AFGPulse.prototype = extend( AFGPulse.prototype, { } );
 
 AFGPulse.prototype.streamOn.formChanged = function( data ) {
 
-	this.pulselength = parseFloat( data.form.pulse ) * Math.pow( 10, parseInt( data.form.timebase_pulse ) );
-	this.period = parseFloat( data.form.period ) * Math.pow( 10, parseInt( data.form.timebase_period ) );
+	this.pulselength = Math.round( parseFloat( data.form.pulse ) * 100 ) / 100 * Math.pow( 10, parseInt( data.form.timebase_pulse ) );
+	this.period = Math.round( parseFloat( data.form.period ) * 100 ) / 100 * Math.pow( 10, parseInt( data.form.timebase_period ) );
 	this.channel = parseInt( data.form.channel );
+
+	this.emit("formChanged", this.getConfig( ) );
+	this.emit("configChanged", this.getConfig( ) );
 }
 
 
@@ -55,6 +58,37 @@ AFGPulse.prototype.getChannel = function() {
 	return this.channel;
 }
 
+AFGPulse.prototype.setConfig = function( cfg ) {
+	cfg = cfg || {};
+	
+	this.period = cfg.period || 1e-4;
+	this.pulselength = cfg.pulseLength || 1e-5;
+	this.channel = cfg.channel || 1;
+
+	this.updateClient();
+}
+
+
+AFGPulse.prototype.getConfig = function( cfg ) {
+	return {
+		period: this.period,
+		pulselength: this.pulselength,
+		channel: this.channel
+	};
+	
+}
+
+AFGPulse.prototype.updateClient = function() {
+	var data = {
+		pulse: this.getPulse(),
+		period: this.getPeriod(),
+		channel: this.getChannel(),
+		timebase_pulse: 0,
+		timebase_period: 0
+	};
+
+	this.setFormData( data );
+}
 
 
 exports = module.exports = {
