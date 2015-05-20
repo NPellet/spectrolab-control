@@ -46,14 +46,12 @@ var methods = {
 			if( options.scanRate ) {
 					options.settlingTime = Math.abs( options.stopV - options.startV ) / options.scanRate / options.nbPoints;
 			}
-
 			return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ? 1 : 0 ]
 		},
 
 		processing: function( data, options ) {
 
 			var iv = new IV();
-
 			var current, voltage;
 			data = data.split(/,[\t\r\s\n]*/);
 
@@ -77,20 +75,21 @@ var methods = {
 			}
 
 			if( options.hysteresis ) {
+				if( data.length > 2 ) {
+					var iv1 = getIv( 0, data.length / 2 );
+					var iv2 = getIv( data.length / 2, data.length );
 
-				var iv1 = getIv( 0, data.length / 2 );
-				var iv2 = getIv( data.length / 2, data.length );
+					if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
 
-				if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
+						iv.setBackward( iv1 );
+						iv.setForward( iv2 );
 
-					iv.setBackward( iv1 );
-					iv.setForward( iv2 );
+					} else {
 
-				} else {
+						iv.setForward( iv1 );
+						iv.setBackward( iv2 );
 
-					iv.setForward( iv1 );
-					iv.setBackward( iv2 );
-
+					}
 				}
 
 			} else {
@@ -458,17 +457,18 @@ Keithley.prototype.connect = function( callback ) {
 
 			module.connecting = true;
 			module.socket = socket;
-			
+
 			var timeout = setTimeout( function() {
-				self.emit("connectionerror");
+
+				module.emit("connectionerror");
 				rejecter();
-				self.socket.destroy(); // Kills the socket
+				module.socket.destroy(); // Kills the socket
 
 			}, module.params.timeout || 10000 );
 
 
-			this.socket.on('connect', function() {
-				
+			module.socket.on('connect', function() {
+
 				// It's connected...
 				clearTimeout( timeout );
 
@@ -497,11 +497,17 @@ Keithley.prototype.connect = function( callback ) {
 				self.queue = [];
 			});
 
-			this.socket.on('end', function() {
+			module.socket.on('end', function() {
 				console.log('Keithley is being disconnected');
 				module.socket.removeAllListeners( 'data' );
 				self.emit("disconnected");
 			});
+
+			module.socket.on("data", function( d ) {
+				console.log( "Keithley response : " );
+				console.log( d.toString('ascii') );
+				console.log(" End Keithley response");
+			})
 
 
 			module.queue.push( resolver );
@@ -592,6 +598,8 @@ Keithley.prototype.setDigioPin = function( pin, bln ) {
 		this.command("digio.writebit( " + pin + ", " + bln + " )");
 }
 
+Keithley.prototype.writeDigio = Keithley.prototype.setDigioPin;
+
 
 Keithley.prototype.flushErrors = function() {
 
@@ -609,12 +617,12 @@ Keithley.prototype.checkConnection = function() {
 Keithley.prototype.uploadScripts = function() {
 
 	try {
-		this.checkConnection();	
+		this.checkConnection();
 	} catch( e ) {
 
 		return false;
 	}
-	
+
 
 	this.socket.write("loadscript SpetroscopyScripts\r\n");
 

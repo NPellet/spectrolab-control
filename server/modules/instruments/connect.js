@@ -27,7 +27,7 @@ define( [ 'js/module'], function( defaultModule ) {
       this.disconnected();
     },
 
-    'error': function() {
+    'connectionerror': function() {
       this.error();
     }
 

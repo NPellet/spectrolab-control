@@ -30,11 +30,11 @@
 		</div>
 
 		<div class="form-group">
-			<input type="text" class="form-control" placeholder="Device name" />	
+			<input type="text" class="form-control" placeholder="Device name" />
 		</div>
-		
-		<button type="button" class="btn btn-default">Run !</button>
-		<button type="button" class="btn btn-default" disabled="disabled">Abort</button>
+
+		<button type="button" id="run-experiment" class="btn btn-default">Run !</button>
+		<button type="button" id="abort-experiment" class="btn btn-default" disabled="disabled">Abort</button>
 		<button type="button" id="more-cfg" class="btn btn-default">More config</button>
 
 	</form>
@@ -43,9 +43,9 @@
 	<div id="more-cfg-pannel">
 
 		<div class="col-md-3">
-	 
+
 			<form class="form-horizontal">
-			  
+
 			  <div class="form-group form-group-sm">
 			    <label for="area" class="col-sm-4 control-label">Area</label>
 			    <div class="col-sm-4 input-group">
@@ -80,9 +80,9 @@
 			<div id="cfg-tree"></div>
 
 			<form class="form">
-				
+
 			  	<div class="input-group">
-		     		
+
 		     		<input type="text" class="form-control" id="cfg-name" placeholder="">
 		       		<div class="input-group-btn">
 		       			<button type="button" id="cfg-newfolder" class="btn btn-default">New folder</button>
@@ -91,7 +91,7 @@
 		        		<button type="button" id="cfg-save" class="btn btn-default" type="button">Save</button>
 		      		</div>
 		      	</div>
-		  	
+
 			  </form>
 		</div>
 

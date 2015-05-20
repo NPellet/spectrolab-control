@@ -1,14 +1,17 @@
 
 var EventEmitter = require('events').EventEmitter;
+var expGlobal = require("app/experiment");
 
-var Experiment = function() {};
+var Experiment = function() {
+	this._init();
+};
 Experiment.prototype = new EventEmitter();
 
 
 Experiment.prototype._init = function() {
 
-	if( experiment.init ) { // Child init
-		experiment.init();
+	if( this.init ) { // Child init
+		this.init();
 	}
 
 	this.loadConfig( this.__proto__.defaults );
@@ -17,11 +20,14 @@ Experiment.prototype._init = function() {
 Experiment.prototype.loadConfig = function( cfg ) {
 	this.config = this.config || {};
 	extend( true, this.config, cfg );
+
+	//console.log( this.config );
+	this.config = cfg;
 }
 
 
 Experiment.prototype.progress = function( progressType, progressArguments ) {
-	
+
 	this.emit("progress", { type: progressType, arguments: progressArguments } );
 };
 
@@ -35,7 +41,7 @@ Experiment.prototype.terminate = function( ) {
 
 Experiment.prototype.loopNext = function( ) {
 
-	if( ! experiment._paused ) {
+	if( ! this._paused ) {
 		this.loop.next();
 	} else {
 		this._isPaused = true;
@@ -63,7 +69,7 @@ Experiment.prototype.makeLoop = function() {
 }
 
 Experiment.prototype.pause = function() {
-	
+
 	var self = this;
 	this._paused = true;
 	return new Promise( function( resolver, rejecter ) {
@@ -89,8 +95,8 @@ Experiment.prototype.run = function() {
 	var self = this;
 
 	this.setup().then( function() {
-		
-		var generator = this.makeLoop();
+
+		var generator = self.makeLoop();
 		self.loop = generator();
 		self.loopNext();
 	} );
@@ -108,6 +114,12 @@ Experiment.prototype.abort = function() {
 	});
 }
 
+Experiment.prototype.setup = function() {
+	return new Promise( function( resolver ) { resolver(); } );
+}
 
+Experiment.prototype.getInstrument = function( instrument ) {
+	return expGlobal.getInstrument( instrument );
+}
 
 module.exports = Experiment;

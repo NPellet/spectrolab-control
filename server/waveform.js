@@ -15,10 +15,15 @@ Waveform.prototype = {
 
 	setData: function( data ) {
 
+		if( ! data ) {
+			return;
+		}
+
 		this.data = data;
 		this.length = this.data.length;
 
 		this._checkScalingWave();
+
 	},
 
 	setDataFromArray: function( a, index, startAt ) {
@@ -281,8 +286,9 @@ Waveform.prototype = {
 	},
 
 	getValueAt: function( p ) {
-console.trace();
+
 		if( this.data.length - 1 < p ) {
+			console.trace();
 			throw "Cannot access index " + p + ". Index is out of range";
 		}
 

@@ -54,7 +54,7 @@ function global( IO ) {
 	});
 
 
-	$("#experiment-run .run input").on('click', function() {
+	$("#run-experiment").on('click', function() {
 
 		btns.prop( 'disabled', true );
 
@@ -82,7 +82,7 @@ function global( IO ) {
 
 
 
-	$("#experiment-run .abort input").on('click', function() {
+	$("#abort-experiment").on('click', function() {
 
 		btns.prop( 'disabled', true );
 
@@ -102,26 +102,25 @@ function global( IO ) {
 	IO.onGlobal( "experiment-running", function() {
 
 		experimentStatus = "running";
-		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Pause experiment").addClass('input-red').removeClass('input-green');
-		$("#experiment-run .run input").prop( "disabled", false ).addClass('input-red').removeClass('input-grey');
-		$("#experiment-abort .abort input").prop( "disabled", false );
-		deviceName.prop('disabled', true );
+		$("#run-experiment").prop("disabled", false ).html("Pause");
+		$("#run-experiment").prop( "disabled", false );
+		$("#abort-experiment").prop( "disabled", false );
 	} );
 
 
 	IO.onGlobal( "experiment-pausing", function() {
 
 		experimentStatus = "pausing";
-		$("#experiment-run .run input").prop("disabled", true ).attr('value', "Pausing experiment...").addClass('input-grey').removeClass('input-red');
-		$("#experiment-run .abort input").prop( "disabled", true ).addClass('input-grey').removeClass('input-red');
+		$("#run-experiment").prop("disabled", true ).html("Pausing...");
+		$("#abort-experiment").prop( "disabled", true );
 
 	} );
 
 	IO.onGlobal( "experiment-aborting", function() {
 
 		experimentStatus = "pausing";
-		$("#experiment-run .run input").prop("disabled", true ).addClass('input-grey').removeClass('input-red');
-		$("#experiment-run .abort input").prop( "disabled", true ).attr('value', "Aborting experiment...").addClass('input-grey').removeClass('input-red');
+		$("#run-experiment").prop("disabled", true );
+		$("#abort-experiment").prop( "disabled", true ).html("Aborting...");
 
 	} );
 
@@ -129,28 +128,29 @@ function global( IO ) {
 	IO.onGlobal( "experiment-paused", function() {
 
 		experimentStatus = "paused";
-		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Resume experiment").removeClass('input-red').removeClass('input-grey').addClass('input-green');
-		$("#experiment-abort .abort input").prop( "disabled", false );
+		$("#run-experiment").prop("disabled", false ).html("Resume experiment");
+		$("#abort-experiment").prop( "disabled", false );
 	} );
 
 	IO.onGlobal( "experiment-stopped", function() {
 
 		experimentStatus = "stopped";
-		$("#experiment-run .run input").prop("disabled", false ).attr('value', "Run experiment").removeClass('input-red').addClass('input-green');
-		$("#experiment-abort .abort input").prop( "disabled", true ).addClass('input-grey').removeClass('input-red');
-		deviceName.prop('disabled', false );
+		$("#run-experiment").prop("disabled", false ).html("Run experiment");
+		$("#abort-experiment").prop( "disabled", true );
 	} );
 
 	IO.onGlobal( "cfg-list", function( cfgList ) {
-	
+
 		cfgSelected = cfgList[ 0 ].path;
 
 		$("#cfg-tree").treeview( {
 
 			data: cfgList,
 			onNodeSelected: function( event, data ) {
-				
+
 				$("#cfg-name").prop( 'value', data.text );
+				$("#cfg-remove").prop( 'disabled', !!data.locked );
+
 				cfgSelected = data.path;
 			},
 
@@ -167,23 +167,23 @@ function global( IO ) {
 	IO.writeGlobal('domReady');
 
 	$("#cfg-load").on( 'click', function() {
-		
+
 		IO.writeGlobal( "cfg-load", cfgSelected );
 	});
 
 
 	$("#cfg-save").on( 'click', function() {
-		
+
 		IO.writeGlobal( "cfg-save", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
 	});
 
 	$("#cfg-newfolder").on( 'click', function() {
-		
+
 		IO.writeGlobal( "cfg-newfolder", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
 	});
 
 	$("#cfg-remove").on( 'click', function() {
-		
+
 		IO.writeGlobal( "cfg-remove", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
 	});
 

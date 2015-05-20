@@ -53,6 +53,14 @@ IV.prototype = extend( IV.prototype, {
 
 		this.autoscale();
 		this.redraw();
+	},
+
+	clear: function(  ) {
+		this.ivs = {};
+		this.ivsNumber = 0;
+		this.series = {};
+		this.out( "clear" );
+		return this;
 	}
 } );
 

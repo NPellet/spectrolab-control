@@ -3,11 +3,11 @@ var experimentLoader = {};
 var currentExperiment;
 
 experimentLoader.load = function( experimentName ) {
-	
+
 	var experiment = require( __dirname + "/experiments/" + experimentName );
 	experiment = new experiment();
-
-	experiments.push( experimentName );
+	experiment.makeLoop();
+	experiments.push( experiment );
 	return experiment;
 }
 

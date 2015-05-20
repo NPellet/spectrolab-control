@@ -127,6 +127,7 @@
     if (this.length > 1) {
       return new Error("jquery-serialize-object can only serialize one form at a time");
     }
+
     return new FormSerializer($, this).
       addPairs(this.serializeArray()).
       serialize();

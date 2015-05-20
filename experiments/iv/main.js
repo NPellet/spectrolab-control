@@ -25,36 +25,48 @@ var ivs = {};
 experiment.renderer.getModule("ivsetup").setFormHtml( cfgHtml );
 
 experiment.onLoadConfig( function() {
+	IV.loadConfig( experiment.config.iv );
 	experiment.getModule("ivsetup").setFormData( experiment.config.iv );
-	redoIvViewForm( experiment.config.iv.lightlevels );
+	redoIvViewForm( experiment.config.iv.lightLevels );
 } );
 
 
 experiment.getModule("ivview").on("formChanged", function( cfg ) {
-	viewLightLevel = cfg.form.lightlevel;
+	viewLightLevel = parseFloat( cfg.form.lightlevel );
 	redoIv();
 });
 
 experiment.getModule("ivsetup").on("formChanged", function( cfg ) {
-	
+
+	// Form treatment
+	cfg.form.lightLevels = cfg.form.lightLevels.map( function( i ) { return parseInt( i ); } );
+	cfg.form.scanRates = cfg.form.scanRates.map( function( i ) { return parseFloat( i ); } );
+	cfg.form.vstart = parseFloat( cfg.form.vstart );
+	cfg.form.vend = parseFloat( cfg.form.vend );
+
+	// Set it to config
 	experiment.config.iv = cfg.form;
 
-	redoIvViewForm( cfg.form.lightlevels );
+	// Upload to experiment
+	IV.loadConfig( experiment.config.iv );
+
+	// Redo the form
+	redoIvViewForm( cfg.form.lightLevels );
 } );
 
 // create a new file
 var itx = experiment.itx();
 
-IV.on("progress", function( method, progress ) {
+IV.on("progress", function( progress ) {
 
-	var itxw = itx.newWave( "iv_" + progress.lightLevel + "_" + progress.scanRate + "_backward" );
-	itxw.setWaveform( progress.iv.getBackwardScan( ) );
+	var itxw = itx.newWave( "iv_" + progress.arguments.lightLevel + "_" + progress.arguments.scanRate + "_backward" );
+	itxw.setWaveform( progress.arguments.iv.getBackwardScan( ) );
 
-	var itxw = itx.newWave( "iv_" + progress.lightLevel + "_" + progress.scanRate + "_forward" );
-	itxw.setWaveform( progress.iv.getForwardScan( ) );
+	var itxw = itx.newWave( "iv_" + progress.arguments.lightLevel + "_" + progress.arguments.scanRate + "_forward" );
+	itxw.setWaveform( progress.arguments.iv.getForwardScan( ) );
 
-	ivs[ progress.lightLevel ] = ivs[ progress.lightLevel ] || [];
-	ivs[ progress.lightLevel ].push( progress.iv );
+	ivs[ progress.arguments.lightLevel ] = ivs[ progress.arguments.lightLevel ] || [];
+	ivs[ progress.arguments.lightLevel ].push( progress.arguments.iv );
 
 	var fileName = experiment.getFileSaver().save( {
 		contents: itx.getFile(),
@@ -63,7 +75,7 @@ IV.on("progress", function( method, progress ) {
 		dir: './iv/'
 	} );
 
-	redoIv( progress.lightLevel );
+	redoIv( progress.arguments.lightLevel );
 } );
 
 
@@ -71,9 +83,9 @@ function redoIv( lightLevel ) {
 
 	if( viewLightLevel == lightLevel || lightLevel === undefined ) {
 
+		experiment.getModule( "IV" ).clear();
+
 		if( ivs[ viewLightLevel ] ) {
-	
-			experiment.getModule( "IV" ).clear();
 
 			for( var i = 0, l = ivs[ viewLightLevel ].length; i < l ; i ++ ) {
 
@@ -85,10 +97,11 @@ function redoIv( lightLevel ) {
 
 function redoIvViewForm( lightLevels ) {
 
+	viewLightLevel = parseFloat( lightLevels[ 0 ] );
 	if( typeof lightLevels !== "undefined" ) {
 		var html = '<div class="form-group"><label>Light level to visualize</label>';
 		for( var i = 0; i < lightLevels.length; i ++ ) {
-			html += '<div class="radio"><label><input type="radio" name="lightlevel" value="' + i + '">' + arduino.getSunLevel( i ) + ' sun</label></div>';
+			html += '<div class="radio"><label><input type="radio" ' + ( i == 0 ? 'checked="checked"' : '' ) + ' name="lightlevel" value="' + lightLevels[ i ] + '">' + arduino.getSunLevel( lightLevels[ i ] ) + ' sun</label></div>';
 		}
 		html += '</div>';
 	} else {
