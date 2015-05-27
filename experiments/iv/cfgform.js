@@ -19,7 +19,7 @@ html += '</div>';
 html += '<div class="form-group">';
 html += '<label for="vEnd">V<sub>end</sub></label>';
   html += '<div class="input-group">';
-  html += '<div class="input-group-addon checkbox"><label style="min-height: initial;"><input type="checkbox" name="forcevend"> Force </label></div>';
+  html += '<label class="input-group-addon"><input type="checkbox" name="forcevend"> Force </label>';
     html += '<input type="text" class="form-control" id="vEnd" name="vend" placeholder="Enter V end" />';
   html += '</div>';
 html += '</div>';

@@ -17,6 +17,14 @@ renderer.init = function() {
         left: 3,
         top: 1,
         width: 15 // 500px
+      },
+
+
+      gright: {
+        title: "Configuration",
+        left: 18,
+        top: 1,
+        width: 15 // 500px
       }
 
   } );
@@ -27,6 +35,17 @@ renderer.init = function() {
     graph: {
       wrapper: 'q',
       path: 'display/graph'
+    },
+
+    jscExtraction: {
+      wrapper: 'q',
+      path: 'display/graph'
+    },
+
+    config: {
+      wrapper: 'gright',
+      path: 'display/form2',
+      title: 'Configuration'
     }
   } );
 
