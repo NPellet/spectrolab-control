@@ -40,6 +40,7 @@ KeithleyConnect.prototype = extend( KeithleyConnect.prototype, {
 			module.unlock();
 			module.status = "error";
 			module.emit("connectionerror");
+			module.streamOut( "connectionerror", true );
 		});
 
 

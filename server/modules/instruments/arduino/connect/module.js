@@ -43,9 +43,9 @@ ArduinoConnect.prototype = extend( ArduinoConnect.prototype, {
 		this.arduino.on( "connectionerror", function() {
 
 			module.unlock();
-			module.emit("error");
+			module.emit("connectionerror");
 			module.status = "error";
-			module.streamOut("error");
+			module.streamOut("connectionerror");
 		});
 
 

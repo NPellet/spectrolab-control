@@ -10,36 +10,53 @@ var SerialPort = require('serialport').SerialPort,
 	promise = require("bluebird"),
 	Waveform = require("../../../server/waveform");
 
+var InstrumentController = require("../../instrumentcontroller");
+
 
 var timeout;
 
-function doConnect( arduino, resolver ) {
+function doConnect( arduino, resolver, rejecter ) {
 
 	if( ! arduino.params || ! arduino.params.host ) {
 		throw "No Arduino host was found";
 	}
 
+	arduino.log("Attempting to connect to the Arduino");
+
+	var timeout = setTimeout( function() {
+
+		module.emit("connectionerror");
+		rejecter();
+		serialPort.close(); // Kills the socket
+		
+	}, module.params.timeout || 10000 );
+
 	try {
 
 		var serialPort = new SerialPort( arduino.params.host, {
-				baudrate: arduino.params.baudrate,
-				stopBits: 1,
-				parity: 'none',
-				databits: 8,
-				flowControl: true
+			baudrate: arduino.params.baudrate,
+			stopBits: 1,
+			parity: 'none',
+			databits: 8,
+			flowControl: true
+		});
+
+		serialPort.on("open", function() {
+			clearTimeout( timeout );
+			resolver();
 		});
 
 		arduino.serialPort = serialPort;
 
 	} catch ( error ) {
-		console.log( error );
-		throw "Error while connecting to the Arduino";
-
+		
+		arduino.logError("Could not connect to the arduino. Connection refused");
 		arduino.emit("connectionerror");
 		rejecter();
 	}
 
 	setEvents( arduino, resolver );
+
 }
 
 var Arduino = function( params ) {
@@ -50,7 +67,7 @@ var Arduino = function( params ) {
 
 
 
-Arduino.prototype = new events.EventEmitter;
+Arduino.prototype = new InstrumentController();
 
 Arduino.prototype.connect = function( ) {
 
@@ -97,20 +114,26 @@ Arduino.prototype.connect = function( ) {
 
 			serialPort.list(function (err, ports) {
 
-				ports.forEach(function(port) {
+				var port;
+				for( var i = 0, l = ports.length; i < l ; i ++ ) {
+					port = ports[ i ];
 
 					if( port.comName && port.comName.indexOf("/dev/cu.usbmodem") > -1 ) {
-
 						module.params.host = port.comName;
-						doConnect( module, resolver );
-					}
-				});
+						doConnect( module, resolver, rejecter );
+						return;
+					}	
+				}
+				
+				module.logError("Cannot find arduino in port list. Check USB connection.");
+				module.emit("connectionerror");
 			});
 
 			return;
-		}
+		} else {
 
-		doConnect( module, resolver );
+			doConnect( module, resolver, rejecter );
+		}
 	} );
 };
 

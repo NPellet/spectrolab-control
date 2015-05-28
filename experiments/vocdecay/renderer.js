@@ -10,14 +10,14 @@ renderer.init = function() {
         special: "connect",
         title: "Experiment control",
         width: 3,
-        top: 1,
+        top: 0,
         left: 0
       },
 
       results: {
         title: "Results",
-        left: 13,
-        top: 1,
+        left: 3,
+        top: 0,
         width: 10 // 500px
       }
 

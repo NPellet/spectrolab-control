@@ -1,3 +1,6 @@
+html {
+	height: 100%;
+}
 
 body {
 	font-family: "Helvetica Neue", Helvetica, Arial;
@@ -5,6 +8,8 @@ body {
 	position: relative;
 	padding: 0px;
 	margin: 0px;
+	min-height: 100%;
+
 }
 
 #header {
@@ -25,8 +30,43 @@ body {
 }
 
 
+#console-pannel {
+	position: relative;
+	margin-bottom: -200px;
+	height: 200px;
+	width: 100%;
+	margin-bottom: 0px;
+}
 
+#console-pannel .time {
+	width: 100px;
+}
 
+#console-main-wrapper {
+	overflow-y: auto;
+	overflow-x: hidden;
+	height: calc( 200px - 73px );
+}
+
+#grid {
+	height: calc( 100vh - 200px - 45px );
+	display: block;
+	position: relative;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+#container {
+	position: relative;
+	height: 100vh;
+}
+/*
+
+#console-pannel tr {
+	display: block;
+    width: 100%;
+}
+*/
 .wrapper {
 	position: absolute;
 }

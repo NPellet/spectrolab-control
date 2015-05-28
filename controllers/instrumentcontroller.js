@@ -1,35 +1,39 @@
 
 
 var events = require("events");
-
+var logger = require("../server/logger");
+var util = require("util");
 
 var InstrumentController = function() {};
 
-InstrumentController.prototype = new events.EventEmitter;
+util.inherits( InstrumentController, events.EventEmitter );
 
 InstrumentController.prototype.log = function( message ) {
 
-	if( this._logger ) {
-		this._logger.log( message );
-	}
+	
+	logger.log( message );
+	
 }
 
 InstrumentController.prototype.logError = function( message ) {
 
-	if( this._logger ) {
-		this._logger.error( message );
-	}
+	logger.error( message );
+	
 }
 
 InstrumentController.prototype.logWarning = function( message ) {
 
-	if( this._logger ) {
-		this._logger.warning( message );
-	}
+	
+	logger.warning( message );
+	
 }
 
-InstrumentController.prototype.setLogger = function( logger ) {
-	this._logger = logger;
+
+InstrumentController.prototype.logOk = function( message ) {
+
+	
+	logger.ok( message );
+	
 }
 
 module.exports = InstrumentController;

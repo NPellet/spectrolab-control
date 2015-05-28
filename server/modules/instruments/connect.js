@@ -30,28 +30,27 @@ define( [ 'js/module'], function( defaultModule ) {
     'connectionerror': function() {
       this.error();
     }
-
   };
 
   module.prototype.connected = function() {
     var connect = this.connect;
     connect.html("Disconnect");
     this.getDom().addClass('panel-success').removeClass("panel-warning panel-error panel-primary");
-    connect.removeClass('label-primary label-warning label-error').addClass('label-success');
+    connect.removeClass('btn-primary btn-warning btn-danger').addClass('btn-success');
   }
 
   module.prototype.disconnected = function() {
     var connect = this.connect;
     connect.html("Connect");
     this.getDom().removeClass('panel-success panel-warning panel-error').addClass("panel-primary");
-    connect.removeClass('label-success label-warning label-error').addClass('label-primary');
+    connect.removeClass('btn-success btn-warning btn-danger').addClass('btn-primary');
   }
 
   module.prototype.error = function() {
     var connect = this.connect;
     connect.html("Reconnect");
-    this.getDom().removeClass('panel-success panel-primary panel-error').addClass("panel-error");
-    connect.removeClass('label-success label-warning label-error').addClass('label-error');
+    this.getDom().removeClass('panel-success panel-primary panel-error').addClass("panel-danger");
+    connect.removeClass('btn-success btn-warning btn-danger').addClass('btn-danger');
   }
 
   module.prototype.setStatus = function( status ) {

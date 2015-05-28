@@ -111,7 +111,7 @@ Wrapper.prototype.render = function() {
 }
 
 Wrapper.prototype.getPositionTop = function() {
-	return ( this.top ) * ( Wrapper.gridY + 0 ) ;
+	return ( this.top ) * ( Wrapper.gridY + 0 ) + 10 ;
 }
 Wrapper.prototype.getPositionLeft = function() {
 	return ( this.left ) * ( Wrapper.gridX + 0 );

@@ -1,144 +1,143 @@
 
-var Waveform = require('../../server/waveform');
 
-var experiment = {
+/**
+ *  Measures IV at different scans, different speeds
+ *  Author: Norman Pellet
+ *  Date: Mai 19, 2015
+ */
 
-	init: function( parameters ) {
+var defaultExperiment = require("../experiment"),
+  extend = require("extend");
 
-		experiment.parameters = parameters;
+var oscilloscope, arduino, afg;
 
-		experiment.oscilloscope = parameters.instruments["tektronix-oscilloscope"].instrument;
-		experiment.keithley = parameters.instruments["keithley-smu"].instrument;
-		experiment.arduino = parameters.instruments.arduino.instrument;
-
-		experiment.parameters.ledPin = 4;
-		experiment.parameters.pulseTime = 10;
-		experiment.parameters.delay = 15;
-
-		experiment.lightIntensities = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ];
-	},
-
-	run: function() {
-
-		var self = experiment;
-		return new Promise( function( resolver, rejecter ) {
-
-			var recordedWaves = [];
-			var timeBase = 1000000e-6;
-			var preTrigger = 0.1;
-			var recordLength = 1000000;
-			// Oscilloscope functions
+var experiment = function() {
+  this._init();
+};
+experiment.prototype = new defaultExperiment();
 
 
-			self.oscilloscope.disableAveraging();
+extend( experiment.prototype, {
 
-			self.oscilloscope.enable50Ohms( 2 );
-			self.oscilloscope.disable50Ohms( 3 );
+  defaults: {
+  	ledPin: 4,
+  	pulseTime: 10,
+    delay: 15,
+    timebase: 0.1,
+    lightIntensities: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ]
+  },
 
-			self.keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-			self.keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
+  init: function( parameters ) {
 
-			self.oscilloscope.setVerticalScale( 3, 200e-3 ); // 200mV over channel 3
+ 	keithley = this.getInstrument("keithley-smu");
+    arduino = this.getInstrument("arduino");
+    oscilloscope = this.getInstrument("tektronix-oscilloscope");
+  },
 
-			self.oscilloscope.setCoupling( 1, "DC");
-			self.oscilloscope.setCoupling( 2, "GND");
-			self.oscilloscope.setCoupling( 3, "DC");
-			self.oscilloscope.setCoupling( 4, "GND");
+  makeLoop: function() {
 
+		var self = this;
 
+		var preTrigger = 10;
+		var recordLength = 100000;
+		var yscales = {};
 
-			self.oscilloscope.stopAfterSequence( false );
+		return function *pulse(  ) {
 
-			self.oscilloscope.setRecordLength( recordLength );
+			var recordedWave;
+			oscilloscope.setRecordLength( recordLength );
+			oscilloscope.setTriggerRefPoint( preTrigger * 100 ); // Set pre-trigger, 10%
 
-			self.oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel
-			self.oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
-			self.oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
-			self.oscilloscope.setTriggerRefPoint( preTrigger * 100 ); // Set pre-trigger, 10%
-			self.oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
-			self.oscilloscope.setHorizontalScale( timeBase );
+			for( var i = 0; i < self.config.lightIntensities.length; i += 1 ) {
 
-			self.oscilloscope.setRecordLength( recordLength );
-			self.oscilloscope.setPosition( 3, -4 );
+				
+				arduino.setWhiteLightLevel( self.config.lightIntensities[ i ] );
+				oscilloscope.clear();
+	
+				// Wait two seconds				
+				self.waitAndNext( 2 );
+				yield;
 
-				var vocDecays = [];
-				function *pulse( ) {
+				// Pulse the light
+				self.pulse( self.config.timebase, 1 ).then( function( w ) {
+					recordedWave = w;
+					self.loopNext();
+				});
+				yield;
 
-					for( var i = 0; i < self.lightIntensities.length; i += 1 ) {
+				// Extract the interesting part
+				recordedWave = recordedWave.subset( ( recordLength - 1 ) * preTrigger, recordLength - 1 );
+				// No need to save 100k points...
+				recordedWave = recordedWave.degradeExp( 1000, 0.05 );
 
-						var recordedWave;
+				// Shift to 1us initial value
+				recordedWave.shiftXToMin( 1e-6 );
 
-						self.arduino.setWhiteLightLevel( self.lightIntensities[ i ] );
-						self.oscilloscope.clear();
-						self.oscilloscope.ready().then( function() {
-							p.next();
-						});
-						yield;
+				vocDecays[ i ] = recordedWave
 
-						setTimeout( function() { p.next(); }, 2000 );
-						yield;
+				self.progress( "vocdecay", {
+					vocDecays: vocDecays,
+					lightIntensities: self.config.lightIntensities
+				});
+			}
 
-						self.pulse( timeBase, 1 ).then( function( w ) {
-
-							recordedWave = w;
-
-							if( ! experiment._paused ) {
-									p.next();
-							} else {
-								experiment.paused();
-							}
-
-						});
-
-
-						yield;
-						recordedWave = recordedWave.subset( ( recordLength - 1 ) * preTrigger, recordLength - 1 );
-						recordedWave = recordedWave.degradeExp( 1000, 0.05 );
-						recordedWave.shiftXToMin( 1e-6 );
-
-
-						vocDecays[ i ] = recordedWave
-
-						experiment.progress( vocDecays, self.lightIntensities );
-
-
-					}
-
-					experiment.done( vocDecays, self.lightIntensities );
-				}
-
-				var p = pulse();
-				experiment.iterator = p;
-				p.next( );
-
-
-		}); // End returned promise
-
+			self.terminate( { decays: vocDecays, lightIntensities: self.lightIntensities } );
+		}
 	},
 
 	pulse: function( timeBase, number, delay ) {
 
-		var self = experiment;
+		var self = this;
 
 		return self.keithley.longPulse( {
 
-			diodePin: self.parameters.ledPin,
-			pulseWidth: self.parameters.pulseTime,
+			diodePin: self.config.ledPin,
+			pulseWidth: self.config.pulseTime,
 			numberOfPulses: number || 1,
-			delay: delay || self.parameters.delay
+			delay: delay || self.config.delay
 
 		} ).then( function( value ) {
 
-			return self.oscilloscope.getWaves().then( function( allWaves ) {
-
+			return oscilloscope.getWaves().then( function( allWaves ) {
 				var voltageWave = allWaves[ "3" ];
-				console.log('done');
 				return voltageWave;
 			});
 		});
+	},
+
+	setup: function() {
+
+		oscilloscope.disableAveraging();
+
+		oscilloscope.enable50Ohms( 2 );
+		oscilloscope.disable50Ohms( 3 );
+
+		keithley.command( "smua.source.offmode = smua.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+		keithley.command( "smua.source.output = smua.OUTPUT_OFF;" ); // Turn the output off
 
 
+		oscilloscope.setVerticalScale( 3, 200e-3 ); // 200mV over channel 3
+
+		oscilloscope.setCoupling( 1, "DC");
+		oscilloscope.setCoupling( 2, "GND");
+		oscilloscope.setCoupling( 3, "DC");
+		oscilloscope.setCoupling( 4, "GND");
+
+
+
+		oscilloscope.stopAfterSequence( false );
+
+
+		oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel
+		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
+		oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
+		oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
+		oscilloscope.setHorizontalScale( this.config.timebase );
+
+		oscilloscope.setPosition( 3, -4 );
+
+		return oscilloscope.ready();
 	}
-}
+});
 
 module.exports = experiment;

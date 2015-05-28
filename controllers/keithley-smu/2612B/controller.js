@@ -128,14 +128,14 @@ var methods = {
 	},
 
 
-	'measureIsc': {
+	'measureJ': {
 		defaults: {
 			channel: 'smua',
 			settlingTime: 0.02,
 			voltage: 0
 		},
 
-		method: 'measurejsc',
+		method: 'measurej',
 		parameters: function( options ) {
 
 			return [ options.channel, options.settlingTime, options.voltage ]
@@ -447,13 +447,13 @@ Keithley.prototype.connect = function( callback ) {
 			// Connect by raw TCP sockets
 
 			var self = module,
+				socket = net.createConnection( {
+					port: module.params.port,
+					host: module.params.host,
+					allowHalfOpen: true
+				});
 
-
-			socket = net.createConnection( {
-				port: module.params.port,
-				host: module.params.host,
-				allowHalfOpen: true
-			});
+			self.log("Attempting to connect to Keithley");
 
 			module.connecting = true;
 			module.socket = socket;
@@ -462,6 +462,7 @@ Keithley.prototype.connect = function( callback ) {
 
 				module.emit("connectionerror");
 				rejecter();
+				self.logError("Error while connecting to Keithley. Request timeout. Check that the Keithley is connected and turned on.")
 				module.socket.destroy(); // Kills the socket
 
 			}, module.params.timeout || 10000 );
@@ -489,6 +490,7 @@ Keithley.prototype.connect = function( callback ) {
 				self.socket.write("SpetroscopyScripts();\r\n");
 
 				self.emit("connected");
+				module.logOk("Connected to Keithley on host " + module.params.host + " on port " + module.params.port );
 
 				self.queue.map( function( resolver ) {
 					resolver();

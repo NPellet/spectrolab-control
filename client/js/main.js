@@ -163,6 +163,33 @@ function global( IO ) {
 	} );
 
 
+	IO.onGlobal('logger', function( message ) {
+
+		var classTr, classText;
+		switch( message.type ) {
+
+			case 'error':
+				classTr = 'danger';
+			break;
+
+			case 'warning':
+				classTr = 'warning';
+			break;
+
+			case 'log':
+				classTr = '';
+			break;
+
+			case 'ok':
+				classTr = 'success';
+			break;
+
+		}
+
+		classText = classTr !== "" ? 'text-' + classTr : '';
+		var tr = '<tr class="' + classTr + ' ' + classText + '"><td class="time">[' + message.time + '] :</td><td>' + message.message + '</td></tr>'
+		$("#console-main tbody").prepend( tr );
+	});
 
 	IO.writeGlobal('domReady');
 

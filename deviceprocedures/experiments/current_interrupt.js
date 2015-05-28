@@ -53,10 +53,9 @@ extend( experiment.prototype, {
 			var lightLevel = 0;
 
 			var results = {
-				vocs: [],
-				charges: [],
+				jscs: [],
+				voltages: [],
 				lightLevels: [],
-				currentWaves: [],
 				voltageWaves: []
 			};
 
@@ -67,42 +66,26 @@ extend( experiment.prototype, {
 				arduino.setWhiteLightLevel( lightLevel );
 				var breakit = false;
 				self.pulse( ).then( function( w ) {
-
-					oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
-						if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
-							oscilloscope.setOffset( 2, measurements[ 1 ] );
-
-							yscales[ lightLevel ] = measurements[ 0 ] / 7;
-							breakit = true;
-
-						} else {
-							current = w[ 2 ];
-								voltage = w[ 3 ];
-						}
-
-						self.loopNext();
-					} );
-
+					voltage = w[ 3 ];
+					self.loopNext();
 				} );
+
 				yield;
 
-				if( breakit ) {
-					continue;
-				}
+				keithley.measureJ( { channel: 'smub', voltage: 0, settlingTime: 2 }).then( function( measuredJsc ) {
+					jsc = measuredJsc;
+					self.loopNext();
+				});
 
-				var voc = voltage.average( recordLength * 0.05, recordLength * 0.09 );
-				var charges = current.integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
+				yield;
 
-				results.vocs.push( voc );
-				results.charges.push( charges );
+				results.voltages.push( voltage.getMax() );
+				results.jscs.push( jsc );
 				results.lightLevels.push( lightLevel );
-				results.currentWaves.push( current );
 				results.voltageWaves.push( voltage );
-       			results.lastCurrentWave = current;
+       			results.lastVoltageWave = voltage;
+
 				self.progress( "charge", results );
-
-				oscilloscope.setOffset( 2, 0 );
-
 
 				if( lightLevel >= 12 ) {
 					break;
@@ -117,7 +100,6 @@ extend( experiment.prototype, {
 
 	pulse: function( vscale ) {
 
-	
 		oscilloscope.clear();
 		oscilloscope.startAquisition();
 		afg.enableChannel( 1 );
@@ -166,7 +148,6 @@ extend( experiment.prototype, {
 
 		oscilloscope.setPosition( 2, -4 );
 		oscilloscope.setPosition( 3, -4 );
-
 		oscilloscope.setPosition( 1, 0 );
 		oscilloscope.setPosition( 4, 0 );
 
@@ -176,33 +157,12 @@ extend( experiment.prototype, {
 		oscilloscope.setOffset( 4, 0 );
 
 		oscilloscope.enableAveraging();
-
-
    		oscilloscope.setHorizontalScale( timeBase );
-
-		oscilloscope.setCursors( "VBArs" );
-		oscilloscope.setCursorsMode( "INDependent" );
-		oscilloscope.setCursorsSource( 2 );
-		oscilloscope.enableCursors( 2 );
-		oscilloscope.setVCursorsPosition( 2, timeBase * 8 );
-		oscilloscope.setVCursorsPosition( 1, 900e-9 ); // 5%
-
-
-		oscilloscope.setMeasurementType( 1, "PK2PK" );
-		oscilloscope.setMeasurementSource( 1, 2 );
-		oscilloscope.enableMeasurement( 1 );
-		oscilloscope.setMeasurementGating( "CURSOR" );
-
-		oscilloscope.setMeasurementType( 2, "MINImum" );
-		oscilloscope.setMeasurementSource( 2, 2 );
-		oscilloscope.enableMeasurement( 2 );
+   		oscilloscope.disableMeasurements();
 
 		oscilloscope.setNbAverage( nbAverage );
 		 
-	   
-
-
-
+	  
 		/* AFG SETUP */
 
 		afg.setTriggerExternal(); // Only external trigger
@@ -222,7 +182,6 @@ extend( experiment.prototype, {
 		afg.setPulseWidth( pulseChannel, pulsetime );
 		afg.setBurstNCycles( pulseChannel, nb );
 		
-
 
 		var pulseChannel = 2;
 		afg.enableBurst( pulseChannel );

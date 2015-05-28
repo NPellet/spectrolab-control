@@ -35,9 +35,9 @@ Experiment.prototype.progress = function( progressType, progressArguments ) {
 };
 
 
-Experiment.prototype.terminate = function( ) {
+Experiment.prototype.terminate = function( data ) {
 
-	this.emit("terminated");
+	this.emit("terminated", data );
 	this.loop = false;
 }
 

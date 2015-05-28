@@ -2,13 +2,10 @@
 "use strict";
 
 var
-	extend = require('extend'),
-	fs = require('fs'),
-	events = require("events"),
 	path = require("path"),
-	promise = require("bluebird"),
-	Waveform = require("../../../server/waveform");
+	promise = require("bluebird");
 
+var InstrumentController = require("../../instrumentcontroller");
 var pythonShell = require("python-shell"); // Used to communicate through VXI11 with the Tektronix AFG
 
 var TektronixAFG = function( params ) {
@@ -22,40 +19,40 @@ var TektronixAFG = function( params ) {
 
 		while( true ) {
 
-				while( queue.length == 0 ) {
+			while( queue.length == 0 ) {
 
-					self.emit("queueEmpty");
-					yield;
-				}
-
-				var running = true;
-
-				var element = queue.shift();
-
-				self.connect().then( function() {
-
-						query( self, element.command ).then( function( data ) {
-
-						element.promiseResolve( data );
-
-					}/*, function( error ) {
-						console.log('sdf');
-						element.promiseReject();
-
-					} */).finally( function() {
-
-						running = false;
-						self.commandRunner.next();
-
-					});
-				});
-
+				self.emit("queueEmpty");
 				yield;
+			}
 
-				// Does nothing if next is called and the process is running already
-				while( running ) {
-					yield;
-				}
+			var running = true;
+
+			var element = queue.shift();
+
+			self.connect().then( function() {
+
+					query( self, element.command ).then( function( data ) {
+
+					element.promiseResolve( data );
+
+				}/*, function( error ) {
+					console.log('sdf');
+					element.promiseReject();
+
+				} */).finally( function() {
+
+					running = false;
+					self.commandRunner.next();
+
+				});
+			});
+
+			yield;
+
+			// Does nothing if next is called and the process is running already
+			while( running ) {
+				yield;
+			}
 		}
 	}
 
@@ -65,7 +62,7 @@ var TektronixAFG = function( params ) {
 };
 
 
-TektronixAFG.prototype = new events.EventEmitter;
+TektronixAFG.prototype = new InstrumentController();
 
 TektronixAFG.prototype.connect = function(  ) {
 
@@ -80,51 +77,54 @@ TektronixAFG.prototype.connect = function(  ) {
 				return;
 			}
 
-			console.log( "Trying to connect to host " + module.params.host + " via VXI11" );
+			module.log( "Trying to connect to Tektronix AFG on host " + module.params.host + " via VXI11" );
 
-			// Launches a python instance which will communicate in VXI11 with the scope
-			module.shellInstance = new pythonShell( 'io.py', {
-				scriptPath: path.resolve( 'server/util/vxi11/' ),
-				args: [ module.params.host ], // Pass the IP address
-				mode: "text" // Text mode
-			} );
+			try {
+				// Launches a python instance which will communicate in VXI11 with the scope
+				module.shellInstance = new pythonShell( 'io.py', {
+					scriptPath: path.resolve( 'server/util/vxi11/' ),
+					args: [ module.params.host ], // Pass the IP address
+					mode: "text" // Text mode
+				} );
 
-		/*	module.shellInstance.on("message", function( data ) {
-				console.log( data );
-			})
-*/
-
-			// At this point we are already connected. No asynchronous behaviour with python
-			module.connected = true;
-
-			module.shellInstance.once( 'message', function( data ) {
+				// At this point we are already connected. No asynchronous behaviour with python
+				module.shellInstance.once( 'message', function( data ) {
 
 					if( data == "IO:connected" ) {
 
 						module.getErrors().then( function() {
-
+							module.connected = true;
+							module.logOk("Connected to Tektronix AFG on host " + module.params.host + " via VXI11" );
 							resolver( module );
 							module.emit("connected");
-
 						});
 
-					} else if( data == "IO:unreachable") {
+					} else {
 						rejecter( module );
 						module.emit("connectionerror");
+						module.connected = false;
+						module.logError("Unexpected response from Tektronix AFG during connection. Response was : " + data );
 					}
+				});
 
+				module.shellInstance.on( 'error', function() {
 
-			});
+					rejecter( module );
+					module.emit("connectionerror");
+					module.connected = false;
+					module.logError("Error while connecting to Tektronix AFG. Check connection and cables.");
+				});
 
+				module.shellInstance.on( 'message', function( data ) {
+					console.log("Receiving from AFG: " + data );
+				});
 
-
-			module.shellInstance.on( 'message', function( data ) {
-				console.log("Receiving from AFG: " + data );
-
-			});
-
-
-
+			} catch( e ) {
+				console.log("Error");
+				module.emit("connectionerror");
+				module.logError("Cannot reach Tektronix AFG. Check connection and cables.");
+				rejecter();
+			}
 		} );
 
 	}

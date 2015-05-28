@@ -21,6 +21,7 @@
 
 <body>
 
+<div id="container">
 <div id="header">
 
 <div id="header-main">
@@ -98,11 +99,33 @@
 	</div>
 </div>
 
-
+<div id="grid">
 {% for wrapper in wrappers %}
 	{{ wrapper }}
 {% endfor %}
+</div>
 
+
+<div class="panel panel-default" id="console-pannel">
+  <!-- Default panel contents -->
+  <div class="panel-heading">Console</div>
+  <!-- Table -->
+  <table class="table table-condensed" id="console-head">
+  <thead>
+  	<tr>
+  		<th class="time">Time</th>
+  		<th class="message">Message</th>
+  	</tr>
+  	</thead>
+  </table>
+  <div id="console-main-wrapper">
+  <table id="console-main" class="table table-condensed">
+  	<tbody>
+  	</tbody>
+  </table>
+  </div>
+</div>
+</div>
 
 </body>
 

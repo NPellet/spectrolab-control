@@ -38,7 +38,8 @@ AFGConnect.prototype = extend( AFGConnect.prototype, {
 		this.afg.on( "connectionerror", function() {
 
 			module.unlock();
-			module.emit("error");
+			module.streamOut( "connectionerror", true );
+			module.emit("connectionerror");
 			module.status = "error";
 		});
 

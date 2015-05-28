@@ -1,41 +1,39 @@
 
 
+var fs = require('fs');
 var experiment = require('app/experiment');
+var Waveform = require('../../server/waveform');
+var itx = experiment.itx();
+var extend = require("extend");
+
+experiment.loadInstruments();
 
 experiment.renderer = require('./renderer');
 experiment.config = require('./config');
-
 experiment.renderer.experiment = experiment;
-experiment.loadInstruments();
-
 experiment.renderer.init();
-
 experiment.addInstrumentConnectModules();
+var VocDecay = experiment.loadProcedure('VocDecay');
 
-var proc = experiment.getDeviceProcedure('VocDecay');
+var itx = experiment.itx();
 
-proc.on("progress", function( response ) {
+VocDecay.on("progress", function( response ) {
 	var vocDecayWave = response;
 	var i = 1;
 
-	experiment.renderer.getModule('VocDecay').clear();
-
+	experiment.getModule('VocDecay').clear();
 	vocDecayWave.map( function( wave ) {
-		experiment.renderer.getModule('VocDecay').newSerie("vocvstime" + i , wave, { lineStyle: i } );
+		experiment.getModule('VocDecay').newSerie("vocvstime" + i , wave, { lineStyle: i } );
 		i++;
 	});
 
-	experiment.renderer.getModule('VocDecay').autoscale();
-	experiment.renderer.getModule('VocDecay').redraw();
+	experiment.getModule('VocDecay').autoscale();
+	experiment.getModule('VocDecay').redraw();
 
 });
 
 
-var itx = experiment.getITXBuilder();
-var itx = new itx();
-
-
-proc.on("done", function( response ) {
+VocDecay.on("terminated", function( response ) {
 
 	var waves = response;
 

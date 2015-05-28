@@ -1,5 +1,5 @@
 
-var experiment = require('experiment');
+var experiment = require('app/experiment');
 
 var logger = {};
 
@@ -16,7 +16,8 @@ logger.setIO = function() {
 logger._log = function( message ) {
 	var date = new Date();
 	message.time = pad( date.getHours() ) + ":" + pad( date.getMinutes() ) + ":" + pad( date.getSeconds() ); 
-	experiment.globalOut("logger", message )
+
+	experiment.streamOut("logger", message )
 
 }
 
@@ -30,6 +31,14 @@ logger.log = function( message ) {
 logger.error = function( message ) {
 	logger._log( {
 		type: "error",
+		message: message
+	} );
+}
+
+
+logger.ok = function( message ) {
+	logger._log( {
+		type: "ok",
 		message: message
 	} );
 }
