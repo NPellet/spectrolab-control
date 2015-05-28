@@ -37,7 +37,7 @@ renderer.init = function() {
       path: 'display/graph'
     },
 
-    jscExtraction: {
+    lastqextr: {
       wrapper: 'q',
       path: 'display/graph'
     },

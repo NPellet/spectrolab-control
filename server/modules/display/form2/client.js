@@ -1,6 +1,6 @@
 
 
-define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-serialize-object/dist/jquery.serialize-object.min'], function( defaultModule ) {
+define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-serialize-object/jquery.serialize-object'], function( defaultModule ) {
 
 	var module = function() {}
 
@@ -17,7 +17,7 @@ define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-se
 		} );
 
 		this.getInnerDom().on("change keyup", ':input', function() {
-			
+
 			var formData = self.getFormData();
 			self.out( "formChanged", { form: formData } );
 		} );

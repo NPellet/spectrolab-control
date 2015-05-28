@@ -4,6 +4,7 @@ var fs = require('fs');
 var experiment = require('app/experiment');
 var Waveform = require('../../server/waveform');
 var itx = experiment.itx();
+var extend = require("extend");
 
 experiment.loadInstruments();
 
@@ -23,28 +24,26 @@ var ivs = {};
 experiment.renderer.getModule("config").setFormHtml( cfgHtml );
 
 experiment.onLoadConfig( function() {
-	QExtr.loadConfig( experiment.config );
+	QExtr.loadConfig( experiment.config, function( cfg ) { cfg.timebase /= 1000000; } );
 	experiment.getModule("config").setFormData( experiment.config );
 } );
 
 
 experiment.getModule("config").on("formChanged", function( cfg ) {
 
-	cfg.form.pulselength = parseFloat( cfg.form.pulselength );
-	cfg.form.pulsedelay = parseFloat( cfg.form.pulsedelay );
-	cfg.form.verticalDiv = parseFloat( cfg.form.verticalDiv );
+	cfg.form.vscale = parseFloat( cfg.form.vscale );
 
 	// Set it to config
 	experiment.config = cfg.form;
 
 	// Upload to experiment
-	QExtr.loadConfig( experiment.config );
+	QExtr.loadConfig( experiment.config, function( cfg ) { cfg.timebase /= 1000000; } );
 } );
 
 
 QExtr.on("progress", function( progress ) {
 
-	switch( method ) {
+	switch( progress.type ) {
 
 		case 'charge':
 
@@ -71,7 +70,7 @@ QExtr.on("progress", function( progress ) {
 			}
 
 			experiment.renderer.getModule( "graph" ).newScatterSerie( "qvoc", qvoc );
-			experiment.renderer.getModule( "lastqextr" ).newSerie( "qextr", progress.arguments.lasCurrentWave );
+			experiment.renderer.getModule( "lastqextr" ).newSerie( "qextr", progress.arguments.lastCurrentWave );
 
 			var fileName = experiment.getFileSaver().save( {
 				contents: itx.getFile(),
@@ -79,7 +78,7 @@ QExtr.on("progress", function( progress ) {
 				fileExtension: 'itx',
 				dir: './chargeextraction_voc/'
 			} );
-			
+
 		break;
 	}
 

@@ -32,9 +32,9 @@ extend( experiment.prototype, {
   init: function( parameters ) {
 
  	   keithley = this.getInstrument("keithley-smu");
-       arduino = this.getInstrument("arduino");
-       afg = this.getInstrument("tektronix-functiongenerator");
-       oscilloscope = this.getInstrument("tektronix-oscilloscope");
+     arduino = this.getInstrument("arduino");
+     afg = this.getInstrument("tektronix-functiongenerator");
+     oscilloscope = this.getInstrument("tektronix-oscilloscope");
   },
 
 	makeLoop: function() {
@@ -64,11 +64,11 @@ extend( experiment.prototype, {
 
 			while( true ) {
 
-				self.arduino.setWhiteLightLevel( lightLevel );
-				yscales[ lightLevel ] = yscales[ lightLevel ] || yscales[ lightLevel - 1 ] || defaultYScale;
+				arduino.setWhiteLightLevel( lightLevel );
+				yscales[ lightLevel ] = yscales[ lightLevel ] || yscales[ lightLevel - 1 ] || self.config.vscale;
 				var breakit = false;
 
-				self.pulse( timeBase, yscales[ lightLevel ], recordLength ).then( function( w ) {
+				self.pulse( yscales[ lightLevel ] ).then( function( w ) {
 
 					oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
 							if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
@@ -79,10 +79,10 @@ extend( experiment.prototype, {
 
 							} else {
 								current = w[ 2 ];
-								voltage = w[ 3 ];
+ 								voltage = w[ 3 ];
 							}
 
-							experiment.next();
+							self.loopNext();
 					} );
 
 				} );
@@ -92,11 +92,11 @@ extend( experiment.prototype, {
 					continue;
 				}
 
-				self.pulseBlank( timeBase, yscales[ lightLevel ], recordLength ).then( function( w ) {
+				self.pulseBlank(  ).then( function( w ) {
 
 					current.subtract( w[ 2 ] );
 					voltage.subtract( w[ 3 ] );
-					experiment.next();
+					self.loopNext();
 				});
 				yield;
 
@@ -110,7 +110,7 @@ extend( experiment.prototype, {
 				results.lightLevels.push( lightLevel );
 				results.currentWaves.push( current );
 				results.voltageWaves.push( voltage );
-
+        results.lastCurrentWave = current;
 				self.progress( "charge", results );
 
 				oscilloscope.setOffset( 2, 0 );
@@ -127,25 +127,34 @@ extend( experiment.prototype, {
 
 	},
 
-	pulse: function( ) {
+	pulse: function( vscale ) {
 
 		var nb = this.config.averaging;
-		
+
 		oscilloscope.setNbAverage( nb );
 		oscilloscope.clear();
 		oscilloscope.startAquisition();
 
-		afg.setBurstNCycles( nb );
+    oscilloscope.setVerticalScale( 2, vscale );
+
+    afg.setBurstNCycles( 1, nb );
+    afg.setBurstNCycles( 2, nb );
+
+    afg.setPulsePeriod( 2, ( this.config.pulsetime + this.config.delaytime ) + 1 );
+    afg.setPulseWidth( 2, this.config.delaytime );
+    afg.setPulseDelay( 2, this.config.pulsetime );
+
 		afg.enableChannel( 1 );
 		afg.enableChannel( 2 );
+
+
 		afg.trigger();
 
-		afg.setPulsePeriod( 2, this.config.pulsetime + this.config.delaytime );
-		afg.setPulseWidth( 2, this.config.delaytime );
 
-
-		return this.wait( ( this.config.delaytime + this.config.pulsetime ) * nb * 1000 + 2000 ).then( function() {
+		return this.wait( ( this.config.delaytime + this.config.pulsetime + 1 ) * nb + 2 ).then( function() {
 			afg.disableChannels();
+
+      return oscilloscope.getWaves();
 		});
 	},
 
@@ -153,27 +162,31 @@ extend( experiment.prototype, {
 	pulseBlank: function(  ) {
 
 		var nb = this.config.blankaveraging;
-		afg.setBurstNCycles( nb );
+
 		oscilloscope.setNbAverage( nb );
 		oscilloscope.clear();
 		oscilloscope.startAquisition();
-		afg.enableChannel( 1 );
-		afg.enableChannel( 2 );
+    afg.setBurstNCycles( 2, nb );
+
+    afg.setPulseDelay( 2, 0 );
+    afg.setPulsePeriod( 2, this.config.timebase * 20 );
+    afg.setPulseWidth( 2, this.config.timebase * 10 );
+    afg.enableChannel( 2 );
 		afg.trigger();
 
-		afg.setPulsePeriod( 2, this.config.timebase * 12 );
-		afg.setPulseWidth( 2, this.config.timebase * 10 );
 
-
-		return this.wait( ( this.config.timebase ) * 12 * nb * 1000 + 2000 ).then( function() {
+		return this.wait( ( this.config.timebase ) * 20 * nb + 2 ).then( function() {
+      console.log('Blank Done');
 			afg.disableChannels();
+
+      return oscilloscope.getWaves();
 		});
 
 	},
 
 	setup: function() {
 
-
+console.log( this.config );
 
 		var nbAverage = this.config.averaging;
 		var pulsetime = this.config.pulsetime;
@@ -187,7 +200,6 @@ extend( experiment.prototype, {
 		oscilloscope.disable50Ohms( 3 );
 		oscilloscope.disable50Ohms( 1 );
 		oscilloscope.disable50Ohms( 4 );
-		oscilloscope.setRecordLength( recordLength );
 		oscilloscope.setTriggerMode("NORMAL");
 
 		oscilloscope.setVerticalScale( 3, vscale ); // 200mV over channel 3
@@ -221,6 +233,8 @@ extend( experiment.prototype, {
 
 		oscilloscope.enableAveraging();
 
+
+    oscilloscope.setHorizontalScale( timeBase );
 
 		oscilloscope.setCursors( "VBArs" );
 		oscilloscope.setCursorsMode( "INDependent" );
@@ -257,7 +271,7 @@ extend( experiment.prototype, {
 		afg.setPulseLeadingTime( pulseChannel, 9e-9 );
 		afg.setPulseTrailingTime( pulseChannel, 9e-9 );
 		afg.setPulseDelay( pulseChannel, 0 );
-		afg.setPulsePeriod( pulseChannel, pulsetime + delaytime + 1 );
+		afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
 		afg.setPulseWidth( pulseChannel, pulsetime );
 
 
@@ -265,16 +279,12 @@ extend( experiment.prototype, {
 		afg.enableBurst( pulseChannel );
 		afg.setShape( pulseChannel, "PULSE" );
 		afg.setPulseHold( pulseChannel , "WIDTH" );
-		afg.setBurstTriggerDelay(  pulseChannel, pulsetime );
+		afg.setBurstTriggerDelay(  pulseChannel, 0 );
 		afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
 		afg.setVoltageLow( pulseChannel, 0 );
 		afg.setVoltageHigh( pulseChannel, 1.5 );
 		afg.setPulseLeadingTime( pulseChannel, 9e-9 );
 		afg.setPulseTrailingTime( pulseChannel, 9e-9 );
-		afg.setPulseDelay( pulseChannel, 0 );
-		afg.setPulsePeriod( pulseChannel, pulsetime + delaytime );
-		afg.setPulseWidth( pulseChannel, delaytime );
-
 
 
 		afg.disableChannels( ); // Set the pin LOW

@@ -107,7 +107,7 @@ TektronixAFG.prototype.connect = function(  ) {
 							module.emit("connected");
 
 						});
-						
+
 					} else if( data == "IO:unreachable") {
 						rejecter( module );
 						module.emit("connectionerror");
@@ -489,6 +489,7 @@ function getChannel( channel ) {
 	if( channel == 1 || channel == 2 ) {
 		return channel;
 	}
+	console.log( channel );
 	console.trace();
 	throw "Channel invalid";
 }
@@ -503,7 +504,7 @@ function getTime( time ) {
 	} else if( typeof time == "number") {
 		return time;
 	}
-
+	console.trace();
 	throw "Time invalid";
 }
 
@@ -512,7 +513,7 @@ function getVoltage( voltage ) {
 	voltage = parseFloat( voltage );
 
 	if( voltage > 10 || voltage < -10 ) {
-
+		console.trace();
 		throw "Voltage invalid";
 	}
 
@@ -529,6 +530,7 @@ function getNumber( nb ) {
 function getPercent( val ) {
 	var val = parseInt( val );
 	if( val < 0 || val > 100 ) {
+		console.trace();
 		throw "Invalid percentage";
 	}
 }

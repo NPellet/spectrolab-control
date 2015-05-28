@@ -17,12 +17,15 @@ Experiment.prototype._init = function() {
 	this.loadConfig( this.__proto__.defaults );
 }
 
-Experiment.prototype.loadConfig = function( cfg ) {
+Experiment.prototype.loadConfig = function( cfg, afterLoad ) {
 	this.config = this.config || {};
 	extend( true, this.config, cfg );
 
-	//console.log( this.config );
-	this.config = cfg;
+	if( typeof afterLoad == "function" ) {
+		afterLoad( this.config );
+	}
+
+	//this.config = cfg;
 }
 
 
