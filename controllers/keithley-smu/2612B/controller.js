@@ -128,23 +128,80 @@ var methods = {
 	},
 
 
-	'measureJ': {
-		defaults: {
-			channel: 'smua',
-			settlingTime: 0.02,
-			voltage: 0
+		'measureJ': {
+			defaults: {
+				channel: 'smua',
+				settlingTime: 0.02,
+				voltage: 0
+			},
+
+			method: 'measurej',
+			parameters: function( options ) {
+
+				return [ options.channel, options.settlingTime, options.voltage ]
+			},
+
+			processing: function( data ) {
+				return parseFloat( data );
+			}
 		},
 
-		method: 'measurej',
-		parameters: function( options ) {
+		'MPPTracking': {
+			defaults: {
+				channel: 'smua',
+			},
 
-			return [ options.channel, options.settlingTime, options.voltage ]
+			method: 'MPPTracking',
+			parameters: function( options ) {
+
+				return [ options.channel ]
+			},
+
+			processing: function( data ) {
+
+				var current, voltage;
+				data = data.split(/,[\t\r\s\n]*/);
+
+				var iv = new Waveform();
+				var it = new Waveform();
+				var vt = new Waveform();
+				var pt = new Waveform();
+
+				var time = new Waveform();
+				var voltage = new Waveform();
+
+				var v = new Waveform();
+				var c = [], v = [], t = [];
+
+				for( var i = 0; i < data.length; i += 3 ) {
+					c.push( parseFloat( data[ i ] ) );
+					v.push( parseFloat( data[ i + 1 ] ) );
+					t.push( parseFloat( data[ i + 2 ] ) );
+				}
+
+				time.setData( t );
+				voltage.setData( v );
+
+				iv.setData( c );
+				iv.setXWave( voltage )
+
+				it.setData( c );
+				it.setXWave( time )
+
+				vt.setData( v );
+				vt.setXWave( time )
+
+				pt = iv.duplicate().multiplyBy( function( valX ) { return valX; } );
+				pt.setXWave( time )
+console.log( data );
+				return {
+					IvsV: iv,
+					IvsT: it,
+					VvsT: vt,
+					PvsT: pt
+				};
+			}
 		},
-
-		processing: function( data ) {
-			return parseFloat( data );
-		}
-	},
 
 
 	'applyVoltage': {
@@ -472,18 +529,21 @@ Keithley.prototype.connect = function( callback ) {
 
 				// It's connected...
 				clearTimeout( timeout );
-
 				self.uploadScripts();
+
+		//		self.getErrors();
+
 				self.connected = true;
 				self.connecting = false;
 
 				self.socket.removeAllListeners( 'data' );
 
 				self.command("exit()"); // Reset keithley
-				self.flushErrors();
 				self.command("*RST"); // Reset keithley
 				self.command("*CLS"); // Reset keithley
 				self.command("digio.writeport(0)");
+				self.flushErrors();
+
 			//	self.command("format.data=format.REAL32");
 				self.command("format.byteorder=format.LITTLEENDIAN");
 
@@ -582,18 +642,49 @@ Keithley.prototype._callMethod = function( method, options ) {
 Keithley.prototype.command = function( command ) {
 
 	var module = this;
-
 	return this.connect().then( function() {
-
 		return new Promise( function( resolver, rejecter ) {
-
 			module.socket.write( command + "\r\n", function() {
-
 				resolver();
 			});
 		});
 	});
 }
+
+Keithley.prototype.commandPrint = function( command ) {
+
+	var module = this;
+	return this.connect().then( function() {
+
+		return new Promise( function( resolver, rejecter ) {
+
+				function end( data ) {
+					data = data.replace("\n", "");
+					if( method.processing ) {
+						data = method.processing( data, options );
+					}
+					resolver( data );
+				}
+
+				function listen( prevData ) {
+
+					module.socket.once( 'data', function( data ) {
+						console.log( ">" + data.toString('ascii') + "< Buffer" );
+						data = prevData + data.toString('ascii');
+						if( data.indexOf("\n") == -1 ) {
+							listen( data );
+						} else {
+							resolver( data );
+						}
+					} );
+				}
+
+				listen("");
+				module.socket.write( command + "\r\n" );
+		});
+	});
+}
+
 
 Keithley.prototype.setDigioPin = function( pin, bln ) {
 		bln = bln ? 1 : 0;
@@ -615,6 +706,23 @@ Keithley.prototype.checkConnection = function() {
 	}
 }
 
+Keithley.prototype.getErrors = function() {
+		var self = this;
+		this.commandPrint("print( errorqueue.count );").then( function( errorCount ) {
+			console.log("Raw error count: " + errorCount );
+			errorCount = parseInt( errorCount );
+			console.log( "Error count: " + errorCount );
+			for( var i = 0; i < errorCount; i ++ ) {
+
+				self.commandPrint("errorCode, message, severity, errorNode = errorqueue.next(); print( errorCode, message );").then( function( error ) {
+					console.log('___');
+					console.log( error );
+					console.log('----');
+				} );
+			}
+		});
+}
+
 
 Keithley.prototype.uploadScripts = function() {
 
@@ -625,20 +733,44 @@ Keithley.prototype.uploadScripts = function() {
 		return false;
 	}
 
-
+	var func;
 	this.socket.write("loadscript SpetroscopyScripts\r\n");
 
 	// Voltage sourcing, current measurement
 	var files = fs.readdirSync( path.resolve( __dirname, "scripts/" ) );
 
 	for( var i = 0; i < files.length ; i ++ ) {
-		if( files[ i ].substr( 0, 1 ) == '_' ) {
+
+		if( files[ i ].substr( 0, 1 ) == '_' || files[ i ].substr( 0, 1 ) == '.' ) {
 			continue;
 		}
 
-		this.socket.write( fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ) );
+		func = fs.readFileSync( path.resolve( __dirname, "scripts/", files[ i ] ) ).toString( 'ascii' );
+		func = func.split("\n");
+
+		var l = 0;
+		var b = "";
+		for( var m = 0, k = func.length; m < k; m ++ ) {
+			if( l + func[ m ].length > 1024 ) {
+				this.socket.write( b );
+
+				b = "";
+				l = 0;
+
+			} else {
+
+				b += func[ m ] + "\n";
+				l += func[ m ].length + 2;
+			}
+		}
+
+		this.socket.write( b );
+
+
+		//this.socket.write(  );
 		this.socket.write("\r\n");
 	}
+
 
 	this.socket.write("endscript\r\n");
 	this.socket.write("SpetroscopyScripts.save()\r\n");

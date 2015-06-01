@@ -12,6 +12,8 @@ function longPulse(diodePin, pulseWidth, numberOfPulses, pulseDelay)
 
 	end
 
+
+
 	print("method_done:longPulse");
 
 end

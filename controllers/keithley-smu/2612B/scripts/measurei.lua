@@ -1,4 +1,4 @@
-function measurejsc( channel, stime )
+function measurej( channel, stime )
 	local pt
 	local pts = 50
 
@@ -19,6 +19,7 @@ function measurejsc( channel, stime )
 		delay( 0.00001 )
 		current = current + channel.measure.i()
 	end
+
 
 	channel.source.output = channel.OUTPUT_OFF
 	printnumber( current / pts )	-- Binary output

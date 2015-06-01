@@ -64,7 +64,7 @@ extend( experiment.prototype, {
 			while( true ) {
 
 				arduino.setWhiteLightLevel( lightLevel );
-				var breakit = false;
+
 				self.pulse( ).then( function( w ) {
 					voltage = w[ 3 ];
 					self.loopNext();
@@ -72,12 +72,22 @@ extend( experiment.prototype, {
 
 				yield;
 
+        afg.setShape( 1, "DC" );
+        afg.setVoltageOffset( 1, 1.5 );
+        afg.setShape( 2, "DC" );
+        afg.setVoltageOffset( 2, 0 );
+        afg.enableChannels();
+
+
 				keithley.measureJ( { channel: 'smub', voltage: 0, settlingTime: 2 }).then( function( measuredJsc ) {
+          console.log( measuredJsc );
 					jsc = measuredJsc;
 					self.loopNext();
 				});
 
 				yield;
+
+        self.setAFGPulses();
 
 				results.voltages.push( voltage.getMax() );
 				results.jscs.push( jsc );
@@ -102,14 +112,17 @@ extend( experiment.prototype, {
 
 		oscilloscope.clear();
 		oscilloscope.startAquisition();
-		afg.enableChannel( 1 );
-		afg.enableChannel( 2 );
-		afg.trigger();
 
-		return this.wait( ( this.config.delaytime + this.config.pulsetime + 1 ) * nb + 2 ).then( function() {
-			afg.disableChannels();
-    		return oscilloscope.getWaves();
-		});
+    this.wait( 5 ).then( function() {
+      afg.enableChannels( );
+      afg.trigger();
+    });
+
+
+    return oscilloscope.ready().then( function() {
+      afg.disableChannels();
+      return oscilloscope.getWaves();
+    })
 	},
 
 	setup: function() {
@@ -120,7 +133,10 @@ extend( experiment.prototype, {
 		var timeBase = this.config.timebase;
 		var vscale = this.config.vscale;
 
-		oscilloscope.stopAfterSequence( false );
+    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+
+		oscilloscope.stopAfterSequence( true );
 
 		oscilloscope.enable50Ohms( 2 );
 		oscilloscope.disable50Ohms( 3 );
@@ -128,7 +144,8 @@ extend( experiment.prototype, {
 		oscilloscope.disable50Ohms( 4 );
 		oscilloscope.setTriggerMode("NORMAL");
 
-		oscilloscope.setVerticalScale( 3, 150e-3 );
+    oscilloscope.setVerticalScale( 2, 20e-3 );
+    oscilloscope.setVerticalScale( 3, 150e-3 );
 		oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
 
 		oscilloscope.setTriggerCoupling( "AC" ); // Trigger coupling should be AC
@@ -140,7 +157,7 @@ extend( experiment.prototype, {
 
 		oscilloscope.setTriggerToChannel( 4 ); // Set trigger on switch channel
 		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
-		oscilloscope.setTriggerSlope( 4, "RISE"); // Trigger on bit going up
+		oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
 		oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
 		oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
 
@@ -161,43 +178,13 @@ extend( experiment.prototype, {
    		oscilloscope.disableMeasurements();
 
 		oscilloscope.setNbAverage( nbAverage );
-		 
-	  
+
+
 		/* AFG SETUP */
 
 		afg.setTriggerExternal(); // Only external trigger
 
-		var pulseChannel = 1;
-		afg.enableBurst( pulseChannel );
-		afg.setShape( pulseChannel, "PULSE" );
-		afg.setPulseHold( pulseChannel , "WIDTH" );
-		afg.setBurstTriggerDelay(  pulseChannel, 0 );
-		afg.setBurstNCycles( pulseChannel, nbAverage );
-		afg.setVoltageLow( pulseChannel, 0 );
-		afg.setVoltageHigh( pulseChannel, 1.5 );
-		afg.setPulseLeadingTime( pulseChannel, 9e-9 );
-		afg.setPulseTrailingTime( pulseChannel, 9e-9 );
-		afg.setPulseDelay( pulseChannel, 0 );
-		afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
-		afg.setPulseWidth( pulseChannel, pulsetime );
-		afg.setBurstNCycles( pulseChannel, nb );
-		
-
-		var pulseChannel = 2;
-		afg.enableBurst( pulseChannel );
-		afg.setShape( pulseChannel, "PULSE" );
-		afg.setPulseHold( pulseChannel , "WIDTH" );
-		afg.setBurstTriggerDelay(  pulseChannel, 0 );
-		afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
-		afg.setVoltageLow( pulseChannel, 0 );
-		afg.setVoltageHigh( pulseChannel, 1.5 );
-		afg.setPulseLeadingTime( pulseChannel, 9e-9 );
-		afg.setPulseTrailingTime( pulseChannel, 9e-9 );
-		afg.setBurstNCycles( pulseChannel, nb );
- 		afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
-	    afg.setPulseWidth( pulseChannel, pulsetime );
-	    afg.setPulseDelay( pulseChannel, 0 );
-
+    this.setAFGPulses();
 
 		afg.disableChannels( ); // Set the pin LOW
 
@@ -205,7 +192,46 @@ extend( experiment.prototype, {
 
 
 		return oscilloscope.ready();
-	}
+	},
+
+  setAFGPulses: function() {
+    var nbAverage = this.config.averaging;
+    var pulsetime = this.config.pulsetime;
+    var delaytime = this.config.delaytime;
+    var timeBase = this.config.timebase;
+    var vscale = this.config.vscale;
+
+    var pulseChannel = 1;
+    afg.enableBurst( pulseChannel );
+    afg.setShape( pulseChannel, "PULSE" );
+    afg.setPulseHold( pulseChannel , "WIDTH" );
+    afg.setBurstTriggerDelay(  pulseChannel, 0 );
+    afg.setBurstNCycles( pulseChannel, nbAverage );
+    afg.setVoltageLow( pulseChannel, 0 );
+    afg.setVoltageHigh( pulseChannel, 1.5 );
+    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
+    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
+    afg.setPulseDelay( pulseChannel, 0 );
+    afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
+    afg.setPulseWidth( pulseChannel, pulsetime );
+
+
+    var pulseChannel = 2;
+    afg.enableBurst( pulseChannel );
+    afg.setShape( pulseChannel, "PULSE" );
+    afg.setPulseHold( pulseChannel , "WIDTH" );
+    afg.setBurstTriggerDelay(  pulseChannel, 0 );
+    afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
+    afg.setVoltageLow( pulseChannel, 0 );
+    afg.setVoltageHigh( pulseChannel, 1.5 );
+    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
+    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
+
+    afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
+    afg.setPulseWidth( pulseChannel, pulsetime );
+    afg.setPulseDelay( pulseChannel, 0 );
+
+  }
 });
 
 

@@ -28,6 +28,7 @@ define( [ 'js/module'], function( defaultModule ) {
     },
 
     'connectionerror': function() {
+      this.unlock();
       this.error();
     }
   };

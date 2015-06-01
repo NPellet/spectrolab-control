@@ -83,10 +83,10 @@ TektronixOscilloscope.prototype.connect = function(  ) {
 
       var timeout = setTimeout( function() {
         module.shellInstance.end( function() {
-          module.emit("connectionerror");  
+          module.emit("connectionerror");
         });
 
-        
+
       }, module.params.timeout || 10000 );
 
 
@@ -679,7 +679,7 @@ TektronixOscilloscope.prototype.getMeasurementMethod = function( measNum, method
 }
 
 TektronixOscilloscope.prototype.getMeasurementMean = function( ) {
-  
+
   if( arguments.length == 1 ) {
     return this.command("MEASUrement:" + arguments[ 0 ] + ":MEAN?");
   }
@@ -805,7 +805,7 @@ TektronixOscilloscope.prototype.optimizeMeasurement = function( measurementNumbe
               }
 
               if( pass > 2 ) {
-                resolver();                
+                resolver();
               }
 
             } else if( mean < idealValue - tolerance * idealValue ) { // Too low
@@ -828,7 +828,7 @@ TektronixOscilloscope.prototype.optimizeMeasurement = function( measurementNumbe
               }
 
               changeUp( pass ).then( function() {
-               run.next(); 
+               run.next();
               } );
 
             } else {
@@ -837,7 +837,7 @@ TektronixOscilloscope.prototype.optimizeMeasurement = function( measurementNumbe
             }
 
           } );
-          
+
 
         }, Math.min( 1 / triggerFrequency, 0.1 ) * 1000 ); // min 0.1s
 
@@ -886,22 +886,27 @@ TektronixOscilloscope.prototype.setVCursorsPosition = function( cursorNumber, po
 
 
 
-TektronixOscilloscope.prototype.ready = function() {
+TektronixOscilloscope.prototype.ready = function( delay ) {
   //this.command( "*OPC" );
   var self = this;
 
   return this.command("BUSY?").then( function( data ) {
-    console.log( "Busy: " + data );
 
     if( data == 0 ) {
       return true;
     }
     return self.command( "*OPC?" ).then( function( data ) {
 
-      console.log( "OPC: " + data );
-      return 1;
+      if( delay ) {
+        return new Promise( function( resolver, rejecter ) {
+          setTimeout( resolver, delay * 1000 );
+        })
+      } else {
+        return 1;
+      }
+
     }, function( data ) {
-      console.log( "Non-ready" );
+
       return self.ready();
     });
 

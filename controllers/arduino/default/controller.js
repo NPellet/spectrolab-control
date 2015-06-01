@@ -28,8 +28,8 @@ function doConnect( arduino, resolver, rejecter ) {
 		module.emit("connectionerror");
 		rejecter();
 		serialPort.close(); // Kills the socket
-		
-	}, module.params.timeout || 10000 );
+
+	}, arduino.params.timeout || 10000 );
 
 	try {
 
@@ -49,7 +49,7 @@ function doConnect( arduino, resolver, rejecter ) {
 		arduino.serialPort = serialPort;
 
 	} catch ( error ) {
-		
+
 		arduino.logError("Could not connect to the arduino. Connection refused");
 		arduino.emit("connectionerror");
 		rejecter();
@@ -122,9 +122,9 @@ Arduino.prototype.connect = function( ) {
 						module.params.host = port.comName;
 						doConnect( module, resolver, rejecter );
 						return;
-					}	
+					}
 				}
-				
+
 				module.logError("Cannot find arduino in port list. Check USB connection.");
 				module.emit("connectionerror");
 			});

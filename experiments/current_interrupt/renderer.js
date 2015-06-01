@@ -37,7 +37,7 @@ renderer.init = function() {
       path: 'display/graph'
     },
 
-    lastqextr: {
+    lastvoltage: {
       wrapper: 'q',
       path: 'display/graph'
     },

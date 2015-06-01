@@ -54,7 +54,7 @@ CurrentInterupt.on("progress", function( progress ) {
 			itxw.setWaveform( progress.arguments.jscs );
 
 			for( var i = 0; i < progress.arguments.lightLevels.length; i ++ ) {
-				vocjsc.push( progress.arguments.voltages[ i ], progress.arguments.jscs[ i ] );
+				vocjsc.push( progress.arguments.jscs[ i ], progress.arguments.voltages[ i ] );
 
 				var itxw = itx.newWave( "voltage_" + i );
 				itxw.setWaveform( progress.arguments.voltageWaves[ i ] );

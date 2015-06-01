@@ -7,6 +7,10 @@ function sourcev(channel,bias,complianceV)	-- SOURCEV()
 	channel.source.levelv = bias
 	channel.source.rangev = complianceV
 	channel.source.limiti = complianceI
+
+
 	channel.source.output = channel.OUTPUT_ON
-	printnumber "done"	-- ASCII output
+	print( "done" )	-- ASCII output
+
+	
 end

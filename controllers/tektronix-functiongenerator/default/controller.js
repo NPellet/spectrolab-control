@@ -32,7 +32,6 @@ var TektronixAFG = function( params ) {
 			self.connect().then( function() {
 
 					query( self, element.command ).then( function( data ) {
-
 					element.promiseResolve( data );
 
 				}/*, function( error ) {
@@ -68,7 +67,11 @@ TektronixAFG.prototype.connect = function(  ) {
 
 		var module = this;
 
-		return new Promise( function( resolver, rejecter ) {
+		if( module.connecting ) {
+			return module.connecting;
+		}
+
+		var promise = new Promise( function( resolver, rejecter ) {
 
 			// Avoid multiple connection
 			if( module.connected ) {
@@ -80,6 +83,7 @@ TektronixAFG.prototype.connect = function(  ) {
 			module.log( "Trying to connect to Tektronix AFG on host " + module.params.host + " via VXI11" );
 
 			try {
+
 				// Launches a python instance which will communicate in VXI11 with the scope
 				module.shellInstance = new pythonShell( 'io.py', {
 					scriptPath: path.resolve( 'server/util/vxi11/' ),
@@ -92,15 +96,15 @@ TektronixAFG.prototype.connect = function(  ) {
 
 					if( data == "IO:connected" ) {
 
-						module.getErrors().then( function() {
-							module.connected = true;
-							module.logOk("Connected to Tektronix AFG on host " + module.params.host + " via VXI11" );
-							resolver( module );
-							module.emit("connected");
-						});
+						module.connecting = false;
+						module.connected = true;
+
+						module.logOk("Connected to Tektronix AFG on host " + module.params.host + " via VXI11" );
+						resolver( module );
+						module.emit("connected");
 
 					} else {
-						rejecter( module );
+				//		rejecter( module );
 						module.emit("connectionerror");
 						module.connected = false;
 						module.logError("Unexpected response from Tektronix AFG during connection. Response was : " + data );
@@ -109,10 +113,10 @@ TektronixAFG.prototype.connect = function(  ) {
 
 				module.shellInstance.on( 'error', function() {
 
-					rejecter( module );
+			//		rejecter( module );
 					module.emit("connectionerror");
 					module.connected = false;
-					module.logError("Error while connecting to Tektronix AFG. Check connection and cables.");
+					module.logError("Error while connecting to Tektronix AFG. Check connection and cables. You may have to reboot it");
 				});
 
 				module.shellInstance.on( 'message', function( data ) {
@@ -120,12 +124,17 @@ TektronixAFG.prototype.connect = function(  ) {
 				});
 
 			} catch( e ) {
-				console.log("Error");
 				module.emit("connectionerror");
-				module.logError("Cannot reach Tektronix AFG. Check connection and cables.");
-				rejecter();
+				module.logError("Cannot reach Tektronix AFG. Check connection and cables. You may have to reboot it");
+		//		rejecter();
 			}
 		} );
+
+		if( ! module.connected ) {
+			module.connecting = promise;
+		}
+
+		return promise;
 
 	}
 
@@ -166,7 +175,7 @@ TektronixAFG.prototype.connect = function(  ) {
 function query( module, query ) {
 
 		var ask = query.indexOf('?') > -1;
-
+console.log( query );
 		return new Promise( function( resolver, rejecter ) {
 
 			if( ask ) {
@@ -176,7 +185,7 @@ function query( module, query ) {
 					module.shellInstance.once( 'message', function( data ) {
 
 						data = prevData + data.toString('ascii');
-
+console.log( "AFG says: " + data );
 					/*	if( data.indexOf("\n") == -1 ) {
 							console.log('NThr');
 							listen( data );
@@ -216,13 +225,17 @@ TektronixAFG.prototype.getErrors = function() {
 
 	return new Promise( function( resolver ) {
 
-
+		console.log( "here2" );
 		var errorQueue;
-var i = 0;
+		var i = 0;
 		function *errors() {
+			console.log( "here3" );
 
 			while( true ) {
+				console.log( "here4" );
+
 				self.command("SYSTEM:ERROR:NEXT?").then( function( error ) {
+					console.log( "here3" );
 
 						error = error.split(',');
 						var errorCode = parseInt( error[ 0 ] );
@@ -233,7 +246,6 @@ var i = 0;
 							console.log( "Infinite loop" );
 							return; // Infinite loop. Close the iterator;
 						}
-
 						if( errorCode != 0 ) {
 							console.log("Error: " + errorCode + "; Message: " + errorMessage );
 							errorQueue.next();
@@ -461,7 +473,7 @@ TektronixAFG.prototype.disableChannels = function() {
 }
 
 TektronixAFG.prototype.trigger = function() { // Generates a trigger
-	this.command("*TRG");
+	this.command("TRIGger:SEQuence:IMMediate");
 }
 
 TektronixAFG.prototype.setTriggerSlope = function( slope ) {
@@ -480,6 +492,11 @@ TektronixAFG.prototype.setTriggerExternal = function() {
 TektronixAFG.prototype.ready = function() {
 	this.command( "*OPC" );
 	return this.command( "*OPC?" );
+}
+
+
+TektronixAFG.prototype.wait = function() {
+	this.command( "*WAI" );
 }
 
 
