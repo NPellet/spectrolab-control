@@ -8,6 +8,7 @@ var
   pythonShell = require("python-shell"),
   promise = require("bluebird");
 
+var InstrumentController = require("../../instrumentcontroller");
 var Waveform = require("../../../server/waveform");
 
 var TektronixOscilloscope = function( params ) {
@@ -35,11 +36,12 @@ var TektronixOscilloscope = function( params ) {
 
             query( self, element.command ).then( function( data ) {
 
-            element.promiseResolve( data );
+              element.promiseResolve( data );
 
-          }, function( data ) {
+            }, function( data ) {
 
-            element.promiseReject( data );
+              self.logError("Error on oscilloscope while running command \"" + element.command + "\". Response: " + data );
+              element.promiseReject( { data: data, command: element.command } );
 
           } ).finally( function() {
 
@@ -63,7 +65,7 @@ var TektronixOscilloscope = function( params ) {
 };
 
 
-TektronixOscilloscope.prototype = new events.EventEmitter;
+TektronixOscilloscope.prototype = new InstrumentController();
 
 TektronixOscilloscope.prototype.connect = function(  ) {
 
@@ -148,6 +150,9 @@ TektronixOscilloscope.prototype.connect = function(  ) {
       } );
 
       self.runCommands();
+    }).catch( function() {
+      // Reset queue
+      self.queue = [];
     });
   }
 
@@ -171,6 +176,7 @@ function query( module, query ) {
         function listen( prevData ) {
 
           module.shellInstance.once( 'message', function( data ) {
+            console.log("Oscilloscope data: " + data.toString('ascii') );
             data = prevData + data.toString('ascii');
             data = data.replace("\n", "");
             if( data.indexOf( "ERROR" ) > -1 ) {
@@ -681,7 +687,7 @@ TektronixOscilloscope.prototype.getMeasurementMethod = function( measNum, method
 TektronixOscilloscope.prototype.getMeasurementMean = function( ) {
 
   if( arguments.length == 1 ) {
-    return this.command("MEASUrement:" + arguments[ 0 ] + ":MEAN?");
+    return this.command("MEASUrement:" + getMeasurementNumber( arguments[ 0 ] ) + ":MEAN?");
   }
 
   return this.all( "MEASUrement:%s:MEAN?", Array.prototype.map.call( arguments, getMeasurementNumber ), function( val ) { return parseFloat( val ); } );
