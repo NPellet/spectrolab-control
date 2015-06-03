@@ -5,7 +5,6 @@ var Waveform = require('../../server/waveform');
 
 var oscilloscope, keithley, arduino, afg;
 
-
 var experiment = function() {};
 experiment.prototype = new defaultExperiment();
 
@@ -34,6 +33,12 @@ extend( experiment.prototype, {
 		return function *perturbation() {
 
 			self.sunLevel = arduino.lowestSun();
+
+			perturbationVoc = 1000;
+			horizontalScaleV = 200e-4;
+
+			perturbationJsc = 1000;
+			horizontalScaleJ = 200e-4;
 
 			while( true ) {
 
@@ -72,14 +77,17 @@ extend( experiment.prototype, {
 				oscilloscope.enableChannel( 3 );
 				oscilloscope.enableChannel( 1 );
 
-				oscilloscope.setHorizontalScale( experiment.cfg[ sunLevel ].voltage.xscale );
-				oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].voltage.yscale );
+				oscilloscope.setVerticalScale( 3, 1e-3 );
 				oscilloscope.setPosition( 3, -4 );
 				oscilloscope.setOffset( 3, 0 );
 
 				experiment.perturbationValue = 0;
-				experiment.perturbation( voc, sunLevel, true ).then( function( d ) {
-					vocDecay = d;
+				experiment.perturbationV( perturnationVoc, horizontalScaleV ).then( function( d ) {
+					
+					vocDecay = d.wave;
+					perturbationVoc = d.perturbation;
+					horizontalScaleV = d.horizontalScale;
+
 					experiment.next();
 				} );
 				yield;
@@ -159,84 +167,51 @@ extend( experiment.prototype, {
 		});
 	},
 
-	perturbation: function( DC, whiteLightLevel, voltage ) {
+	perturbationValue: function( perturbation, horizontalScale ) {
 
-		var arduino = experiment.arduino;
-		var afg = experiment.afg;
-		var oscilloscope = experiment.oscilloscope;
-
-		oscilloscope.clear();
-		afg.enableChannel( 1 );
 		return new Promise( function( resolver, rejecter ) {
 
-			if( voltage ) {
-				arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].voltage.perturbation );
-			} else {
-				arduino.setColorLightLevelVoltage( experiment.cfg[ sunLevel ].current.perturbation );
-			}
+			oscilloscope.clear();
+			afg.enableChannel( 1 );
+			
+			oscilloscope.setHorizontalScale( horizontalScale );
 
-			experiment.wait( 2 ).then( function() {
-
-				oscilloscope.setNbAverage( 16 );
-				oscilloscope.startAquisition();
-
-				oscilloscope.ready().then( function() {
-
-						oscilloscope.getMeasurementMean( 1, 2, 4 ).then( function( results ) {
-
-							var perturbation = results[ 0 ];
-							var perturbationPk = results[ 2 ];
-							var mean = results[ 1 ];
-
-							if( voltage ) {
-								oscilloscope.setPosition( 3, -4 );
-								oscilloscope.setOffset( 3, 0 );
-							} else {
-								oscilloscope.setVerticalScale( 3, experiment.cfg[ sunLevel ].current.yscale ); //
-								oscilloscope.setOffset( 3, mean );
-								oscilloscope.setPosition( 3, 0 );
-							}
+			function perturbatorIterator*() {
 
 
+		        while( true ) {
 
-							function( measurementNumber, idealValue, tolerance, triggerFrequency, changeUp, changeDown )
-							// Measurement 1
-							// 2mV optimal
-							// 10% deviation ok
-							// 1 / period = frequency
-							oscilloscope.optimizeMeasurement( 1, 0.002, 0.1, 1 / experiment.configuration.period, function( pass ) {
+		            if( perturbed < 1e-3 ) {
 
-								arduino.setColorLightLevelVoltage( perturbation + 100 / pass );
+						perturbation += 50;
+						arduino.setColorLightLevelVoltage( perturbation );
 
-							}, function() {
+		            } else {
 
-								arduino.setColorLightLevelVoltage( perturbation - 100 / pass );
-								
+		              break;
+		            
+		            }
 
-							} );
+		            oscilloscope.clear();
+		            self.wait( 5 ).then( function() {
 
+		            	oscilloscope.getMeasurementMean( 1 ).then( function( results ) {
 
+		            		perturbed = results;
+		            		perturbator.next();
+		            	} );
+		            } );
 
-							oscilloscope.clear();
-							oscilloscope.setNbAverage( voltage ? 2000 : 300 );
-							oscilloscope.startAquisition();
+		            yield;
+		        }
 
-							oscilloscope.ready().then( function() {
-								afg.disableChannel( 1 );
+		    }
 
-								oscilloscope.getChannel( 3 ).then( function( wave3 ) {
-									resolver( wave3 );
-								} );
+		  	var perturbator = perturbatorIterator();
+		  	perturbator.next();
 
-							});
-						});
-				});
-
-
-			});
-
-
-		});
+		  });
+	  }
 
 	},
 
