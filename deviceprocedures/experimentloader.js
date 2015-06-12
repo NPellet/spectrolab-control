@@ -1,3 +1,5 @@
+
+
 var experiments = [];
 var experimentLoader = {};
 var currentExperiment;
@@ -35,6 +37,12 @@ experimentLoader.runAll = function() {
 
 experimentLoader.pause = function() {
 	return currentExperiment.pause();
+}
+
+experimentLoader.experimentLoopNext = function() {
+	if( currentExperiment ) {
+		currentExperiment.loopNext();
+	}
 }
 
 module.exports = experimentLoader;
