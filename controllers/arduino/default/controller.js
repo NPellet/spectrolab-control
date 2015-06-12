@@ -138,7 +138,7 @@ Arduino.prototype.connect = function( ) {
 };
 
 
-Arduino.prototype.getSunLevel = function() {
+Arduino.prototype.getCurrentSunLevel = function() {
 	return this.currentWhiteLightLevel;
 }
 
@@ -157,6 +157,11 @@ Arduino.prototype.increaseSun = function( ) {
 	}
 
 	return this.setWhiteLightLevel( this.currentWhiteLightLevel - 1 );
+}
+
+
+Arduino.prototype.whiteLightOff = function() {
+		return this.setWhiteLightLevelVoltage( 0 );
 }
 
 Arduino.prototype.setWhiteLightLevel = function( whiteLightLevel ) {

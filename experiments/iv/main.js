@@ -67,6 +67,7 @@ IV.on("progress", function( progress ) {
 
 	ivs[ progress.arguments.lightLevel ] = ivs[ progress.arguments.lightLevel ] || [];
 	ivs[ progress.arguments.lightLevel ].push( progress.arguments.iv );
+console.log( itx.getFile(), experiment.getDeviceName() );
 
 	var fileName = experiment.getFileSaver().save( {
 		contents: itx.getFile(),

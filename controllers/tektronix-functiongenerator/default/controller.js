@@ -185,7 +185,6 @@ console.log( query );
 					module.shellInstance.once( 'message', function( data ) {
 
 						data = prevData + data.toString('ascii');
-console.log( "AFG says: " + data );
 					/*	if( data.indexOf("\n") == -1 ) {
 							console.log('NThr');
 							listen( data );
@@ -225,17 +224,13 @@ TektronixAFG.prototype.getErrors = function() {
 
 	return new Promise( function( resolver ) {
 
-		console.log( "here2" );
 		var errorQueue;
 		var i = 0;
 		function *errors() {
-			console.log( "here3" );
 
 			while( true ) {
-				console.log( "here4" );
 
 				self.command("SYSTEM:ERROR:NEXT?").then( function( error ) {
-					console.log( "here3" );
 
 						error = error.split(',');
 						var errorCode = parseInt( error[ 0 ] );

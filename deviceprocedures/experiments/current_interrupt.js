@@ -60,34 +60,51 @@ extend( experiment.prototype, {
 			};
 
 			var current, voltage;
+			var yscale = self.config.vscale;
 
 			while( true ) {
 
 				arduino.setWhiteLightLevel( lightLevel );
 
-				self.pulse( ).then( function( w ) {
-					voltage = w[ 3 ];
-					self.loopNext();
-				} );
 
+		        self.pulse( yscale ).then( function( w ) {
+		          oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
+		                //oscilloscope.setOffset( 2, measurements[ 1 ] );
+		                console.log( measurements );
+		              yscale = measurements[ 0 ] / 7;
+		              self.loopNext();
+		          } );
+		        } );
 				yield;
 
-        afg.setShape( 1, "DC" );
-        afg.setVoltageOffset( 1, 1.5 );
-        afg.setShape( 2, "DC" );
-        afg.setVoltageOffset( 2, 0 );
-        afg.enableChannels();
+
+		        self.pulse( yscale ).then( function( w ) {
+		          oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
+		                //oscilloscope.setOffset( 2, measurements[ 1 ] );
+		                voltage = w[ 3 ];
+						self.loopNext();
+		          } );
+		        } );
+		        yield;
+
+
+		        afg.setShape( 1, "DC" );
+		        afg.setVoltageOffset( 1, 1.5 );
+		        afg.setShape( 2, "DC" );
+		        afg.setVoltageOffset( 2, 0 );
+		        afg.enableChannels();
 
 
 				keithley.measureJ( { channel: 'smub', voltage: 0, settlingTime: 2 }).then( function( measuredJsc ) {
-          console.log( measuredJsc );
 					jsc = measuredJsc;
 					self.loopNext();
 				});
 
 				yield;
 
-        self.setAFGPulses();
+				oscilloscope.clear();
+
+  			    self.setAFGPulses();
 
 				results.voltages.push( voltage.getMax() );
 				results.jscs.push( jsc );
@@ -111,17 +128,27 @@ extend( experiment.prototype, {
 	pulse: function( vscale ) {
 
 		oscilloscope.clear();
+		oscilloscope.enableChannels();
 		oscilloscope.startAquisition();
+	    afg.disableChannels( );
 
-    this.wait( 5 ).then( function() {
-      afg.enableChannels( );
-      afg.trigger();
-    });
+		oscilloscope.setVerticalScale( 3, vscale );
+
+	    this.wait( 5 ).then( function() {
+	      afg.enableChannels( );
+	      afg.trigger();
+	    });
 
 
     return oscilloscope.ready().then( function() {
-      afg.disableChannels();
-      return oscilloscope.getWaves();
+      
+      return oscilloscope.getWaves().then( function( w ) {
+      	afg.disableChannels();
+	      oscilloscope.stopAquisition();
+	      oscilloscope.disableChannels();
+
+	      return w;
+      });
     })
 	},
 
@@ -144,8 +171,8 @@ extend( experiment.prototype, {
 		oscilloscope.disable50Ohms( 4 );
 		oscilloscope.setTriggerMode("NORMAL");
 
-    oscilloscope.setVerticalScale( 2, 20e-3 );
-    oscilloscope.setVerticalScale( 3, 150e-3 );
+	    oscilloscope.setVerticalScale( 2, 20e-3 );
+	    oscilloscope.setVerticalScale( 3, 150e-3 );
 		oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
 
 		oscilloscope.setTriggerCoupling( "AC" ); // Trigger coupling should be AC
@@ -178,6 +205,21 @@ extend( experiment.prototype, {
    		oscilloscope.disableMeasurements();
 
 		oscilloscope.setNbAverage( nbAverage );
+
+
+		oscilloscope.setCursors( "OFF" );
+
+	    oscilloscope.setMeasurementType( 1, "PK2PK" );
+	    oscilloscope.setMeasurementSource( 1, 3 );
+	    oscilloscope.enableMeasurement( 1 );
+	    oscilloscope.setMeasurementGating( "OFF" );
+
+	    oscilloscope.setMeasurementType( 2, "MINImum" );
+	    oscilloscope.setMeasurementSource( 2, 3 );
+	    oscilloscope.enableMeasurement( 2 );
+
+
+
 
 
 		/* AFG SETUP */
@@ -221,6 +263,7 @@ extend( experiment.prototype, {
     afg.setShape( pulseChannel, "PULSE" );
     afg.setPulseHold( pulseChannel , "WIDTH" );
     afg.setBurstTriggerDelay(  pulseChannel, 0 );
+    afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
     afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
     afg.setVoltageLow( pulseChannel, 0 );
     afg.setVoltageHigh( pulseChannel, 1.5 );

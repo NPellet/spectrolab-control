@@ -16,7 +16,6 @@ define( [ 'jquery' ], function( $ ) {
     parseDom: function( global ) {
 
       var requiring = 0;
-console.log('1234');
       $( global )
       .find( '.module' )
       .each( function( ) {
@@ -38,7 +37,6 @@ console.log('1234');
             requiring--;
             console.log(requiring);
             if( requiring == 0) {
-console.log('all');
               exports.allModules( function( module ) {
                 module.onDomReady();
               } );

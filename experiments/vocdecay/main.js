@@ -17,50 +17,41 @@ var VocDecay = experiment.loadProcedure('VocDecay');
 
 var itx = experiment.itx();
 
-VocDecay.on("progress", function( response ) {
-	var vocDecayWave = response;
-	var i = 1;
+VocDecay.on("progress", function( progress ) {
 
-	experiment.getModule('VocDecay').clear();
-	vocDecayWave.map( function( wave ) {
-		experiment.getModule('VocDecay').newSerie("vocvstime" + i , wave, { lineStyle: i } );
-		i++;
-	});
 
-	experiment.getModule('VocDecay').autoscale();
-	experiment.getModule('VocDecay').redraw();
+	switch( progress.type ) {
 
+		case 'vocdecay':
+
+			var vocDecayWave = progress.arguments.vocDecays;
+			var i = 1;
+
+
+			if( vocDecayWave.length == 0 ) {
+				var itxw = itx.newWave("times");
+				itxw.setWaveform( vocDecayWave[ 0 ].getXWave() );
+			}
+
+			var itxw = itx.newWave( "vocdecay_" + progress.arguments.lightIntensity  );
+			itxw.setWaveform( vocDecayWave[ vocDecayWave.length - 1 ] );
+
+			experiment.getModule('VocDecay').newSerie("vocvstime_" + progress.arguments.lightIntensity, vocDecayWave[ vocDecayWave.length - 1 ], { lineStyle: i } );
+			
+			experiment.getModule('VocDecay').autoscale();
+			experiment.getModule('VocDecay').redraw();
+
+
+			var fileName = experiment.getFileSaver().save( {
+				contents: itx.getFile(),
+				forceFileName: experiment.getDeviceName() + ".itx",
+				fileExtension: 'itx',
+				dir: './vocdecay/'
+			} );
+
+		break;
+	}
 });
-
-
-VocDecay.on("terminated", function( response ) {
-
-	var waves = response;
-
-	var i = 0;
-
-	waves.map( function ( w ) {
-
-		var itxw = itx.newWave( "vocdecay_" + i  );
-		itxw.setWaveform( w );
-
-		if( i == 0 ) {
-			var itxw = itx.newWave("times");
-			itxw.setWaveform( w.getXWave() );
-		}
-
-		i++;
-	});
-
-
-	var fileName = experiment.getFileSaver().save( {
-		contents: itx.getFile(),
-		fileName: "vocdecay.itx",
-		fileExtension: 'itx',
-		dir: './vocdecay/'
-	} );
-
-} );
 
 
 experiment.renderer.render();

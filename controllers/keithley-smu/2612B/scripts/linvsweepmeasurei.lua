@@ -1,24 +1,17 @@
 function LinVSweepMeasureI(smu,startv,stopv,stime,sdelay,complianceI,points,hysteresis)
 
-if smu == nil then smu = smua end
-local l_s_levelv = smu.source.levelv
-local l_s_rangev = smu.source.rangev
-local l_s_autorangev = smu.source.autorangev
-local l_s_func = smu.source.func
-local l_m_autozero = smu.measure.autozero
-local l_d_screen = display.screen
 local l_j, l_stepv, l_sweepv
 
 l_stepv = (stopv - startv) / (points - 1)
 l_sweepv = startv
 smu.source.func = smu.OUTPUT_DCVOLTS
---display.smua.measure.func = display.MEASURE_DCAMPS
 smu.source.rangev = math.max(math.abs(startv), math.abs(stopv))
 smu.source.levelv = startv
 
 smu.source.limiti = 0.1
 smu.source.rangei = 0.1
 
+errorqueue.clear();
 smu.source.autorangei = smu.AUTORANGE_OFF
 smu.source.autorangev = smu.AUTORANGE_OFF
 smu.measure.autozero = smu.AUTOZERO_OFF
@@ -36,7 +29,6 @@ for l_j = 1,points do
   l_sweepv = l_sweepv + l_stepv
 end
 
-l_sweepv = l_sweepv - l_stepv
 
 if hysteresis == 1 then
 
@@ -49,6 +41,7 @@ if hysteresis == 1 then
 
 end
 
+
 smu.source.output = smu.OUTPUT_OFF
 smu.source.levelv = 0
 smu.measure.autozero = smu.AUTOZERO_AUTO
@@ -58,6 +51,4 @@ if hysteresis == 1 then
 else
   printbuffer (1,points,smu.nvbuffer1,smu.nvbuffer1.sourcevalues)
 end
-
-
 end

@@ -78,10 +78,10 @@ IgorWave.prototype = {
 		}
 
 		var string = "";
-		string += "WAVES/D	" + this.name;
+		string += "WAVES/D	'" + this.name + "'";
 
 		if( this.waveform.hasXScaling() && this.waveform.getXScalingMode() == 'wave') {
-				string += " " + this.name + "_x";
+			string += " '" + this.name + "_x'";
 		}
 		string += "\n";
 		string += "BEGIN\n";

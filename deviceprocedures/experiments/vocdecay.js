@@ -21,9 +21,9 @@ extend( experiment.prototype, {
 
   defaults: {
   	ledPin: 4,
-  	pulseTime: 10,
+  	pulseTime:2,
     delay: 15,
-    timebase: 0.1,
+    timebase: 1,
     lightIntensities: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ]
   },
 
@@ -32,21 +32,54 @@ extend( experiment.prototype, {
  	keithley = this.getInstrument("keithley-smu");
     arduino = this.getInstrument("arduino");
     oscilloscope = this.getInstrument("tektronix-oscilloscope");
+    afg = this.getInstrument("tektronix-functiongenerator");
+
   },
 
   makeLoop: function() {
 
 		var self = this;
 
-		var preTrigger = 10;
-		var recordLength = 100000;
+		var preTrigger = 0.1;
+		var recordLength = 1000000;
 		var yscales = {};
-
+		var vocDecays = [];
 		return function *pulse(  ) {
 
 			var recordedWave;
 			oscilloscope.setRecordLength( recordLength );
-			oscilloscope.setTriggerRefPoint( preTrigger * 100 ); // Set pre-trigger, 10%
+			oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
+			oscilloscope.stopAfterSequence( false );
+			oscilloscope.startAquisition();
+			oscilloscope.setHorizontalScale( self.config.timebase );
+
+		    afg.setTriggerExternal(); // Only external trigger
+
+		    var pulseChannel = 1;
+		    afg.enableBurst( pulseChannel );
+		    afg.setShape( pulseChannel, "PULSE" );
+		    afg.setPulseHold( pulseChannel , "WIDTH" );
+		    afg.setBurstTriggerDelay(  pulseChannel, 0 );
+		    afg.setBurstNCycles( pulseChannel, 1 );
+		    afg.setVoltageLow( pulseChannel, 0 );
+		    afg.setVoltageHigh( pulseChannel, 1.5 );
+		    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
+		    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
+		    afg.setPulseDelay( pulseChannel, 0 );
+		    afg.setPulsePeriod( pulseChannel, self.config.delay );
+		    afg.setPulseWidth( pulseChannel, self.config.pulseTime );
+
+		    afg.setShape( 2, "DC" );
+		    afg.setVoltageOffset( 2, 0 );
+
+		    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+		    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+
+
+		    afg.getErrors();
+
+
+
 
 			for( var i = 0; i < self.config.lightIntensities.length; i += 1 ) {
 
@@ -55,15 +88,29 @@ extend( experiment.prototype, {
 				oscilloscope.clear();
 	
 				// Wait two seconds				
-				self.waitAndNext( 2 );
+				self.waitAndNext( 0.1 * self.config.delay );
 				yield;
 
+				afg.enableChannels();
+				afg.trigger();
 				// Pulse the light
-				self.pulse( self.config.timebase, 1 ).then( function( w ) {
+				/*self.pulse( self.config.timebase, 1 ).then( function( w ) {
 					recordedWave = w;
 					self.loopNext();
 				});
+*/
+
+				self.waitAndNext( 16 );
 				yield;
+
+
+				oscilloscope.getWaves().then( function( allWaves ) {
+					recordedWave = allWaves[ "3" ];
+					self.loopNext();
+				});
+				yield;
+
+				afg.disableChannels();
 
 				// Extract the interesting part
 				recordedWave = recordedWave.subset( ( recordLength - 1 ) * preTrigger, recordLength - 1 );
@@ -77,7 +124,9 @@ extend( experiment.prototype, {
 
 				self.progress( "vocdecay", {
 					vocDecays: vocDecays,
-					lightIntensities: self.config.lightIntensities
+					lightIntensities: self.config.lightIntensities,
+					lastVocDecay: recordedWave,
+					lightIntensity: i
 				});
 			}
 
@@ -132,6 +181,8 @@ extend( experiment.prototype, {
 		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
 		oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
 		oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
+	    oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
+
 		oscilloscope.setHorizontalScale( this.config.timebase );
 
 		oscilloscope.setPosition( 3, -4 );

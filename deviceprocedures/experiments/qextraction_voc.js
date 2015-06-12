@@ -70,7 +70,6 @@ extend( experiment.prototype, {
         var breakit = false;
 
         oscilloscope.setOffset( 2, 0 );
-        console.log("PULSING");
         self.pulse( yscales[ lightLevel ] ).then( function( w ) {
           oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
               if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
@@ -188,7 +187,9 @@ extend( experiment.prototype, {
     oscilloscope.setNbAverage( nb );
     oscilloscope.clear();
     oscilloscope.startAquisition();
-    afg.setBurstNCycles( 2, nb );
+
+    afg.disableBurst( 1 );
+    afg.disableBurst( 2 );
 
     afg.setPulseDelay( 2, 0 );
     afg.setPulsePeriod( 2, this.config.timebase * 20 );
@@ -197,17 +198,14 @@ extend( experiment.prototype, {
     afg.setVoltageOffset( 1, 0 );
 
     afg.wait();
+    afg.enableChannels( );
 
-
-
-    this.wait( 5 ).then( function() {
-      afg.enableChannels( );
-
-      afg.trigger();
-    });
 
 
     return oscilloscope.ready().then( function() {
+      afg.enableBurst( 1 );
+      afg.enableBurst( 2 );
+
       afg.disableChannels();
       return oscilloscope.getWaves();
     })
@@ -216,7 +214,6 @@ extend( experiment.prototype, {
 
   setup: function() {
 
-console.log( this.config );
 
     var nbAverage = this.config.averaging;
     var pulsetime = this.config.pulsetime;

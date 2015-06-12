@@ -19,8 +19,9 @@ Experiment.prototype._init = function() {
 
 Experiment.prototype.loadConfig = function( cfg, afterLoad ) {
 	this.config = this.config || {};
-	extend( true, this.config, cfg );
+	extend( true, {}, this.config, cfg );
 
+	this.config = extend( true, {}, cfg );
 	if( typeof afterLoad == "function" ) {
 		afterLoad( this.config );
 	}
@@ -114,6 +115,24 @@ Experiment.prototype.abort = function() {
 	this.on("paused", function() {
 
 		self.terminate();
+	});
+}
+
+Experiment.prototype.modal = function( title, text, buttonText ) {
+
+
+	Promise.all( html ).then( function() {
+
+		return lengine.parseAndRender( fs.readFileSync( './server/html/modal.tpl'), {
+
+			title: title,
+			text: text,
+			buttonText: buttonText
+		} );
+
+	}).then( function( html ) {
+
+		expGlobal.streamOut( "showModal", html );
 	});
 }
 

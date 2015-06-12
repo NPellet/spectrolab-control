@@ -43,6 +43,7 @@ html += '<div class="form-group">';
 for( var i in lights ) {
   html += '<option value="' + i + '">' + lights[ i ] + ' sun</option>';
 }
+html += '<option value="-1">Dark</option>';
 
 html += '</select>';
 html += '</div>';

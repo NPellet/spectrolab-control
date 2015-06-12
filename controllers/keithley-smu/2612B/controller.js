@@ -193,7 +193,7 @@ var methods = {
 
 				pt = iv.duplicate().multiplyBy( function( valX ) { return valX; } );
 				pt.setXWave( time )
-console.log( data );
+
 				return {
 					IvsV: iv,
 					IvsT: it,
@@ -589,7 +589,12 @@ for( var i in methods ) {
 	( function( j ) {
 
 		Keithley.prototype[ j ] = function( options ) {
-			return this._callMethod( methods[ j ], options );
+			var self = this;
+//			self.getErrors();
+			return this._callMethod( methods[ j ], options ).then( function( results ) {
+	//			self.getErrors();
+				return results;
+			});
 		}
 
 	}) ( i );
@@ -626,13 +631,16 @@ Keithley.prototype._callMethod = function( method, options ) {
 					if( data.indexOf("\n") == -1 ) {
 						listen( data );
 					} else {
+						console.log( "Return;" );
 						end( data );
+
 					}
 				} );
 			}
 
 			listen("");
-
+			console.log("Method !");
+			module.log( "Keithley method: <em>" + method.method + "(" + method.parameters( options ).join() + ");</em>");
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
 	});
@@ -706,7 +714,10 @@ Keithley.prototype.checkConnection = function() {
 	}
 }
 
+// NOT STABLE
 Keithley.prototype.getErrors = function() {
+	return;
+	
 		var self = this;
 		this.commandPrint("print( errorqueue.count );").then( function( errorCount ) {
 			console.log("Raw error count: " + errorCount );
@@ -753,6 +764,7 @@ Keithley.prototype.uploadScripts = function() {
 		for( var m = 0, k = func.length; m < k; m ++ ) {
 			if( l + func[ m ].length > 1024 ) {
 				this.socket.write( b );
+				console.log( b );
 
 				b = "";
 				l = 0;
@@ -766,7 +778,7 @@ Keithley.prototype.uploadScripts = function() {
 
 		this.socket.write( b );
 
-
+console.log( b );
 		//this.socket.write(  );
 		this.socket.write("\r\n");
 	}

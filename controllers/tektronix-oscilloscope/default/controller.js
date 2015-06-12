@@ -40,15 +40,17 @@ var TektronixOscilloscope = function( params ) {
 
             }, function( data ) {
 
-              self.logError("Error on oscilloscope while running command \"" + element.command + "\". Response: " + data );
+              if( element.command != "*OPC?" ) {
+                self.logError("Error on oscilloscope while running command \"" + element.command + "\". Response: " + data );
+              }
               element.promiseReject( { data: data, command: element.command } );
 
-          } ).finally( function() {
+            } ).finally( function() {
 
-            running = false;
-            self.commandRunner.next();
+              running = false;
+              self.commandRunner.next();
 
-          });
+            });
         });
 
         yield;
@@ -150,8 +152,9 @@ TektronixOscilloscope.prototype.connect = function(  ) {
       } );
 
       self.runCommands();
-    }).catch( function() {
+    }).catch( function( error ) {
       // Reset queue
+      throw error;
       self.queue = [];
     });
   }
@@ -176,7 +179,7 @@ function query( module, query ) {
         function listen( prevData ) {
 
           module.shellInstance.once( 'message', function( data ) {
-            console.log("Oscilloscope data: " + data.toString('ascii') );
+
             data = prevData + data.toString('ascii');
             data = data.replace("\n", "");
             if( data.indexOf( "ERROR" ) > -1 ) {
@@ -417,7 +420,6 @@ TektronixOscilloscope.prototype.setHorizontalScale = function( scale ) {
       case 'MANUAL':
 
           self.getRecordLength().then( function( rlength ) {
-            console.log( rlength, scale );
             self.setSampleRate( rlength / ( scale * 10 ) );
           } );
 
@@ -517,8 +519,6 @@ TektronixOscilloscope.prototype.setCoupling = function( channel, coupling ) {
 TektronixOscilloscope.prototype.getCoupling = function( channel ) {
   channel = getChannel( channel );
   return this.command( channel + ":COUPLING", true ).then( function( value ) {
-    val
-    console.log( value );
   });
 }
 
@@ -697,7 +697,6 @@ TektronixOscilloscope.prototype.all = function( method, args, processing ) {
   var self = this;
   processing = processing || function( val ) { return val; };
   return Promise.all( args.map( function( a ) {
-    console.log( method.replace( "%s", a ) );
     return self.command( method.replace( "%s", a ) ).then( processing );
   }));
 }
@@ -902,7 +901,6 @@ TektronixOscilloscope.prototype.ready = function( delay ) {
       return true;
     }
     return self.command( "*OPC?" ).then( function( data ) {
-
       if( delay ) {
         return new Promise( function( resolver, rejecter ) {
           setTimeout( resolver, delay * 1000 );
@@ -912,7 +910,6 @@ TektronixOscilloscope.prototype.ready = function( delay ) {
       }
 
     }, function( data ) {
-
       return self.ready();
     });
 

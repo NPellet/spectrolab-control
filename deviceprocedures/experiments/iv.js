@@ -47,7 +47,12 @@ extend( experiment.prototype, {
       for( var light = 0, llights = lights.length; light < llights; light ++ ) {
 
         keithley.writeDigio( 4, 1 );
-        arduino.setWhiteLightLevel( lights[ light ] );
+
+        if( light < 0 ) {
+          arduino.whiteLightOff();
+        } else {
+          arduino.setWhiteLightLevel( lights[ light ] );
+        }
 
         setTimeout( function() {
           self.loopNext();
@@ -73,15 +78,14 @@ extend( experiment.prototype, {
           voltage = Math.max( 0.2, Math.min( voltage, 2 ) );
         }
         for( var speed = 0, lspeeds = speeds.length; speed < lspeeds; speed ++ ) {
-
           keithley.sweepIV( {
 
             channel: 'smub',
             scanRate: speeds[ speed ],
             hysteresis: true,
-            delay: 1,
+            timeDelay: 5,
             startV: voltage,
-            stopV: self.config.forcevend ? self.config.vend : -0.2
+            stopV: self.config.forcevend ? self.config.vend : -voltage
 
           }).then( function( iv ) {
 

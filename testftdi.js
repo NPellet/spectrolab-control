@@ -1,7 +1,6 @@
 
 var ftdi = require('ftdi');
-
-ftdi.find(function(err, devices) {console.log(devices)});
+var Promise = require('bluebird');
 /*
 
     // Set Baud rate to 9600
@@ -28,13 +27,18 @@ var currentState;
 
 
 var thedevice;
+var device;
 
 ftdi.find(function(err, devices){
 
 
-  var device = new ftdi.FtdiDevice(devices[0]);
+  device = new ftdi.FtdiDevice(devices[0]);
   thedevice = device;
   device.open(settings, function( err ) {
+
+  if( err ) {
+    return;
+  }
 
 	console.log('connected');
 	currentState = 0x00;
@@ -42,27 +46,89 @@ ftdi.find(function(err, devices){
 	 device.write([ currentState ], function(err) {
 
 
-		function set() {
+  		function set() {
 
-			setTimeout( function() {
+  			setTimeout( function() {
 
-				var pin = Math.floor(Math.random() * 8) + 1
-				var state = Math.round(Math.random());
+  				var pin = Math.floor(Math.random() * 8) + 1
+  				var state = Math.round(Math.random());
 console.log( pin, state );
-				switchRelay( pin, state, function() {
-					console.log('Executed');
-					set();
+  				switchRelay( pin, state ).then( function() {
+  					console.log('Executed');
+  					set();
 
-				} );
+  				} );
 
 
 
-			}, 1000 );
-		}
+  			}, 1000 );
+  		}
 
-		set();
+  		set();
+
 	  });
 
 	});
 
 });
+
+
+
+var switchRelay = function( relayId, state, callback ) {
+
+  var output = currentState;
+  switch( relayId ) {
+        case 1:
+            relay = 0x01;
+        break;
+
+        case 2:
+            relay = 0x02;
+        break;
+
+        case 3:
+            relay = 0x04;
+        break;
+
+        case 4:
+            relay = 0x08;
+        break;
+
+        case 5:
+            relay = 0x10;
+        break;
+
+        case 6:
+            relay = 0x20;
+        break;
+
+        case 7:
+          relay = 0x40;
+        break;
+
+        case 8:
+          relay = 0x80;
+        break;
+    }
+
+    switch (state) {
+        case 1:
+            output = (output | relay);
+        break;
+        case 0:
+            output = (output & ~(relay));
+        break;
+    }
+
+    currentState = output;
+
+    return new Promise( function( resolver ) {
+      console.log( 'resolver', output );
+      device.write( [ output ], function() {
+        console.log('DONE');
+        resolver();
+      });
+
+    })
+
+}

@@ -4,6 +4,7 @@ requirejs.config({
 	baseUrl: '../../client/',
 	paths: {
 		'jquery': 'js/lib/jquery.min',
+		'util': 'js/lib/util',
 		'jsgraph': 'js/lib/jsgraph.min',
 		'jquery-ui': 'lib/jquery-ui/jquery-ui.min',
 		'bootstrap': 'lib/bootstrap/dist/js/bootstrap.min',
@@ -17,7 +18,7 @@ requirejs.config({
 	}
 });
 
-require( [ 'jquery', 'js/modulefactory', 'js/io', 'bootstrap', 'bootstrap-treeview' ] , function( $, ModuleFactory, IO ) {
+require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstrap-treeview' ] , function( $, ModuleFactory, Util, IO ) {
 
 
 	ModuleFactory.parseDom( document );
@@ -44,7 +45,7 @@ function global( IO ) {
 	var experimentStatus = "stopped";
 
 	var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
-	var deviceName = $("#device-name .name input");
+	var deviceName = $("#device-name");
 
 	deviceName.on('keyup blur change', function() {
 
@@ -97,6 +98,27 @@ function global( IO ) {
 		}
 	});
 
+
+
+	IO.onGlobal( "showModal", function( html ) {
+		var id;
+		html = $( html ).attr('id', ( id = Util.guid() ) );
+		$("body").append( html );
+
+		$("#" + id ).modal( ).on('click', 'button.ok', function() {
+
+			IO.writeGlobal( 'modalOk' );
+
+		});
+
+
+
+
+		experimentStatus = "running";
+		$("#run-experiment").prop("disabled", false ).html("Pause");
+		$("#run-experiment").prop( "disabled", false );
+		$("#abort-experiment").prop( "disabled", false );
+	} );
 
 
 	IO.onGlobal( "experiment-running", function() {

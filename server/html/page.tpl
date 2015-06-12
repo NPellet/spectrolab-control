@@ -31,7 +31,7 @@
 		</div>
 
 		<div class="form-group">
-			<input type="text" class="form-control" placeholder="Device name" />
+			<input type="text" id="device-name" class="form-control" placeholder="Device name" />
 		</div>
 
 		<button type="button" id="run-experiment" class="btn btn-default">Run !</button>
