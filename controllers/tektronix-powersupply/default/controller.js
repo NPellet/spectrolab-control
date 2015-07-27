@@ -48,7 +48,7 @@ TektronixPWS.prototype.connect = function(  ) {
 
 
       module.shellInstance.once( "message", function( message ) {
-
+console.log( message );
         if( message == "ok" ) {
           module.connected = true;
           module.logOk( "Successfully found Tektronix PWS on host " + module.params.host + " via VISA" );
@@ -56,18 +56,19 @@ TektronixPWS.prototype.connect = function(  ) {
           module.logError( "Cannot find Tektronix PWS on host " + module.params.host + " via VISA" );
         }
 
+        module.setVoltage( 2 );
       } );
   } );
 }
 
 TektronixPWS.prototype.command = function( command ) {
 
-    this.shellInstance.once( "message", function( message ) {
+    this.shellInstance.on( "message", function( message ) {
 
-      console.log( message );
+      console.log( "Message: " + message );
 
     } );
-
+console.log( "Command: " + command );
     this.shellInstance.send( command )
 }
 

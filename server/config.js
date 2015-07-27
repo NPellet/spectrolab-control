@@ -51,7 +51,7 @@ var config = {
 		"tektronix-PWS-WhiteLED": {
 			type: 'tektronix-powersupply',
 			name: 'PWS - White',
-			host: ''
+			host: 'USB0::0x0699::0x0392::C011451::INSTR'
 		},
 
 		"tektronix-PWS-ColorLED": {

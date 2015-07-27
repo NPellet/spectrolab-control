@@ -28,34 +28,45 @@ def main():
     host = args[0]
 
     rm = visa.ResourceManager()
+
+    
+
     inst = rm.open_resource( host )
     #inst.query("*IDN?")
     
-    print( "ok" )
+    print( rm.list_resources() );
+
+    #print( "ok" )
     sys.stdout.flush()
 
     # std in    
     while True:
+        print("ok");
         cmd = sys.stdin.readline()
         is_query = cmd.split(' ')[0][-2] == '?'
         try:
             if is_query:
                 if len(cmd) > 1:
                     response = inst.query(cmd)
-                print( response )
+                    print( response )
+                else:
+                    raise Exception("Cannot execute an empty command")
             else:
-                v.write(cmd)
-                print( "ok" )
-            sys.stdout.flush()
+                inst.write( cmd ) # Write command to device and do not expect a response
+                print( cmd )
+
+            sys.stdout.flush() # Send message to node
+
             if options.check_esr:
-                esr = int(v.ask('*ESR?').strip())
+                esr = int(inst.ask('*ESR?').strip())
                 if esr != 0:
                     print('Warning: ESR was %d' % esr)
         except Exception:
             e = sys.exc_info()[1]
             print('ERROR: %s' % e)
+            sys.stdout.flush()
         
-    v.close()
+    inst.close()
 
 if __name__ == '__main__':
     main()
