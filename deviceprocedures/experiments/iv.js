@@ -30,7 +30,7 @@ extend( experiment.prototype, {
 
   init: function( parameters ) {
 
-    keithley = this.getInstrument("keithley-smu");
+    keithley = this.getInstrument("keithley");
     arduino = this.getInstrument("arduino");
   },
 

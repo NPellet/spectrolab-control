@@ -9,10 +9,10 @@ var PWSConnect = function() {
 
 
 PWSConnect.prototype = new moduleProto();
-PWSConnect.prototype = extend( oscilloscopeConnect.prototype, {
+PWSConnect.prototype = extend( PWSConnect.prototype, {
 
 
-	assignInstrument: function( oscilloscope ) {
+	assignInstrument: function( pws ) {
 
 		var module = this;
 

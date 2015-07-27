@@ -57,26 +57,28 @@ TektronixPWS.prototype.connect = function(  ) {
         }
 
       } );
-  }
+  } );
+}
 
-  TektronixPWS.prototype.command = function( command ) {
+TektronixPWS.prototype.command = function( command ) {
 
-      this.shellInstance.once( "message", function( message ) {
+    this.shellInstance.once( "message", function( message ) {
 
-        console.log( message );
+      console.log( message );
 
-      } );
+    } );
 
-      this.shellInstance.send( command )
-  }
+    this.shellInstance.send( command )
+}
 
-  TektronixPWS.prototype.setVoltage = function( voltage ) {
+TektronixPWS.prototype.setVoltage = function( voltage ) {
 
-    this.command("SOURce:VOLTage:LEVel " + getVoltage( voltage ) );
+  this.command("SOURce:VOLTage:LEVel " + getVoltage( voltage ) );
 
-  }
+}
 
-  function getVoltage( v ) {
-    return parseFloat( v ) + "V";
-  }
-  
+function getVoltage( v ) {
+  return parseFloat( v ) + "V";
+}
+
+module.exports = TektronixPWS;
