@@ -183,7 +183,7 @@ extend( experiment.prototype, {
 
     var nb = this.config.blankaveraging;
 
-
+    afg.disableChannels();
     oscilloscope.setNbAverage( nb );
     oscilloscope.clear();
     oscilloscope.startAquisition();
@@ -273,7 +273,8 @@ extend( experiment.prototype, {
     oscilloscope.setCursorsMode( "INDependent" );
     oscilloscope.setCursorsSource( 2 );
     oscilloscope.enableCursors( 2 );
-    oscilloscope.setVCursorsPosition( 2, timeBase * 8 );
+    oscilloscope.setVCursorsPosition( 2, timeBase * 7 );
+    oscilloscope.setVCursorsPosition( 1, 900e-9 ); // 5%
     oscilloscope.setVCursorsPosition( 1, 900e-9 ); // 5%
 
 

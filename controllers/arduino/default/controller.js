@@ -148,9 +148,11 @@ Arduino.prototype.lowestSun = function( ) {
 }
 
 Arduino.prototype.increaseSun = function( ) {
-	this.currentWhiteLightLevel = this.currentWhiteLightLevel || this.params.whiteLightLED.arduinoAnalogValue.length - 1;
+	if( typeof this.currentWhiteLightLevel == "undefined" ) {
+		this.currentWhiteLightLevel = this.params.whiteLightLED.arduinoAnalogValue.length - 1
+	}
 
-	if( this.currentWhiteLightLevel - 1 < 0 ) {
+	if( this.currentWhiteLightLevel == 0) {
 		return new Promise( function( resolver, rejecter ) {
 			rejecter();
 		} );
@@ -194,8 +196,10 @@ Arduino.prototype.getSunLevels = function() {
 
 Arduino.prototype.setColorLightLevelVoltage = function( voltage ) {
 
-	if( voltage > 5000 ) {
-		voltage = 5000;
+	var toReturn = true;
+	if( voltage > 3000 ) {
+		voltage = 3000;
+		toReturn = false;
 	}
 
 	if( voltage < 0 ) {
@@ -204,7 +208,9 @@ Arduino.prototype.setColorLightLevelVoltage = function( voltage ) {
 
 
 	var cmd = "5," + this.params.colorLightLED.arduinoAnalogPin + "," + voltage + ";";
-	return callSerial( this, cmd );
+	callSerial( this, cmd );
+
+	return toReturn;
 }
 
 

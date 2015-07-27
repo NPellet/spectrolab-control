@@ -559,6 +559,8 @@ Waveform.prototype = {
 
 	_integrateP: function( from, to ) {
 
+		from = Math.round( from );
+		to = Math.round( to );
 		var l = to - from + 1;
 		var sum = 0, delta;
 

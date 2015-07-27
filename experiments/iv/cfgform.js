@@ -35,18 +35,8 @@ html += '<label for="settlingTime">Settling time</label>';
 
 html += '</div>';
 
-
-html += '<div class="form-group">';
-  html += '<label for="lights">Light levels</label>';
-  html += '<select multiple name="lightLevels[]" class="form-control" id="lights">';
-
-for( var i in lights ) {
-  html += '<option value="' + i + '">' + lights[ i ] + ' sun</option>';
-}
-html += '<option value="-1">Dark</option>';
-
-html += '</select>';
-html += '</div>';
+var lights = require("../../server/html/formLights.js");
+html += lights( true );
 
 
 html += '<div class="form-group">';

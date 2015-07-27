@@ -25,8 +25,7 @@ experiment.renderer.getModule("config").setFormHtml( cfgHtml );
 
 experiment.onLoadConfig( function() {
 	QExtr.loadConfig( experiment.config, function( cfg ) { cfg.timebase /= 1000000; } );
-	console.log( experiment.config );
-	console.log('_');
+	
 	experiment.getModule("config").setFormData( experiment.config );
 } );
 

@@ -9,8 +9,13 @@ experimentLoader.load = function( experimentName ) {
 	var experiment = require( __dirname + "/experiments/" + experimentName );
 	experiment = new experiment();
 	experiment.makeLoop();
+	experiment.setId( experiments.length );
 	experiments.push( experiment );
 	return experiment;
+}
+
+experimentLoader.getProcedures = function() {
+	return experiments;
 }
 
 experimentLoader.runAll = function() {
@@ -41,8 +46,11 @@ experimentLoader.pause = function() {
 
 experimentLoader.experimentLoopNext = function() {
 	if( currentExperiment ) {
+		console.log('here2');
 		currentExperiment.loopNext();
 	}
 }
+
+
 
 module.exports = experimentLoader;

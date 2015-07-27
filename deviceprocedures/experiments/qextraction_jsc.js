@@ -25,7 +25,8 @@ extend( experiment.prototype, {
     delaytime: 2,
     pulsetime: 1,
     timebase: 50e-3,
-    vscale: 80
+    vscale: 80,
+    lightLevels: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
   },
 
   init: function( parameters ) {
@@ -43,14 +44,12 @@ extend( experiment.prototype, {
 		var preTrigger = 10;
 		var recordLength = 100000;
 		var yscales = {};
+        var i = 0;
 
 		return function *pulse(  ) {
 
 			oscilloscope.setRecordLength( recordLength );
-
-
-			var lightLevel = 0;
-
+		
 			var results = {
 				jscs: [],
 				charges: [],
@@ -63,29 +62,30 @@ extend( experiment.prototype, {
 
 			while( true ) {
 
+                var lightLevel = self.config.lightLevels[ i ];
+
 				arduino.setWhiteLightLevel( lightLevel );
-        console.log( yscales[ lightLevel ] );
 				yscales[ lightLevel ] = yscales[ lightLevel ] || yscales[ lightLevel - 1 ] || self.config.vscale;
 				var breakit = false;
 
-        self.pulse( yscales[ lightLevel ], 2 ).then( function( w ) {
-          oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
-                //oscilloscope.setOffset( 2, measurements[ 1 ] );
-              yscales[ lightLevel ] = measurements[ 0 ] / 7;
-              self.loopNext();
-          } );
-        } );
-				yield;
+                self.pulse( yscales[ lightLevel ], 2 ).then( function( w ) {
+                  oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
+                        //oscilloscope.setOffset( 2, measurements[ 1 ] );
+                      yscales[ lightLevel ] = measurements[ 0 ] / 7;
+                      self.loopNext();
+                  } );
+                } );
+        		yield;
 
 
-        self.pulse( yscales[ lightLevel ], self.config.averaging ).then( function( w ) {
-          oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
-                //oscilloscope.setOffset( 2, measurements[ 1 ] );
-                current = w[ 3 ];
-                self.loopNext();
-          } );
-        } );
-        yield;
+                self.pulse( yscales[ lightLevel ], self.config.averaging ).then( function( w ) {
+                  oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
+                        //oscilloscope.setOffset( 2, measurements[ 1 ] );
+                        current = w[ 3 ];
+                        self.loopNext();
+                  } );
+                } );
+                yield;
 
 
 				if( breakit ) {
@@ -108,18 +108,22 @@ extend( experiment.prototype, {
 				results.charges.push( charges );
 				results.lightLevels.push( lightLevel );
 				results.currentWaves.push( current );
-       	results.lastCurrentWave = current;
+               	results.lastCurrentWave = current;
 
 				self.progress( "charge", results );
 
-
-				if( lightLevel >= 9 ) {
-					break;
-				}
-				lightLevel++;
+                i++;
+                
+                if( i == self.config.lightLevels.length - 1 ) {
+                    break;
+                }
+				
 			}
 
 			oscilloscope.disableChannels();
+
+            self.terminate();
+
 		}
 
 	},
@@ -218,7 +222,7 @@ extend( experiment.prototype, {
     oscilloscope.enableAveraging();
     oscilloscope.disableCursors( );
 
-    oscilloscope.setMeasurementType( 1, "PK2PK" );
+    oscilloscope.setMeasurementType( 1, "AMPlitude" );
     oscilloscope.setMeasurementSource( 1, 3 );
     oscilloscope.enableMeasurement( 1 );
     oscilloscope.setMeasurementGating( "OFF" );

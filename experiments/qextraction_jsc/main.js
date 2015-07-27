@@ -32,6 +32,7 @@ experiment.onLoadConfig( function() {
 experiment.getModule("config").on("formChanged", function( cfg ) {
 
 	cfg.form.vscale = parseFloat( cfg.form.vscale );
+	cfg.form.lightLevels = cfg.form.lightLevels.map( function( i ) { return parseInt( i ); } );
 
 	// Set it to config
 	experiment.config = cfg.form;

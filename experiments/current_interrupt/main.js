@@ -21,7 +21,7 @@ experiment.addInstrumentConnectModules();
 var CurrentInterupt = experiment.loadProcedure('current_interrupt');
 var ivs = {};
 
-experiment.renderer.getModule("config").setFormHtml( cfgHtml );
+experiment.renderer.getModule( "config" ).setFormHtml( cfgHtml );
 
 experiment.onLoadConfig( function() {
 	CurrentInterupt.loadConfig( experiment.config, function( cfg ) { cfg.timebase /= 1000000; } );
@@ -29,7 +29,7 @@ experiment.onLoadConfig( function() {
 } );
 
 
-experiment.getModule("config").on("formChanged", function( cfg ) {
+experiment.getModule( "config" ).on( "formChanged", function( cfg ) {
 	// Set it to config
 	experiment.config = cfg.form;
 	// Upload to experiment
@@ -37,40 +37,63 @@ experiment.getModule("config").on("formChanged", function( cfg ) {
 } );
 
 
+
+var itx = experiment.itx();
+var vocjsc = new Waveform();
+
+var lightLevels = itx.newWave( "lightLevels" );
+var jscs = itx.newWave( "jscs" );
+
 CurrentInterupt.on("progress", function( progress ) {
 
 	switch( progress.type ) {
 
 		case 'charge':
 
-			var itx = experiment.itx();
+			lightLevels.setWaveform( progress.arguments.lightLevels );
+
 			var vocjsc = new Waveform();
 
-			var itxw = itx.newWave( "lightLevels" );
-			itxw.setWaveform( progress.arguments.lightLevels );
-
-
-			var itxw = itx.newWave( "jscs" );
-			itxw.setWaveform( progress.arguments.jscs );
-
 			for( var i = 0; i < progress.arguments.lightLevels.length; i ++ ) {
-				vocjsc.push( progress.arguments.jscs[ i ], progress.arguments.voltages[ i ] );
-
-				var itxw = itx.newWave( "voltage_" + i );
-				itxw.setWaveform( progress.arguments.voltageWaves[ i ] );
+				vocjsc.push( progress.arguments.jscs[ i ] || 0, progress.arguments.voltages[ i ] );
 			}
+
+			var itxw = itx.newWave( "voltage_" + progress.arguments.lastLightLevel );
+			itxw.setWaveform( progress.arguments.lastVoltageWave );
+
 
 			experiment.renderer.getModule( "graph" ).newScatterSerie( "vocjsc", vocjsc );
 			experiment.renderer.getModule( "lastvoltage" ).newSerie( "lastvoltage", progress.arguments.lastVoltageWave );
 
-			var fileName = experiment.getFileSaver().save( {
-				contents: itx.getFile(),
-				forceFileName: experiment.getDeviceName() + ".itx",
-				fileExtension: 'itx',
-				dir: './current_interrupt/'
-			} );
 
 		break;
+
+		case 'jscs':
+
+console.log( progress.arguments.jscs );
+			jscs.setWaveform( progress.arguments.jscs );
+
+			var vocjsc = new Waveform();
+			for( var i = 0; i < progress.arguments.lightLevels.length; i ++ ) {
+				vocjsc.push( progress.arguments.jscs[ i ] || 0, progress.arguments.voltages[ i ] );
+			}
+
+			experiment.renderer.getModule( "graph" ).newScatterSerie( "vocjsc", vocjsc );
+
+
+		break;
+	
+	}
+
+	try {
+		var fileName = experiment.getFileSaver().save( {
+			contents: itx.getFile(),
+			forceFileName: experiment.getDeviceName() + ".itx",
+			fileExtension: 'itx',
+			dir: './current_interrupt/'
+		} );
+	} catch( e ) {
+		// Nothing to do, that's normal
 	}
 
 } );

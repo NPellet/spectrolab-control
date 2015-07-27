@@ -21,8 +21,8 @@ extend( experiment.prototype, {
 
   defaults: {
   	ledPin: 4,
-  	pulseTime:2,
-    delay: 15,
+  	pulseTime:10,
+    delay: 22,
     timebase: 1,
     lightIntensities: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 ]
   },
@@ -88,7 +88,7 @@ extend( experiment.prototype, {
 				oscilloscope.clear();
 	
 				// Wait two seconds				
-				self.waitAndNext( 0.1 * self.config.delay );
+				self.waitAndNext( 0.2 * self.config.delay );
 				yield;
 
 				afg.enableChannels();
@@ -100,7 +100,7 @@ extend( experiment.prototype, {
 				});
 */
 
-				self.waitAndNext( 16 );
+				self.waitAndNext( self.config.delay + self.config.pulseTime );
 				yield;
 
 
@@ -176,7 +176,7 @@ extend( experiment.prototype, {
 
 		oscilloscope.stopAfterSequence( false );
 
-
+		oscilloscope.enableChannels();
 		oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel
 		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
 		oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up

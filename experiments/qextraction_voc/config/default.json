@@ -1,1 +1,1 @@
-{"pulsetime":1,"delaytime":2,"vscale":0.08,"timebase":10000,"averaging":8,"blankaveraging":128,"pulsechannel":"1","switchchannel":"2"}
+{"pulsetime":1,"delaytime":2,"vscale":0.08,"timebase":200,"averaging":12,"blankaveraging":128,"pulsechannel":"1","switchchannel":"2"}

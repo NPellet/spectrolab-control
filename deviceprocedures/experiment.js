@@ -1,6 +1,9 @@
 
 var EventEmitter = require('events').EventEmitter;
 var expGlobal = require("app/experiment");
+var liquid = require("liquid-node"),
+	lengine = new liquid.Engine,
+	fs = require('fs');
 
 var Experiment = function() {
 	this._init();
@@ -120,20 +123,17 @@ Experiment.prototype.abort = function() {
 
 Experiment.prototype.modal = function( title, text, buttonText ) {
 
+	var html = lengine.parseAndRender( fs.readFileSync( './server/html/modal.tpl'), {
 
-	Promise.all( html ).then( function() {
-
-		return lengine.parseAndRender( fs.readFileSync( './server/html/modal.tpl'), {
-
-			title: title,
-			text: text,
-			buttonText: buttonText
-		} );
-
-	}).then( function( html ) {
-
+		title: title,
+		text: text,
+		buttonText: buttonText
+	} ).then( function( html ) {
 		expGlobal.streamOut( "showModal", html );
 	});
+
+		
+
 }
 
 Experiment.prototype.setup = function() {
@@ -142,6 +142,14 @@ Experiment.prototype.setup = function() {
 
 Experiment.prototype.getInstrument = function( instrument ) {
 	return expGlobal.getInstrument( instrument );
+}
+
+Experiment.prototype.getId = function() {
+	return this.id;
+}
+
+Experiment.prototype.setId = function( id ) {
+	this.id = id;
 }
 
 module.exports = Experiment;

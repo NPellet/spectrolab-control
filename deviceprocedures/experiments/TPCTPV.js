@@ -11,6 +11,7 @@ var defaultExperiment = require("../experiment"),
 var oscilloscope, arduino, afg, keithley;
 
 var experiment = function() {
+	this.recordLength = 100000;
 	this._init();
 };
 experiment.prototype = new defaultExperiment();
@@ -19,7 +20,7 @@ experiment.prototype = new defaultExperiment();
 extend( experiment.prototype, {
 
 	defaults: {
-		averaging: 200
+		averaging: 400
 	},
 
 	init: function( parameters ) {
@@ -38,112 +39,95 @@ extend( experiment.prototype, {
 		var self = this;
 
 		return function *perturbation() {
-			self.sunLevel = arduino.lowestSun();
 
-			var jscDecay, vocDecay;
+
+			self.sunLevel = arduino.lowestSun();
 
 			while( true ) {
 
-				var iv;
-				var vocDecay;
-				var jsDecay;
-				var voc;
-				var jsc;
+				var TPV;
 
-
-				self.modal("Enable 50 Ohm", "Please plug in the 50 Ohm terminator", "Ok");
-				yield;
-				
 				self.sunLevel = arduino.getCurrentSunLevel();
-				afg.disableChannels();
-
-
-				/*
-				self.iv().then( function( ivCurve ) {
-					iv = ivCurve;
-					self.loopNext();
-				} );
-				yield;
-
-				self.getVoc().then( function( v ) {
-					voc = v;
-					self.loopNext();
-				} );
-				yield;
-
-				self.getJsc().then( function( j ) {
-					jsc = - j;
-					self.loopNext();
-				} );
-				yield;
-*/
-				//self.progress( "iv", [ iv, voc, jsc, arduino.getSunLevel() ] );
 				afg.enableChannel( 1 );
 
-				self.perturbation( 'perturbationVoc' ).then( function( d ) {
-					vocDecay = d;
+				self.perturbation( 'perturbationVoc', 1e-3 ).then( function( d ) {
+					TPV = d;
 					self.loopNext();
 				} );
 				yield;
-			/*	self.perturbation( 'perturbationJsc' ).then( function( d ) {
-					jscDecay = d;
-					self.loopNext();
-				} );
-				yield;
-*/
+				TPV.subtract( TPV.getAverageP( 0, 0.04 * self.recordLength ) );
+				TPV.divideBy( TPV.getAverageP( 0.14 * self.recordLength, 0.15 * self.recordLength ) );
+				TPV.shiftX( - TPV.getXFromIndex( 0.15 * self.recordLength ) );
 
-				self.progress( "perturbation", {
-														TPV: vocDecay,
-											//			TPC: jscDecay,
-														Sun: self.sunLevel
-													} );
+		
+
+				self.progress( "TPV", {	TPV: TPV, Sun: self.sunLevel } );
+
 
 				var breakExperiment = false;
-
-				console.log('Increase');
-				arduino.increaseSun().then( function( sun ) {
-					sunLevel = sun;
+				arduino.increaseSun().then( function( newSun ) {
+					sunLevel = newSun;
 					self.loopNext();
 				}, function() {
 					breakExperiment = true;
 					self.loopNext();
 				});
-
-
 				yield;
 
 				if( breakExperiment ) {
-					return;
+					break;
 				}
 
 			}
+
+			self.sunLevel = arduino.lowestSun();
+
+			self.modal("Change load resistance", "Plug 50 Ohm termination resistance", "Done");
+			yield;
+
+			while( true ) {
+
+				var TPC;
+				self.sunLevel = arduino.getCurrentSunLevel();
+				afg.enableChannel( 1 );
+				self.perturbation( 'perturbationJsc', 0.3e-3 ).then( function( d ) {
+					TPC = d;
+					self.loopNext();
+				} );
+				yield;
+
+				TPC.subtract( TPC.getAverageP( 0, 0.04 * self.recordLength ) );
+				TPC.divideBy( TPC.getAverageP( 0.14 * self.recordLength, 0.15 * self.recordLength ) );
+				TPC.shiftX( - TPC.getXFromIndex( 0.15 * self.recordLength ) );
+
+
+				self.progress( "TPC", {	TPC: TPC, Sun: self.sunLevel } );
+
+				var breakExperiment = false;
+
+				arduino.increaseSun().then( function( newSun ) {
+
+					sunLevel = newSun;
+					self.loopNext();
+
+				}, function() {
+
+					breakExperiment = true;
+					self.loopNext();
+				});
+				yield;
+
+				if( breakExperiment ) {
+					break;
+				}
+			}
+
+			afg.disableChannels();
+			arduino.whiteLightOff();
 		}
 	},
 
 
-	iv: function() {
-		return keithley.sweepIV( {
-			channel: 'smub',
-			hysteresis: true,
-			startV: 1,
-			stopV: -0.2,
-			scanRate: 0.2
-		})
-	},
-
-	getVoc: function() {
-		return keithley.measureVoc( {
-			channel: 'smub',
-			settlingTime: 3
-		})
-	},
-
-	getJsc: function() {
-		return keithley.measureIsc( {
-			channel: 'smub',
-			settlingTime: 3
-		})
-	},
 
 	setLight: function( l ) {
 		arduino.setWhiteLightLevelVoltage( l );
@@ -154,7 +138,7 @@ extend( experiment.prototype, {
 
 
 	// Applicable with jsc and voc
-	perturbation: function( perturbationTxt ) {
+	perturbation: function( perturbationTxt, level ) {
 
 		var self = this,
 			perturbation = self[ perturbationTxt ] - 50;
@@ -166,15 +150,20 @@ extend( experiment.prototype, {
 			
 			function *perturbator() {
 
+				var max = false;
+
 				oscilloscope.setNbAverage( 100 );
 				oscilloscope.stopAfterSequence( false );
 				oscilloscope.startAquisition();
 				while( true ) {
 
-					if( perturbed < 0.5e-3  ) {
+					if( perturbed < level && max == false ) {
 
-						perturbation += 50;
-						arduino.setColorLightLevelVoltage( perturbation );
+						perturbation += 40;
+						if( ! arduino.setColorLightLevelVoltage( perturbation ) ) {
+							max = true;
+						}
+
 						oscilloscope.clear();
 						oscilloscope.startAquisition();
 
@@ -202,7 +191,7 @@ extend( experiment.prototype, {
 					}
 
 					oscilloscope.clear();
-					self.wait( 5 ).then( function() {
+					self.wait( 2 ).then( function() {
 
 						oscilloscope.getMeasurementMean( 1 ).then( function( results ) {
 
@@ -237,7 +226,7 @@ extend( experiment.prototype, {
 		afg.setPulseLeadingTime( 1, 9e-9 );
 		afg.setPulseTrailingTime( 1, 9e-9 );
 		afg.setPulseDelay( 1, 0 );
-		afg.setPulsePeriod( 1, 10e-3 );
+		afg.setPulsePeriod( 1, 11e-3 );
 		afg.setPulseWidth( 1, 1e-3 );
 		afg.disableChannels( ); // Set the pin LOW
 		afg.getErrors();
@@ -258,8 +247,8 @@ extend( experiment.prototype, {
 		oscilloscope.setCoupling( 3, "AC");
 		oscilloscope.setCoupling( 4, "GND");
 
-
-		oscilloscope.setRecordLength( 100000 );
+		oscilloscope.disable50Ohms( 3 );
+		oscilloscope.setRecordLength( this.recordLength );
 
 		oscilloscope.setVerticalScale( 3, 1e-3 );
 		oscilloscope.setPosition( 3, -4 );
@@ -269,6 +258,7 @@ extend( experiment.prototype, {
 		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
 		oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
 		oscilloscope.setTriggerLevel( 0.7 ); // TTL down
+		oscilloscope.setTriggerRefPoint( 15 );
 
 		oscilloscope.enableChannels();
 

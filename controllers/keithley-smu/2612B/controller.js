@@ -527,6 +527,10 @@ Keithley.prototype.connect = function( callback ) {
 
 			module.socket.on('connect', function() {
 
+				self.command("ABORT"); // Reset keithley
+				self.command("digio.writeport(0)");
+
+
 				// It's connected...
 				clearTimeout( timeout );
 				self.uploadScripts();
@@ -538,16 +542,11 @@ Keithley.prototype.connect = function( callback ) {
 
 				self.socket.removeAllListeners( 'data' );
 
-				self.command("exit()"); // Reset keithley
-				self.command("*RST"); // Reset keithley
-				self.command("*CLS"); // Reset keithley
-				self.command("digio.writeport(0)");
 				self.flushErrors();
 
 			//	self.command("format.data=format.REAL32");
 				self.command("format.byteorder=format.LITTLEENDIAN");
-
-				self.socket.write("SpetroscopyScripts();\r\n");
+				self.command("SpetroscopyScripts();");
 
 				self.emit("connected");
 				module.logOk("Connected to Keithley on host " + module.params.host + " on port " + module.params.port );
@@ -778,7 +777,6 @@ Keithley.prototype.uploadScripts = function() {
 
 		this.socket.write( b );
 
-console.log( b );
 		//this.socket.write(  );
 		this.socket.write("\r\n");
 	}

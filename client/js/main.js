@@ -18,7 +18,7 @@ requirejs.config({
 	}
 });
 
-require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstrap-treeview' ] , function( $, ModuleFactory, Util, IO ) {
+require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstrap-treeview' ] , function( $, ModuleFactory, IO, Util ) {
 
 
 	ModuleFactory.parseDom( document );
@@ -26,7 +26,7 @@ require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstra
 	IO.setIp( $(document).find('head').find('meta[name=application-meta][data-serverip]').attr('data-serverip') );
 	IO.connect();
 
-	global( IO );
+	global( IO, Util );
 } );
 
 
@@ -39,7 +39,7 @@ function loadCss(url) {
 }
 
 
-function global( IO ) {
+function global( IO, Util ) {
 
 	var cfgSelected;
 	var experimentStatus = "stopped";
@@ -49,9 +49,8 @@ function global( IO ) {
 
 	deviceName.on('keyup blur change', function() {
 
-			var value = $( this ).prop( 'value' );
-			IO.writeGlobal( "deviceName", value );
-			console.log( value );
+		var value = $( this ).prop( 'value' );
+		IO.writeGlobal( "deviceName", value );
 	});
 
 
@@ -103,21 +102,15 @@ function global( IO ) {
 	IO.onGlobal( "showModal", function( html ) {
 		var id;
 		html = $( html ).attr('id', ( id = Util.guid() ) );
+		console.log( html );
 		$("body").append( html );
 
 		$("#" + id ).modal( ).on('click', 'button.ok', function() {
 
 			IO.writeGlobal( 'modalOk' );
-
+			$("#" + id ).modal( 'hide' );
 		});
 
-
-
-
-		experimentStatus = "running";
-		$("#run-experiment").prop("disabled", false ).html("Pause");
-		$("#run-experiment").prop( "disabled", false );
-		$("#abort-experiment").prop( "disabled", false );
 	} );
 
 

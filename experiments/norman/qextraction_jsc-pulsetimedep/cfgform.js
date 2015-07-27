@@ -1,14 +1,6 @@
 
 var html = "";
 
-html += '<div class="form-group">';
-html += '<label for="pulsetime">Pulse time</label>';
-  html += '<div class="input-group">';
-    html += '<input type="number" class="form-control" id="pulsetime" name="pulsetime" placeholder="Enter pulse time (s)" />';
-    html += '<span class="input-group-addon">s</span>';
-  html += '</div>';
-html += '</div>';
-
 
 html += '<div class="form-group">';
 html += '<label for="delaytime">Delay time</label>';
@@ -59,8 +51,8 @@ html += '<label for="pulsechannel">Light channel on AFG</label>';
   html += '</div>';
 html += '</div>';
 
-var lights = require("../../server/html/formLights.js");
-html += lights( true );
+var lights = require("../../../server/html/formLights.js");
+html += lights( false );
 
 
 module.exports = html;

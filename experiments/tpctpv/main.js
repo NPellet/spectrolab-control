@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var experiment = require('app/experiment');
+var color = require("color");
 
 experiment.renderer = require('./renderer');
 experiment.config = require('./config');
@@ -23,9 +24,11 @@ experiment.onLoadConfig( function() {
 	TPCTPV.loadConfig( experiment.config, function( cfg ) { cfg.timebase /= 1000000; } );
 } );
 
+var c = color().hsl( 90, 100, 35 );
+
 
 TPCTPV.on("progress", function( results ) {
-console.log( results );
+
 	switch( results.type ) {
 
 		case 'iv':
@@ -52,26 +55,23 @@ console.log( results );
 			var vocDecay = results.arguments.TPV;
 			var dc = results.arguments.Sun;
 
-			experiment.renderer.getModule( "vocDecay" ).newSerie( "lastVocDecay_" + dc, vocDecay );
-	//		experiment.renderer.getModule( "jscDecay" ).newSerie( "lastJscDecay", jscDecay );
-
+			experiment.renderer.getModule( "vocDecay" ).newSerie( "lastVocDecay_" + dc, vocDecay, { lineColor: c.rgbString() } );
 			experiment.renderer.getModule( "vocDecay" ).autoscale();
-	//		experiment.renderer.getModule( "jscDecay" ).autoscale();
 			var itxw = itx.newWave( "TPV_" + dc );
 			itxw.setWaveform( vocDecay );
+			c.rotate( 270 / 13 );
 
-//			var itxw = itx.newWave( "jscdecay_" + dc );
-//			itxw.setWaveform( jscDecay );
 
 		break;
 
 		case 'TPC':
 			var jscDecay = results.arguments.TPC;
 			var dc = results.arguments.Sun;
-			experiment.renderer.getModule( "jscDecay" ).newSerie( "lastJscDecay_" + dc, jscDecay );
+			experiment.renderer.getModule( "jscDecay" ).newSerie( "lastJscDecay_" + dc, jscDecay, { lineColor: c.rgbString() }  );
 			experiment.renderer.getModule( "jscDecay" ).autoscale();
 			var itxw = itx.newWave( "TPC_" + dc );
 			itxw.setWaveform( jscDecay );
+			c.rotate( 270 / 13 );
 		break;
 	}
 

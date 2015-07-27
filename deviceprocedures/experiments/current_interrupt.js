@@ -62,15 +62,28 @@ extend( experiment.prototype, {
 			var current, voltage;
 			var yscale = self.config.vscale;
 
+
+
+
+		    self.setAFGPulses();
+
 			while( true ) {
 
 				arduino.setWhiteLightLevel( lightLevel );
 
+				oscilloscope.stopAquisition();
+				oscilloscope.clear();
 
+				yscale = self.config.vscale;
+
+				oscilloscope.setVerticalScale( 3, 150e-3 );
+
+console.log( yscale );
 		        self.pulse( yscale ).then( function( w ) {
 		          oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
 		                //oscilloscope.setOffset( 2, measurements[ 1 ] );
-		                console.log( measurements );
+		              oscilloscope.setOffset( 3, measurements[ 1 ] );
+
 		              yscale = measurements[ 0 ] / 7;
 		              self.loopNext();
 		          } );
@@ -88,29 +101,14 @@ extend( experiment.prototype, {
 		        yield;
 
 
-		        afg.setShape( 1, "DC" );
-		        afg.setVoltageOffset( 1, 1.5 );
-		        afg.setShape( 2, "DC" );
-		        afg.setVoltageOffset( 2, 0 );
-		        afg.enableChannels();
 
 
-				keithley.measureJ( { channel: 'smub', voltage: 0, settlingTime: 2 }).then( function( measuredJsc ) {
-					jsc = measuredJsc;
-					self.loopNext();
-				});
-
-				yield;
-
-				oscilloscope.clear();
-
-  			    self.setAFGPulses();
 
 				results.voltages.push( voltage.getMax() );
-				results.jscs.push( jsc );
 				results.lightLevels.push( lightLevel );
 				results.voltageWaves.push( voltage );
        			results.lastVoltageWave = voltage;
+       			results.lastLightLevel = lightLevel;
 
 				self.progress( "charge", results );
 
@@ -120,36 +118,63 @@ extend( experiment.prototype, {
 				lightLevel++;
 			}
 
+			self.modal("Connect Keithley", "Reconnect Keithley", "Done");
+			yield;
+
+			
+			afg.setShape( 1, "DC" );
+	        afg.setVoltageOffset( 1, 1.5 );
+	        afg.setShape( 2, "DC" );
+	        afg.setVoltageOffset( 2, 0 );
+	        afg.enableChannels();
+
+			var lightLevel = 0;
+
+			while( true ) {
+
+				arduino.setWhiteLightLevel( lightLevel );
+
+
+				keithley.measureJ( { channel: 'smub', voltage: 0, settlingTime: 2 }).then( function( measuredJsc ) {
+					jsc = measuredJsc;
+					self.loopNext();
+				});
+
+				yield;
+
+				results.jscs.push( jsc );
+				self.progress( "jscs", results );
+
+				if( lightLevel >= 12 ) {
+					break;
+				}
+				lightLevel++;
+			}
+
+			
 			oscilloscope.disableChannels();
 		}
-
 	},
 
 	pulse: function( vscale ) {
 
+		var self = this;
 		oscilloscope.clear();
 		oscilloscope.enableChannels();
 		oscilloscope.startAquisition();
-	    afg.disableChannels( );
-
 		oscilloscope.setVerticalScale( 3, vscale );
 
-	    this.wait( 5 ).then( function() {
-	      afg.enableChannels( );
-	      afg.trigger();
-	    });
+	    afg.enableChannels( );
 
+	    return oscilloscope.ready().then( function() {
+	      
+	      afg.disableChannels();
 
-    return oscilloscope.ready().then( function() {
-      
-      return oscilloscope.getWaves().then( function( w ) {
-      	afg.disableChannels();
-	      oscilloscope.stopAquisition();
-	      oscilloscope.disableChannels();
-
-	      return w;
-      });
-    })
+	      return oscilloscope.getWaves().then( function( w ) {
+	      	  
+		      return w;
+	      });
+	    })
 	},
 
 	setup: function() {
@@ -160,8 +185,8 @@ extend( experiment.prototype, {
 		var timeBase = this.config.timebase;
 		var vscale = this.config.vscale;
 
-    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+	    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+	    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
 
 		oscilloscope.stopAfterSequence( true );
 
@@ -219,14 +244,11 @@ extend( experiment.prototype, {
 	    oscilloscope.enableMeasurement( 2 );
 
 
-
-
-
 		/* AFG SETUP */
 
 		afg.setTriggerExternal(); // Only external trigger
 
-    this.setAFGPulses();
+    	this.setAFGPulses();
 
 		afg.disableChannels( ); // Set the pin LOW
 
@@ -244,11 +266,9 @@ extend( experiment.prototype, {
     var vscale = this.config.vscale;
 
     var pulseChannel = 1;
-    afg.enableBurst( pulseChannel );
+    afg.disableBurst( pulseChannel );
     afg.setShape( pulseChannel, "PULSE" );
     afg.setPulseHold( pulseChannel , "WIDTH" );
-    afg.setBurstTriggerDelay(  pulseChannel, 0 );
-    afg.setBurstNCycles( pulseChannel, nbAverage );
     afg.setVoltageLow( pulseChannel, 0 );
     afg.setVoltageHigh( pulseChannel, 1.5 );
     afg.setPulseLeadingTime( pulseChannel, 9e-9 );
@@ -259,12 +279,9 @@ extend( experiment.prototype, {
 
 
     var pulseChannel = 2;
-    afg.enableBurst( pulseChannel );
+    afg.disableBurst( pulseChannel );
     afg.setShape( pulseChannel, "PULSE" );
     afg.setPulseHold( pulseChannel , "WIDTH" );
-    afg.setBurstTriggerDelay(  pulseChannel, 0 );
-    afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
-    afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
     afg.setVoltageLow( pulseChannel, 0 );
     afg.setVoltageHigh( pulseChannel, 1.5 );
     afg.setPulseLeadingTime( pulseChannel, 9e-9 );

@@ -3,18 +3,16 @@ var config = {
 	instruments: {
 
 
-		"keithley-smu": {
+		"keithley": {
+			type: "keithley-smu",
+			name: 'Keithley SMU',
 			host: '192.168.0.101',
 			port: '5025'
 		},
 
-		"gould-oscilloscope": {
-			baudrate: 19200,
-			host: '/dev/tty.USA19H141P1.1'
-
-		},
-
 		"arduino": {
+			type: "arduino",
+			name: 'Arduino',
 			baudrate: 115200,
 
 			whiteLightLED: {
@@ -37,13 +35,29 @@ var config = {
 		},
 
 		"tektronix-functiongenerator": {
-
+			type: "tektronix-functiongenerator",
+			name: 'Function generator',
 			host: '192.168.0.100'
 		},
 
 
 		"tektronix-oscilloscope": {
+			type: 'tektronix-oscilloscope',
+			name: 'Oscilloscope',
 			host: '192.168.0.102'
+		},
+
+
+		"tektronix-PWS-WhiteLED": {
+			type: 'tektronix-powersupply',
+			name: 'PWS - White',
+			host: ''
+		},
+
+		"tektronix-PWS-ColorLED": {
+			type: 'tektronix-powersupply',
+			name: 'PWS - Colored',
+			host: ''
 		},
 
 	}
