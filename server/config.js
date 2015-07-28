@@ -60,6 +60,34 @@ var config = {
 			host: ''
 		},
 
+		'OBIS 422nm': {
+
+			type: 'coherent-obis',
+			
+			
+			host: '',
+			baudrate: 115200,
+			options: {
+			  parity: 'none',
+			  dataBits: 8,
+			  stopBits: 1,
+			  flowControl: false
+			}
+		},
+
+
+		'OBIS 660nm': {
+			type: 'coherent-obis',
+
+			host: '',
+			baudrate: 115200,
+			options: {
+			  parity: 'none',
+			  dataBits: 8,
+			  stopBits: 1,
+			  flowControl: false
+			}
+		}
 	}
 
 

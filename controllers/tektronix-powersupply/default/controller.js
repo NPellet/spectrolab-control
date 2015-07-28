@@ -4,12 +4,10 @@
 var
   extend = require('extend'),
   events = require("events"),
-  path = require("path"),
   pythonShell = require("python-shell"),
   promise = require("bluebird");
 
 var InstrumentController = require("../../instrumentcontroller");
-var Waveform = require("../../../server/waveform");
 
 var TektronixPWS = function( params ) {
   this.params = params;
@@ -48,7 +46,6 @@ TektronixPWS.prototype.connect = function(  ) {
 
 
       module.shellInstance.once( "message", function( message ) {
-console.log( message );
         if( message == "ok" ) {
           module.connected = true;
           module.logOk( "Successfully found Tektronix PWS on host " + module.params.host + " via VISA" );
@@ -63,23 +60,39 @@ console.log( message );
 
 TektronixPWS.prototype.command = function( command ) {
 
-    this.shellInstance.on( "message", function( message ) {
+    return new Promise( function( resolver, rejecter ) {
 
-      console.log( "Message: " + message );
+      this.shellInstance.on( "message", function( message ) {
+        resolver( message );
+      } );
+
+      this.shellInstance.send( command )
 
     } );
-console.log( "Command: " + command );
-    this.shellInstance.send( command )
 }
 
-TektronixPWS.prototype.setVoltage = function( voltage ) {
+TektronixPWS.prototype.setVoltageLimit = function( voltage ) {
+  return this.command("SOURce:VOLTage:LEVel " + getVoltage( voltage ) );
+}
 
-  this.command("SOURce:VOLTage:LEVel " + getVoltage( voltage ) );
+TektronixPWS.prototype.setCurrentLimit = function( voltage ) {
+  return this.command("SOURce:CURRent:LEVel " + getCurrent( voltage ) );
+}
 
+TektronixPWS.prototype.turnOn = function() {
+  return this.command("SOURce:OUTPut:STATe ON");
+}
+
+TektronixPWS.prototype.turnOff = function() {
+  return this.command("SOURce:OUTPut:STATe ON");
 }
 
 function getVoltage( v ) {
   return parseFloat( v ) + "V";
+}
+
+function getCurrent( a ) {
+  return parseFloat( a ) + "A";
 }
 
 module.exports = TektronixPWS;
