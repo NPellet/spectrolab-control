@@ -3,7 +3,7 @@ var moduleProto = require('../../../../module'),
 	extend = require('extend');
 
 var OBISConnect = function() {
-	this.title = "PWS";
+	this.title = "OBIS";
 	this.status = {};
 };
 
@@ -54,7 +54,7 @@ OBISConnect.prototype = extend( OBISConnect.prototype, {
 			module.streamOut( "pending", true );
 			module.emit("connecting");
 			module.lock();
-			module.pws.connect();
+			module.OBIS.connect();
 		},
 
 		'disconnected': function() {
@@ -63,7 +63,7 @@ OBISConnect.prototype = extend( OBISConnect.prototype, {
 			module.lock();
 			module.emit("disconnecting");
 			module.streamOut( "pending", true );
-			module.pws.disconnect();
+			module.OBIS.disconnect();
 		}
 	},
 

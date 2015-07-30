@@ -37,7 +37,7 @@ CoherentOBIS.prototype.setContinuousMode = function( mode ) {
 }
 
 CoherentOBIS.prototype.turnOn = function() {	
-	OBISLaser.write("SOURce:AM:STATe ON\r");
+	this.serialCommand("SOURce:AM:STATe ON");
 }
 
 module.exports = CoherentOBIS;

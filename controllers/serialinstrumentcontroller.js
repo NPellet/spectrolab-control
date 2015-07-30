@@ -3,7 +3,8 @@
 
 var InstrumentController = require("./instrumentcontroller"),
 	Promise = require('bluebird'),
-	SerialPort = require('serialport');
+	SerialPort = require('serialport').SerialPort,
+	extend = require('extend');
 
 
 // Empty constructor
@@ -12,9 +13,11 @@ var SerialDevice = function() {};
 SerialDevice.prototype = new InstrumentController();
 
 
-function serialConnect( serialDevice, host, baudrate, options ) {
+function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
-	return new Promise( function( resolver, rejecter ) {
+	serialDevice._serialQueue = [];
+
+	return ( serialDevice._serialOpening || ( serialDevice._serialOpening = new Promise( function( resolver, rejecter ) {
 
 		var serialPort;
 
@@ -30,7 +33,7 @@ function serialConnect( serialDevice, host, baudrate, options ) {
 				serialPort.close(); // Kills the socket
 			}
 
-		}, timeout || 1000 );
+		}, timeoutTime || 10000 );
 
 		options = options || {
 			stopBits: 1,
@@ -42,14 +45,14 @@ function serialConnect( serialDevice, host, baudrate, options ) {
 		try {
 
 			serialPort = new SerialPort( host, extend( options, { baudrate: baudrate } ) );
-			
 			// The serial device has been opened
 			serialPort.on("open", function() {
 				clearTimeout( timeout );
-				self.emit( "connected" );
+				serialDevice.emit( "connected" );
+				serialDevice.logOk("Succesffully connected to \"" + serialDevice.getName() + "\"");
 
 				serialDevice._serialConnected = true;
-
+				serialDevice._serialOpening = false;
 				resolver( serialPort );
 			});
 
@@ -59,14 +62,14 @@ function serialConnect( serialDevice, host, baudrate, options ) {
 
 				serialDevice._serialConnected = false;
 
-				self.emit( "disconnected" );
+				serialDevice.emit( "disconnected" );
 			});
 
 			serialPort.on('error', function() {
 
 				serialDevice._serialConnected = false;
 				
-				self.emit( "error" );
+				serialDevice.emit( "error" );
 			});
 
 
@@ -102,7 +105,9 @@ function serialConnect( serialDevice, host, baudrate, options ) {
 			serialDevice.emit("connectionerror");
 			rejecter();
 		}
-	} );
+
+	} ) ) );
+
 }
 
 
@@ -124,23 +129,23 @@ function serialCall( serialDevice, method ) {
 	} );
 }
 
-function serialCheckQueue( Arduino ) {
+function serialCheckQueue( serialDevice ) {
 
 	if( serialCheckQueue._serialProcessingQueue ) { // Calls are already in progress
 		return;
 	}
 
-	if( serielDevice._serialQueue && serielDevice._serialQueue.length > 0 ) {
+	if( serialDevice._serialQueue && serialDevice._serialQueue.length > 0 ) {
 
-		serielDevice.serialReady = new Promise( function( resolver ) {
-			serielDevice._serialReadyResolver = resolver;
+		serialDevice.serialReady = new Promise( function( resolver ) {
+			serialDevice._serialReadyResolver = resolver;
 		});
 
 		serialProcessQueue( serialDevice );
 	}
 }
 
-function serialProcessQueue( Arduino ) {
+function serialProcessQueue( serialDevice ) {
 
 	if( serialDevice._serialQueue && serialDevice._serialQueue.length == 0 ) {
 
@@ -153,11 +158,11 @@ function serialProcessQueue( Arduino ) {
 
 	var queueElement = serialDevice._serialQueue.shift();
 
-	return SerialDevice.connect().then( function( serialPort ) {
+	return serialDevice.serialConnect().then( function( serialPort ) {
 
 		var timeout;
 
-		serialPort.write( queueElement.method + "\n", function( err, results ) {
+		serialPort.write( queueElement.method + "\r", function( err, results ) {
 
 			if( err ) {
 				throw err;
@@ -199,7 +204,7 @@ function serialProcessQueue( Arduino ) {
 
 SerialDevice.prototype.serialConnect = function( ) {
 
-	if( this.serialCheckConnection ) {
+	if( this.serialCheckConnection( ) ) {
 
 		return new Promise( function( resolver ) { resolver( ); } );
 
@@ -218,15 +223,16 @@ SerialDevice.prototype.serialClose = function() {
 
 	return new Promise( function( resolver, rejecter ) {
 
-		self.serialPort.close( function( ) {
+		serialDevice.serialPort.close( function( ) {
 
-			self._serialConnected = false;
+			serialDevice._serialConnected = false;
 			resolver();
 		});
 	});
 }
 
 SerialDevice.prototype.serialCheckConnection = function() {
+
 	return this._serialConnected;
 }
 

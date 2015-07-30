@@ -64,8 +64,7 @@ var config = {
 
 			type: 'coherent-obis',
 			
-			
-			host: '',
+			host: '/dev/cu.usbmodem1411',
 			baudrate: 115200,
 			options: {
 			  parity: 'none',
