@@ -13,8 +13,16 @@ var config = {
 		"arduino": {
 			type: "arduino",
 			name: 'Arduino',
-			baudrate: 115200,
 
+			baudrate: 115200,
+			host: '/dev/cu.usbmodem1421',
+
+			options: {
+			  parity: 'none',
+			  dataBits: 8,
+			  stopBits: 1
+			 },
+			
 			whiteLightLED: {
 
 				"LEDType": "LuxeonStar REBEL White 5650K",
@@ -64,7 +72,8 @@ var config = {
 
 			type: 'coherent-obis',
 			
-			host: '/dev/cu.usbmodem1411',
+	//		host: '/dev/cu.usbmodem1411',
+
 			baudrate: 115200,
 			options: {
 			  parity: 'none',

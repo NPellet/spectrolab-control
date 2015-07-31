@@ -51,6 +51,57 @@ Arduino.prototype.connect = Arduino.prototype.serialConnect;
 	*/
 
 
+
+Arduino.prototype.readDigital = function( pinNumber ) {
+	var self = this;
+	return this
+			.serialCommand( "6," + pinNumber + ";" )
+			.then( function ( d ) { return self.parseCommandResponse( d ); } )
+			.then( function( d ) {
+				
+				if( d === undefined ) {
+					return NaN;
+				}
+
+				return parseInt( d[ 0 ] );
+			});
+}
+
+
+Arduino.prototype.readAnalog = function( pinNumber ) {
+	var self = this;
+	return this
+			.serialCommand( "7," + pinNumber + ";" )
+			.then( function ( d ) { return self.parseCommandResponse( d ); } )
+			.then( function( d ) {
+				
+				if( d === undefined ) {
+					return NaN;
+				}
+
+				return parseFloat( d[ 0 ] );
+			});
+}
+
+
+Arduino.prototype.parseCommandResponse = function( response ) {
+
+	response = response.replace(';\r\n', '');
+	response = response.split(',');
+console.log( response );
+	if( response[ 0 ] !== '4' ) {
+		this.logError( "An unexpected response has occured. Arduino should respond with command '4' to be valid" );
+		this.logError( "Returned command: " + response );
+		return;
+	} else {
+
+		response.shift();
+console.log( response );
+		return response;
+	}
+}
+
+
 Arduino.prototype.getCurrentSunLevel = function() {
 	return this.currentWhiteLightLevel;
 }
