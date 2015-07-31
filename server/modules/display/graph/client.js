@@ -115,12 +115,33 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 			g.drawSeries();
 		},
 
+		forceXScale: function( d ) {
+			var g = this.checkGraph();
+
+			g.getXAxis().zoom( d[ 0 ], d[ 1 ] );
+			g.redraw();
+			g.drawSeries();
+		},
+
 		"newSerie": function( data ) {
 
 			var g = this.checkGraph();
 
 			this.newSerie( data, 'line' );
 		},
+
+		updateSerie: function( data ) {
+			var g = this.checkGraph();
+
+			var serie = g.getSerie( data.name );
+
+			if( ! serie ) {
+				return;
+			}
+			serie.setData( data.data );
+			serie.setOptions( data.options );
+		},
+
 
 		"newScatterSerie": function ( data ) {
 
@@ -184,7 +205,6 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 			var g = this.checkGraph();
 			g.getXAxis().setLabel( data );
-
 		},
 
 
@@ -218,9 +238,13 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 		var g = this.checkGraph();
 		var self = this;
-console.log( status );
+
 		if( status.height ) {
 			g.setHeight( status.height );
+		}
+
+		if( status.xScale ) {
+			g.getXAxis().forceMin( status.xScale[ 0 ] ).forceMax( status.xScale[ 1 ]);
 		}
 
 		if( status.xAxisLabel ) {

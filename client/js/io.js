@@ -56,6 +56,11 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 			if( data.moduleid ) {
 
 				var module = moduleFactory.getModule( data.moduleid );
+
+				if( ! module ) {
+					console.warn( "No module with ID " + data.moduleid + " existing." );
+					console.warn( "Message ", data, " has not been transmitted" );
+				}
 				var dom = $( "#module-" + data.moduleid );
 
 				if( data.instruction == "lock" ) {
