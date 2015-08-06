@@ -61,10 +61,8 @@ var config = {
 		},
 
 		'OBIS 422nm': {
-
 			type: 'coherent-obis',
-			
-			host: '/dev/cu.usbmodem1411',
+			host: '/dev/cu.usbmodem141421',
 			baudrate: 115200,
 			options: {
 			  parity: 'none',
@@ -77,8 +75,7 @@ var config = {
 
 		'OBIS 660nm': {
 			type: 'coherent-obis',
-
-			host: '',
+			host: '/dev/cu.usbmodem141411',
 			baudrate: 115200,
 			options: {
 			  parity: 'none',
