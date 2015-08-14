@@ -32,21 +32,21 @@ var methods = {
 		defaults: {
 			channel: 'smua',
 			startV: 0,
-			stopV: 1,
-			settlingTime: 0.02,
+			stopV1: 1,
+			stopV2: -1,
+			stepV: 0.1,
+			cycles: 1,
+			scanrate: 0.1,
 			timeDelay: 0,
-			complianceI: 1,
-			nbPoints: 100,
-			hysteresis: false
+			complianceI: 1
 		},
 
 		method: 'LinVSweepMeasureI',
 		parameters: function( options ) {
 
-			if( options.scanRate ) {
-					options.settlingTime = Math.abs( options.stopV - options.startV ) / options.scanRate / options.nbPoints;
-			}
-			return [ options.channel, options.startV, options.stopV, options.settlingTime, options.timeDelay, options.complianceI, options.nbPoints, options.hysteresis ? 1 : 0 ]
+			return [ options.channel, options.startV, options.stopV1, options.stopV2, options.stepV, options.cycles, options.scanRate, options.timeDelay, options.complianceI ]
+
+
 		},
 
 		processing: function( data, options ) {
@@ -70,36 +70,8 @@ var methods = {
 				waveX.setData( dataFinalX );
 				w.setXWave( waveX );
 
-				iv.setBackward( w );
+				iv.setIV( w );
 				return w;
-			}
-
-			if( options.hysteresis ) {
-				if( data.length > 2 ) {
-					var iv1 = getIv( 0, data.length / 2 );
-					var iv2 = getIv( data.length / 2, data.length );
-
-					if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
-
-						iv.setBackward( iv1 );
-						iv.setForward( iv2 );
-
-					} else {
-
-						iv.setForward( iv1 );
-						iv.setBackward( iv2 );
-
-					}
-				}
-
-			} else {
-
-				var iv1 = getIv( 0, data.length );
-				if( iv1.getXFromIndex( 0 ) - iv1.getXFromIndex( 1 ) < 0 ) {
-					iv.setBackward( iv1 );
-				} else {
-					iv.setForward( iv1 );
-				}
 			}
 
 			return iv;
@@ -128,80 +100,80 @@ var methods = {
 	},
 
 
-		'measureJ': {
-			defaults: {
-				channel: 'smua',
-				settlingTime: 0.02,
-				voltage: 0
-			},
-
-			method: 'measurej',
-			parameters: function( options ) {
-
-				return [ options.channel, options.settlingTime, options.voltage ]
-			},
-
-			processing: function( data ) {
-				return parseFloat( data );
-			}
+	'measureJ': {
+		defaults: {
+			channel: 'smua',
+			settlingTime: 0.02,
+			voltage: 0
 		},
 
-		'MPPTracking': {
-			defaults: {
-				channel: 'smua',
-			},
+		method: 'measurej',
+		parameters: function( options ) {
 
-			method: 'MPPTracking',
-			parameters: function( options ) {
-
-				return [ options.channel ]
-			},
-
-			processing: function( data ) {
-
-				var current, voltage;
-				data = data.split(/,[\t\r\s\n]*/);
-
-				var iv = new Waveform();
-				var it = new Waveform();
-				var vt = new Waveform();
-				var pt = new Waveform();
-
-				var time = new Waveform();
-				var voltage = new Waveform();
-
-				var v = new Waveform();
-				var c = [], v = [], t = [];
-
-				for( var i = 0; i < data.length; i += 3 ) {
-					c.push( parseFloat( data[ i ] ) );
-					v.push( parseFloat( data[ i + 1 ] ) );
-					t.push( parseFloat( data[ i + 2 ] ) );
-				}
-
-				time.setData( t );
-				voltage.setData( v );
-
-				iv.setData( c );
-				iv.setXWave( voltage )
-
-				it.setData( c );
-				it.setXWave( time )
-
-				vt.setData( v );
-				vt.setXWave( time )
-
-				pt = iv.duplicate().multiplyBy( function( valX ) { return valX; } );
-				pt.setXWave( time )
-
-				return {
-					IvsV: iv,
-					IvsT: it,
-					VvsT: vt,
-					PvsT: pt
-				};
-			}
+			return [ options.channel, options.settlingTime, options.voltage ]
 		},
+
+		processing: function( data ) {
+			return parseFloat( data );
+		}
+	},
+
+	'MPPTracking': {
+		defaults: {
+			channel: 'smua',
+		},
+
+		method: 'MPPTracking',
+		parameters: function( options ) {
+
+			return [ options.channel ]
+		},
+
+		processing: function( data ) {
+
+			var current, voltage;
+			data = data.split(/,[\t\r\s\n]*/);
+
+			var iv = new Waveform();
+			var it = new Waveform();
+			var vt = new Waveform();
+			var pt = new Waveform();
+
+			var time = new Waveform();
+			var voltage = new Waveform();
+
+			var v = new Waveform();
+			var c = [], v = [], t = [];
+
+			for( var i = 0; i < data.length; i += 3 ) {
+				c.push( parseFloat( data[ i ] ) );
+				v.push( parseFloat( data[ i + 1 ] ) );
+				t.push( parseFloat( data[ i + 2 ] ) );
+			}
+
+			time.setData( t );
+			voltage.setData( v );
+
+			iv.setData( c );
+			iv.setXWave( voltage )
+
+			it.setData( c );
+			it.setXWave( time )
+
+			vt.setData( v );
+			vt.setXWave( time )
+
+			pt = iv.duplicate().multiplyBy( function( valX ) { return valX; } );
+			pt.setXWave( time )
+
+			return {
+				IvsV: iv,
+				IvsT: it,
+				VvsT: vt,
+				PvsT: pt
+			};
+		}
+	},
 
 
 	'applyVoltage': {

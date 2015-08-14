@@ -1,8 +1,8 @@
 var experiment = require("app/experiment");
 
 var arduino = experiment.getInstrument('arduino');
-var lights = arduino.getSunLevels();
-
+//var lights = arduino.getSunLevels();
+var lights = [];
 module.exports = function( multiple ) {
 
 

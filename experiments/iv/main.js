@@ -60,10 +60,9 @@ var itx = experiment.itx();
 IV.on("progress", function( progress ) {
 
 	var itxw = itx.newWave( "iv_" + progress.arguments.lightLevel + "_" + progress.arguments.scanRate + "_backward" );
-	itxw.setWaveform( progress.arguments.iv.getBackwardScan( ) );
+	itxw.setWaveform( progress.arguments.iv.getIV( ) );
 
-	var itxw = itx.newWave( "iv_" + progress.arguments.lightLevel + "_" + progress.arguments.scanRate + "_forward" );
-	itxw.setWaveform( progress.arguments.iv.getForwardScan( ) );
+
 
 	ivs[ progress.arguments.lightLevel ] = ivs[ progress.arguments.lightLevel ] || [];
 	ivs[ progress.arguments.lightLevel ].push( progress.arguments.iv );
@@ -101,7 +100,7 @@ function redoIvViewForm( lightLevels ) {
 	if( typeof lightLevels !== "undefined" ) {
 		var html = '<div class="form-group"><label>Light level to visualize</label>';
 		for( var i = 0; i < lightLevels.length; i ++ ) {
-			html += '<div class="radio"><label><input type="radio" ' + ( i == 0 ? 'checked="checked"' : '' ) + ' name="lightlevel" value="' + lightLevels[ i ] + '">' + arduino.getSunLevel( lightLevels[ i ] ) + ' sun</label></div>';
+			html += '<div class="radio"><label><input type="radio" ' + ( i == 0 ? 'checked="checked"' : '' ) + ' name="lightlevel" value="' + lightLevels[ i ] + '">' + /*arduino.getSunLevel( lightLevels[ i ] )*/0 + ' sun</label></div>';
 		}
 		html += '</div>';
 	} else {

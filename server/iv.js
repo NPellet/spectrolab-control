@@ -3,32 +3,12 @@ var extend = require("extend");
 
 
 var iv = function() {
-    this.backward;
-    this.forward;
+  this.iv;
 };
 
-iv.prototype.setBackwardScan = function( bk ) {
-    this.backward = bk;
-};
-
-iv.prototype.setBackward = iv.prototype.setBackwardScan;
-
-iv.prototype.setForwardScan = function( fw ) {
-    this.forward = fw;
-};
-
-iv.prototype.setForward = iv.prototype.setForwardScan;
-
-iv.prototype.getBackwardScan = function() {
-    return this.backward;
+iv.prototype.setIV = function( ivWave ) {
+  this.iv = ivWave;
 }
-
-iv.prototype.getForwardScan = function() {
-    return this.forward;
-}
-
-iv.prototype.getBackward = iv.prototype.getBackwardScan;
-iv.prototype.getForward = iv.prototype.getForwardScan;
 
 iv.prototype.getVoc = function( direction ) {
     var iv = this._getIVDirection( direction );
@@ -56,6 +36,8 @@ iv.prototype.getMPPJ = function( direction ) {
 }
 
 iv.prototype._getIVDirection = function( direction ) {
+
+  return this.iv;
 
   switch( direction.toLowerCase() ) {
 

@@ -2,7 +2,7 @@
 var experiment = require("app/experiment");
 var arduino = experiment.getInstrument('arduino');
 
-var lights = arduino.getSunLevels();
+var lights = [];
 var speeds = [ '100', '10', '1', '0.5', '0.1', '0.05', '0.01', '0.005', '0.001' ]; // Down to 1mV/s
 
 var html = "";
