@@ -7,7 +7,7 @@ var SerialPort = require('serialport').SerialPort,
 	fs = require('fs'),
 	events = require("events"),
 	path = require("path"),
-	promise = require("bluebird"),
+	Promise = require("bluebird"),
 	Waveform = require("../../../server/waveform");
 
 var InstrumentController = require("../../serialinstrumentcontroller");
@@ -17,6 +17,9 @@ var timeout;
 
 var CoherentOBIS = function( params ) {
 	this.params = params;
+
+	this.mode;
+	this.turnedOn;
 
 	this.serialSetHost( params.host );
 	this.serialSetBaudrate( params.baudrate );
@@ -33,11 +36,43 @@ CoherentOBIS.prototype.setLaserPower = function( power ) {
 }
 
 CoherentOBIS.prototype.setContinuousMode = function( mode ) {
-	this.serialCommand("SOURce:AM:INTernal CWP");
+
+	var self = this;
+	if( this.mode == "continuous" ) {
+		return new Promise( function( resolver ) { resolver(); });
+	}
+
+	this.serialCommand("SOURce:AM:STATe ON");
+	this.serialCommand("SOURce:AM:INTernal CWP").then( function() {
+		self.mode == "continuous";
+	});
 }
 
+
+
 CoherentOBIS.prototype.turnOn = function() {	
-	this.serialCommand("SOURce:AM:STATe ON");
+
+	var self = this;
+	if( this.turnedOn === true ) {
+		return new Promise( function( resolver ) { resolver(); });
+	}
+	
+	this.serialCommand("SOURce:AM:STATe ON").then( function() {
+		self.turnedOn = true;
+	});
+}
+
+CoherentOBIS.prototype.turnOff = function() {	
+
+	var self = this;
+
+	if( this.turnedOn === false ) {
+		return new Promise( function( resolver ) { resolver(); });
+	}
+	
+	this.serialCommand("SOURce:AM:STATe OFF").then( function() {
+		self.turnedOn = true;
+	});
 }
 
 module.exports = CoherentOBIS;

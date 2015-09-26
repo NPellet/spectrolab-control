@@ -44,6 +44,14 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		return this;
 	},
 
+	getSerie: function( name ) {
+		return this.series[ name ];
+	},
+
+	updateSerie: function( name ) {
+		this.out( "updateSerie", this.series[ name ] );
+	},
+
 	newScatterSerie: function( name, data, options, errors, style ) {
 
 		data = waveToData( data );
@@ -98,13 +106,19 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		return this;
 	},
 
+	forceXScale: function( from, to ) {
+		this.status.xScale = [ from, to ];
+		this.out("forceXScale", [ from, to ] );
+		return this;
+	},
+
 	clear: function(  ) {
 
 		this.out( "clear" );
 		return this;
 	},
 
-	setXAxisLabel: function( label ) {
+	setXAxisLael: function( label ) {
 		this.status.xAxisLabel = label;
 		this.out( "setXAxisLabel", label );
 		return this;
@@ -115,6 +129,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		this.out( "setYAxisLabel", label );
 		return this;
 	},
+
 
 
 

@@ -1,6 +1,6 @@
 
 var SerialPort = require("serialport").SerialPort
-var OBISLaser = new SerialPort("/dev/tty.usbmodem1411", {
+var OBISLaser = new SerialPort("/dev/cu.usbmodem141411", {
   baudrate: 115200,
   parity: 'none',
   dataBits: 8,

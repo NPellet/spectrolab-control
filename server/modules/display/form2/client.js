@@ -9,12 +9,16 @@ define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-se
 	module.prototype.onDomReady = function() {
 		var self = this;
 
-		this.getInnerDom().on("click", "input[type=button]", function( ) {
+		this.getInnerDom().on("click", "input[type=button]", function( e ) {
+
+			e.stopPropagation();
 
 			var d = $( this ).data();
 			var formData = self.getFormData();
 			self.out( "submitClicked", { submit: d, form: formData } );
 		} );
+
+
 
 		this.getInnerDom().on("change keyup", ':input', function() {
 

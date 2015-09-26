@@ -15,7 +15,7 @@ SerialDevice.prototype = new InstrumentController();
 
 function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
-	serialDevice._serialQueue = [];
+	serialDevice._serialQueue = serialDevice._serialQueue || [];
 
 	return ( serialDevice._serialOpening || ( serialDevice._serialOpening = new Promise( function( resolver, rejecter ) {
 
@@ -92,7 +92,9 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			serialPort.on( 'data', function( data ) {
 				response = response + data.toString('ascii');
+	console.log( "new response" );
 				if( ! ( response.indexOf("\r\n") == -1 ) ) {
+					console.log("end");
 					endData( response );
 					response = "";
 				}
@@ -101,12 +103,15 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 		} catch ( error ) {
 
+			console.log( error );
 			serialDevice.logError("Could not connect to \"" + serialDevice.getName() + "\". Connection refused.");
 			serialDevice.emit("connectionerror");
 			rejecter();
+
 		}
 
 	} ) ) );
+
 
 }
 
@@ -115,6 +120,8 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 function serialCall( serialDevice, method ) {
 
 	serialDevice.currentResponse = "";
+
+	serialDevice._serialQueue = serialDevice._serialQueue || [];
 
 	return new Promise( function( resolver, rejecter ) {
 
@@ -133,7 +140,9 @@ function serialCheckQueue( serialDevice ) {
 
 	if( serialCheckQueue._serialProcessingQueue ) { // Calls are already in progress
 		return;
-	}
+	}	
+
+	serialDevice._serialQueue = serialDevice._serialQueue || [];
 
 	if( serialDevice._serialQueue && serialDevice._serialQueue.length > 0 ) {
 
@@ -146,7 +155,7 @@ function serialCheckQueue( serialDevice ) {
 }
 
 function serialProcessQueue( serialDevice ) {
-
+	
 	if( serialDevice._serialQueue && serialDevice._serialQueue.length == 0 ) {
 
 		serialDevice._serialProcessingQueue = false;
@@ -162,18 +171,23 @@ function serialProcessQueue( serialDevice ) {
 
 		var timeout;
 
-		serialPort.write( queueElement.method + "\r", function( err, results ) {
+		setTimeout( function() {
 
-			if( err ) {
-				throw err;
-			}
+			serialPort.write( queueElement.method + "\n\r", function( err, results ) {
 
-			if( timeout ) {
-				clearTimeout( timeout );
-			}
+				if( err ) {
+					throw err;
+				}
 
-		} );
+				if( timeout ) {
+					clearTimeout( timeout );
+				}
 
+			} );
+
+
+		}, 20 );
+		
 		// The request has just been sent...
 		timeout = setTimeout( function() {
 			
@@ -204,9 +218,12 @@ function serialProcessQueue( serialDevice ) {
 
 SerialDevice.prototype.serialConnect = function( ) {
 
-	if( this.serialCheckConnection( ) ) {
+	var self = this;
 
-		return new Promise( function( resolver ) { resolver( ); } );
+	if( this.serialCheckConnection() ) {
+
+
+		return new Promise( function( resolver ) { resolver( self._serialPort ); } );
 
 	} else {
 

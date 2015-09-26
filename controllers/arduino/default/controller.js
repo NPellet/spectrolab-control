@@ -51,79 +51,52 @@ Arduino.prototype.connect = Arduino.prototype.serialConnect;
 	*/
 
 
-Arduino.prototype.getCurrentSunLevel = function() {
-	return this.currentWhiteLightLevel;
+
+Arduino.prototype.readDigital = function( pinNumber ) {
+	var self = this;
+	return this
+			.serialCommand( "6," + pinNumber + ";" )
+			.then( function ( d ) { return self.parseCommandResponse( d ); } )
+			.then( function( d ) {
+				
+				if( d === undefined ) {
+					return NaN;
+				}
+
+				return parseInt( d[ 0 ] );
+			});
 }
 
-Arduino.prototype.lowestSun = function( ) {
-		this.setWhiteLightLevel( this.params.whiteLightLED.arduinoAnalogValue.length - 1 );
-		return this.params.whiteLightLED.arduinoAnalogValue.length - 1;
+
+Arduino.prototype.readAnalog = function( pinNumber ) {
+	var self = this;
+	return this
+			.serialCommand( "7," + pinNumber + ";" )
+			.then( function ( d ) { return self.parseCommandResponse( d ); } )
+			.then( function( d ) {
+				
+				if( d === undefined ) {
+					return NaN;
+				}
+
+				return parseFloat( d[ 0 ] );
+			});
 }
 
-Arduino.prototype.increaseSun = function( ) {
-	if( typeof this.currentWhiteLightLevel == "undefined" ) {
-		this.currentWhiteLightLevel = this.params.whiteLightLED.arduinoAnalogValue.length - 1
+
+Arduino.prototype.parseCommandResponse = function( response ) {
+
+	response = response.replace(';\r\n', '');
+	response = response.split(',');
+	if( response[ 0 ] !== '4' ) {
+		this.logError( "An unexpected response has occured. Arduino should respond with command '4' to be valid" );
+		this.logError( "Returned command: " + response );
+		return;
+	} else {
+
+		response.shift();
+		return response;
 	}
-
-	if( this.currentWhiteLightLevel == 0) {
-		return new Promise( function( resolver, rejecter ) {
-			rejecter();
-		} );
-	}
-
-	return this.setWhiteLightLevel( this.currentWhiteLightLevel - 1 );
-}
-
-
-Arduino.prototype.whiteLightOff = function() {
-		return this.setWhiteLightLevelVoltage( 0 );
-}
-
-Arduino.prototype.setWhiteLightLevel = function( whiteLightLevel ) {
-	var cmd = "5," + this.params.whiteLightLED.arduinoAnalogPin + "," + this.params.whiteLightLED.arduinoAnalogValue[ whiteLightLevel ] + ";";
-	this.currentWhiteLightLevel = whiteLightLevel;
-	return callSerial( this, cmd ).then( function() {
-		return whiteLightLevel;
-	});
-}
-
-
-Arduino.prototype.setWhiteLightLevelVoltage = function( whiteLightLevel ) {
-	var max;
-	if( whiteLightLevel > ( max = this.params.whiteLightLED.arduinoAnalogValue[ 0 ] ) ) {
-			whiteLightLevel = max;
-	}
-
-
-	var cmd = "5," + this.params.whiteLightLED.arduinoAnalogPin + "," + whiteLightLevel + ";";
-	return callSerial( this, cmd );
-}
-
-Arduino.prototype.getSunLevel = function( level ) {
-	return this.params.whiteLightLED.sunLevels[ level ];
-}
-
-Arduino.prototype.getSunLevels = function() {
-	return this.params.whiteLightLED.sunLevels;
-}
-
-Arduino.prototype.setColorLightLevelVoltage = function( voltage ) {
-
-	var toReturn = true;
-	if( voltage > 3000 ) {
-		voltage = 3000;
-		toReturn = false;
-	}
-
-	if( voltage < 0 ) {
-		voltage = 0;
-	}
-
-
-	var cmd = "5," + this.params.colorLightLED.arduinoAnalogPin + "," + voltage + ";";
-	callSerial( this, cmd );
-
-	return toReturn;
 }
 
 
