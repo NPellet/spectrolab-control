@@ -27,64 +27,136 @@ Arduino.prototype = new InstrumentController();
 
 Arduino.prototype.connect = Arduino.prototype.serialConnect;
 
-	/* Corresponding IGOR code
-
-	Function SetupArduino()
-		STRUCT ArduinoSeqSettings ards
-		ARDSetSeqSettings(ards)
-		SVAR S_bootver,S_mainver,S_response
-		Variable n,num,flg=1,V_VDT; string port,S_value
-		VDTGetPortList2
-		port=StringFromList(0,ListMatch(S_VDT,"usbmodem*"))
-		if (strlen(port)>0)
-	//		print "Found Port#0:",port													// First Arduino port name(s)
-		else
-			print S_VDT
-			abort " No Arduino USB board found"
-		endif
-		ards.gWhichComStr=port[0,strlen(port)-1]
-		print "USB3 Arduino:",ards.gWhichComStr
-		VDT2/P=$ards.gWhichComStr baud=115200,stopbits=1,databits=8,parity=0,in=0,out=0
-		VDTOperationsPort2 $ards.gWhichComStr
-		VDTWrite2/O=2 "2H"																// Added to warm up Arduino!
-	End
-	*/
-
-
-
 Arduino.prototype.readDigital = function( pinNumber ) {
+
 	var self = this;
 	return this
-			.serialCommand( "6," + pinNumber + ";" )
-			.then( function ( d ) { return self.parseCommandResponse( d ); } )
-			.then( function( d ) {
-				
-				if( d === undefined ) {
-					return NaN;
-				}
+		.serialCommand( "6," + pinNumber + ";" )
+		.then( function ( d ) { return self.parseCommandResponse( d ); } )
+		.then( function( d ) {
+			
+			if( d === undefined ) {
+				return NaN;
+			}
 
-				return parseInt( d[ 0 ] );
-			});
+			return parseInt( d[ 0 ] );
+		});
 }
 
 
 Arduino.prototype.readAnalog = function( pinNumber ) {
+
 	var self = this;
 	return this
-			.serialCommand( "7," + pinNumber + ";" )
-			.then( function ( d ) { return self.parseCommandResponse( d ); } )
-			.then( function( d ) {
-				
-				if( d === undefined ) {
-					return NaN;
-				}
+		.command( "7," + pinNumber + ";" )
+		.then( function( d ) {
+			
+			if( d === undefined ) {
+				return NaN;
+			}
+			return parseFloat( d[ 0 ] );
+		});
+}
 
-				return parseFloat( d[ 0 ] );
-			});
+Arduino.prototype.setDigital = function() {
+
+	return this.command( "8," + pinNumber + "," + pinValue + ";" );
 }
 
 
-Arduino.prototype.parseCommandResponse = function( response ) {
+
+/** DEVICES **/
+
+Arduino.prototype.enableDevice = function( deviceId ) {
+
+	if( this.enabledDevice == deviceId ) {
+		return;
+	}
+
+	this.disableDevices();
+	if( this.params.digital.devices[ deviceId ] ) {
+		this.enabledDevice = deviceId;
+		return this.setDigital( this.params.digital.devices[ deviceId ], 1 );	
+	}	
+}
+
+Arduino.prototype.disableDevices = function() {
+
+	for( var i = 0; i < this.params.digital.devices.length; i ++ ) {
+		this.setDigital( this.params.digital.devices[ i ], 0 );
+	}
+}
+
+
+/** ROUTING **/
+
+
+Arduino.prototype.bypassLEDCard = function() {
+	// 0 == bypass, 1 == use
+	this.setDigital( this.params.digital.LEDCard.bypassAFG, 0 );
+}
+
+Arduino.prototype.routeLEDToAFG = function( color, output ) {
+
+	if( color = this._checkLEDColor( color ) ) {
+		// Turn ON the AFG routing for this LED
+		// Automatically turns off routing from Arduino
+		this.setDigital( this.params.digital.LEDCard.colors[ color ], 1 );
+	}
+
+	// Do not bypass the AFG to next card (0 = bypass, 1 = route through LED card)
+	this.setDigital( this.params.digital.LEDCard.bypassAFG, 1 );
+
+	// If the input is on channel B, we need to turn on the inverter relay
+	// If B, then A is routed to its bypass. If A, then B is routed to its bypass
+	this.setDigital( this.params.digital.LEDCard.inverter, output == "B" );
+}
+
+
+Arduino.prototype.routeLEDToArduino = function( color, output ) {
+
+	if( color = this._checkLEDColor( color ) ) {
+		// Turn ON the Arduino routing for this LED
+		// Automatically turns off routing from AFG
+		this.setDigital( this.params.digital.LEDCard.colors[ color ], 0 );
+	}
+}
+
+
+
+
+"digital": {
+	"LEDCard": {
+		"bypassAFG": 51,
+		"inverter": 49,
+		"colors": {
+			"white": 47,
+			"red": 45,
+			"green": 43,
+			"blue": 41
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+Arduino.prototype.command = function() {
+	return this
+		.serialCommand( cmd )
+		.then( function( d ) {
+			return self._parseCommandResponse( d );
+		} );
+}
+
+Arduino.prototype._parseCommandResponse = function( response ) {
 
 	response = response.replace(';\r\n', '');
 	response = response.split(',');

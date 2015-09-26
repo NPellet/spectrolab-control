@@ -10,6 +10,10 @@ iv.prototype.setIV = function( ivWave ) {
   this.iv = ivWave;
 }
 
+iv.prototype.getIV = function() {
+  return this.iv;
+}
+
 iv.prototype.getVoc = function( direction ) {
     var iv = this._getIVDirection( direction );
     return getVoc( iv );

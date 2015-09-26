@@ -41,6 +41,7 @@ messengerCallbackFunction messengerCallbacks[] =
   setDigitalPin, // Command 5
   readDigitalPin, // Command 6
   readAnalogPin, // Command 7
+  deviceOn, // Command 8
 };
 
 // Set cmdMessage general methods
@@ -161,20 +162,63 @@ void readAnalogPin()
 }
 
 
+
+// ----- DEVICE METHODS
+
+int devicePins[] = { 53, 51, 49, 47, 45, 43, 41, 39 };
+
+void deviceOn( ) {
+  Serial.print("Device on?");
  
+  Serial.print("Turn on device number:");
+
+  int deviceNumber = cmdMessenger.readInt16Arg();
+  Serial.print( deviceNumber );
+  devicesOff();
+
+ _deviceOn( deviceNumber );
+  cmdMessenger.sendCmdStart(kANSWER);
+  cmdMessenger.sendCmdArg( deviceNumber );
+  cmdMessenger.sendCmdEnd();
+}
+
+void _deviceOn( int deviceNumber ) {
+  if( devicePins[ deviceNumber ] ) {
+     digitalWrite( devicePins[ deviceNumber ], HIGH );
+  }
+}
+
+
+void devicesOff() {
+  int i = 0;
+  Serial.print("Of all");
+
+  for( i = 0; i < 8; i = i + 1 ) {
+    Serial.print( devicePins[ i ] );
+    digitalWrite( devicePins[ i ], LOW );
+  }
+  
+}
+
+// ----- DEVICE METHODS
+
 
 void setup()
 {
+  int i;
   // Listen on serial connection for messages from the pc
   Serial.begin(9600); // Arduino Uno, Mega, with AT8u2 USB
-  Serial.print("don");
   
   SerialUSB.begin(115200); 
+
   
-  pinMode(49, INPUT);
-  pinMode(51, INPUT);
-  pinMode(53, INPUT);
+  for( i = 0; i < 8; i = i + 1 ) {
+    Serial.print(devicePins[ i ]);
+    pinMode(devicePins[ i ], OUTPUT);
+    digitalWrite( devicePins[ i ], LOW );
+  }
   
+ 
   // cmdMessenger.discard_LF_CR(); // Useful if your terminal appends CR/LF, and you wish to remove them
   cmdMessenger.printLfCr(); // Make output more readable whilst debugging in Arduino Serial Monitor
   

@@ -43,7 +43,7 @@ extend( experiment.prototype, {
       var lights = self.config.lightLevels;
       var speeds = self.config.scanRates;
       var voltage;
-
+      lights = [ -1]
       for( var light = 0, llights = lights.length; light < llights; light ++ ) {
 
         keithley.writeDigio( 4, 1 );
@@ -62,6 +62,11 @@ extend( experiment.prototype, {
         yield;
 
 
+        self.config.forcevstart = true;
+        self.config.forcevend = true;
+        self.config.vstart = 0
+        self.config.vstart = 0
+
         if( self.config.forcevstart ) {
 
           voltage = Math.min( self.config.vstart, 2 );
@@ -79,38 +84,49 @@ extend( experiment.prototype, {
 
           voltage = Math.max( 0.2, Math.min( voltage, 2 ) );
         }
-        for( var speed = 0, lspeeds = speeds.length; speed < lspeeds; speed ++ ) {
-       
+
+        speeds = [ 0.1 ]
+        var ends = [10]
+
+        for( var end = 0, lends = ends.length; end < lends; end ++ ) {
+
+            for( var speed = 0, lspeeds = speeds.length; speed < lspeeds; speed ++ ) {
+              
+              self.config.vend = ends[ end ];
 
 
+              keithley.sweepIV( {
 
-          keithley.sweepIV( {
-
-            channel: 'smub',
-            startV: voltage,
-            stopV1: self.config.forcevend ? self.config.vend : -voltage,
-            stopV2: - ( self.config.forcevend ? self.config.vend : -voltage ),
-            stepV: 0.05,
-            scanRate: speeds[ speed ],
-            timeDelay: 5,
-            cycles: 3
-            
-          }).then( function( iv ) {
-
-              self.progress( "iv", {
-
-                iv: iv,
+                channel: 'smub',
+                startV: voltage,
+                stopV1: self.config.forcevend ? self.config.vend : -voltage,
+                stopV2: - ( self.config.forcevend ? self.config.vend : -voltage ),
+                stepV: 0.01,
                 scanRate: speeds[ speed ],
-                lightLevel: lights[ light ]
+                timeDelay: 5,
+                cycles: 3
+                
+              }).then( function( iv ) {
 
+                  self.progress( "iv", {
+
+                    iv: iv,
+                    scanRate: speeds[ speed ],
+                    lightLevel: lights[ light ],
+                    endvoltage: ends[ end ]
+
+                  } );
+
+                  self.loopNext();
               } );
 
-              self.loopNext();
-          } );
+              yield;
+            }
+          }
 
-          yield;
+
         }
-      }
+      
     }
 
   }

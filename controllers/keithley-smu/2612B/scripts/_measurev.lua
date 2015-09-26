@@ -30,4 +30,8 @@ function measurevoc( channel, stime, level, complianceV )
 
 	channel.source.output = channel.OUTPUT_OFF
 	printnumber( voltage / pts )	-- Binary output
+
+	  print("keithley:end;");
+
+
 end

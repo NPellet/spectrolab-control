@@ -13,8 +13,11 @@ experiment.renderer = require('./renderer');
 experiment.config = require('./config');
 
 experiment.renderer.experiment = experiment;
-
 experiment.renderer.init();
+
+
+
+
 experiment.addInstrumentConnectModules();
 
 var IV = experiment.loadProcedure('iv');
@@ -59,7 +62,7 @@ var itx = experiment.itx();
 
 IV.on("progress", function( progress ) {
 
-	var itxw = itx.newWave( "iv_" + progress.arguments.lightLevel + "_" + progress.arguments.scanRate + "_backward" );
+	var itxw = itx.newWave( "iv_" + progress.arguments.lightLevel + "_" + progress.arguments.scanRate + "_" + progress.arguments.endvoltage );
 	itxw.setWaveform( progress.arguments.iv.getIV( ) );
 
 

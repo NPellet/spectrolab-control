@@ -1,6 +1,6 @@
 
 var SerialPort = require("serialport")
-
+/*
 SerialPort.list(function (err, ports) {
   ports.forEach(function(port) {
     console.log(port.comName);
@@ -8,9 +8,9 @@ SerialPort.list(function (err, ports) {
     console.log(port.manufacturer);
   });
 });
+*/
 
-
-var Arduino = new SerialPort.SerialPort("/dev/cu.usbmodem1421", {
+var Arduino = new SerialPort.SerialPort("/dev/cu.usbmodem1411", {
   baudrate: 115200,
   parity: 'none',
   dataBits: 8,
@@ -32,5 +32,11 @@ Arduino.on("open", function( ) {
 	OBISLaser.write("SOURce:AM:INTernal CWP\r");
 	OBISLaser.write("SOURce:AM:STATe ON\r");*/
 
-	Arduino.write("6,22;");
+
+console.log('HERE');
+	var i = 0;
+  setInterval( function() {
+    i ++;
+    Arduino.write("8," + ( i % 8 ) + ";");
+  }, 1000 );
 });

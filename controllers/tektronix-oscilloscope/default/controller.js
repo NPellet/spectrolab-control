@@ -656,7 +656,7 @@ TektronixOscilloscope.prototype.disableMeasurements = function(  ) {
 
 
 TektronixOscilloscope.prototype.setMeasurementType = function( measNum, type ) {
-  type = getMnemonic( type, "AMPlitude|AREa| BURst|CARea|CMEan|CRMs|DELay|DISTDUty| EXTINCTDB|EXTINCTPCT|EXTINCTRATIO|EYEHeight| EYEWIdth|FALL|FREQuency|HIGH|HITs|LOW| MAXimum|MEAN|MEDian|MINImum|NCROss|NDUty| NOVershoot|NWIdth|PBASe|PCROss|PCTCROss|PDUty| PEAKHits|PERIod|PHAse|PK2Pk|PKPKJitter| PKPKNoise|POVershoot|PTOP|PWIdth|QFACtor| RISe|RMS|RMSJitter|RMSNoise|SIGMA1|SIGMA2| SIGMA3|SIXSigmajit|SNRatio|STDdev|UNDEFINED|WAVEFORMS")
+  type = getMnemonic( type, "AMPlitude|AREa|BURst|CARea|CMEan|CRMs|DELay|DISTDUty|EXTINCTDB|EXTINCTPCT|EXTINCTRATIO|EYEHeight|EYEWIdth|FALL|FREQuency|HIGH|HITs|LOW|MAXimum|MEAN|MEDian|MINImum|NCROss|NDUty| NOVershoot|NWIdth|PBASe|PCROss|PCTCROss|PDUty|PEAKHits|PERIod|PHAse|PK2Pk|PKPKJitter|PKPKNoise|POVershoot|PTOP|PWIdth|QFACtor|RISe|RMS|RMSJitter|RMSNoise|SIGMA1|SIGMA2|SIGMA3|SIXSigmajit|SNRatio|STDdev|UNDEFINED|WAVEFORMS")
   measNum = getMeasurementNumber( measNum );
   return this.command("MEASUrement:" + measNum + ":TYPE " + type );
 }

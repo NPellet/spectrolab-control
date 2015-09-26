@@ -36,7 +36,7 @@ var methods = {
 			stopV2: -1,
 			stepV: 0.1,
 			cycles: 1,
-			scanrate: 0.1,
+			scanRate: 0.1,
 			timeDelay: 0,
 			complianceI: 1
 		},
@@ -45,39 +45,71 @@ var methods = {
 		parameters: function( options ) {
 
 			return [ options.channel, options.startV, options.stopV1, options.stopV2, options.stepV, options.cycles, options.scanRate, options.timeDelay, options.complianceI ]
-
-
 		},
 
 		processing: function( data, options ) {
 
-			var iv = new IV();
+			var iv = new IV(),
+				w = new Waveform(),
+				wX = new Waveform();
+
 			var current, voltage;
 			data = data.split(/,[\t\r\s\n]*/);
 
-			function getIv( from, to ) {
-				var w = new Waveform();
-				var waveX = new Waveform();
+		
+			var dataFinal = [], dataFinalX = [];
 
-				var dataFinal = [], dataFinalX = [];
-
-				for( var i = from; i < to; i += 2 ) {
-					dataFinal.push( parseFloat( data[ i ] ) );
-					dataFinalX.push( parseFloat( data[ i + 1 ] ) );
-				}
-
-				w.setData( dataFinal );
-				waveX.setData( dataFinalX );
-				w.setXWave( waveX );
-
-				iv.setIV( w );
-				return w;
+			for( var i = 0; i < data.length; i += 2 ) {
+				dataFinal.push( parseFloat( data[ i ] ) );
+				dataFinalX.push( parseFloat( data[ i + 1 ] ) );
 			}
 
+			w.setData( dataFinal );
+			wX.setData( dataFinalX );
+			w.setXWave( wX );
+			iv.setIV( w );
+		
 			return iv;
-
 		}
 	},
+
+
+	'measureVs': {
+		defaults: {
+			channel: 'smua',
+			level: 0.01,
+			rangei: 0.05,
+			time: 10
+		},
+
+		method: 'measurevs',
+		parameters: function( options ) {
+
+			return [ options.channel, options.level, options.rangei, options.time ]
+		},
+
+		processing: function( data, options ) {
+
+			var	w = new Waveform(),
+				wX = new Waveform();
+
+			data = data.split(/,[\t\r\s\n]*/);
+
+			var dataFinal = [], dataFinalX = [];
+			for( var i = 0; i < data.length; i += 2 ) {
+				dataFinal.push( parseFloat( data[ i ] ) );
+				dataFinalX.push( parseFloat( data[ i + 1 ] ) );
+			}
+
+			w.setData( dataFinal );
+			wX.setData( dataFinalX );
+			w.setXWave( wX );
+		
+			return w;
+		}
+	},
+
+
 
 
 	'measureVoc': {
@@ -258,8 +290,6 @@ var methods = {
 		},
 
 		processing: function( data, options ) {
-
-
 
 			var w = new Waveform();
 			w.setXScalingDelta( 0, options.settlingtime );
@@ -499,35 +529,46 @@ Keithley.prototype.connect = function( callback ) {
 
 			module.socket.on('connect', function() {
 
-				self.command("ABORT"); // Reset keithley
-				self.command("digio.writeport(0)");
-
-
-				// It's connected...
-				clearTimeout( timeout );
-				self.uploadScripts();
-
-		//		self.getErrors();
-
 				self.connected = true;
 				self.connecting = false;
 
-				self.socket.removeAllListeners( 'data' );
+				clearTimeout( timeout );
 
-				self.flushErrors();
+				module.sequence("ABORT", "digio.writeport(0)", "format.byteorder=format.LITTLEENDIAN" ).then( function() {
 
-			//	self.command("format.data=format.REAL32");
-				self.command("format.byteorder=format.LITTLEENDIAN");
-				self.command("SpetroscopyScripts();");
+			
+					self.socket.removeAllListeners( 'data' );
+					
+					setTimeout( function() {
+						self.command("SpetroscopyScripts();");
 
-				self.emit("connected");
-				module.logOk("Connected to Keithley on host " + module.params.host + " on port " + module.params.port );
+						self.emit("connected");
+						module.logOk("Connected to Keithley on host " + module.params.host + " on port " + module.params.port );
 
-				self.queue.map( function( resolver ) {
-					resolver();
+						self.queue.map( function( resolver ) {
+							resolver();
+						});
+
+						self.queue = [];
+
+					}, 500);
+
+
 				});
 
-				self.queue = [];
+				// It's connected...
+				
+		//		self.getErrors();
+
+			
+
+
+			//	self.flushErrors();
+
+			//	self.command("format.data=format.REAL32");
+
+				
+					
 			});
 
 			module.socket.on('end', function() {
@@ -599,10 +640,13 @@ Keithley.prototype._callMethod = function( method, options ) {
 
 				module.socket.once( 'data', function( data ) {
 					data = prevData + data.toString('ascii');
-					if( data.indexOf("\n") == -1 ) {
+			
+					if( data.indexOf("keithley:end;") == -1 ) {
+						console.log("Not found");
 						listen( data );
 					} else {
-						console.log( "Return;" );
+						
+						data = data.replace("keithley:end;", "" );
 						end( data );
 
 					}
@@ -610,8 +654,9 @@ Keithley.prototype._callMethod = function( method, options ) {
 			}
 
 			listen("");
-			console.log("Method !");
+			
 			module.log( "Keithley method: <em>" + method.method + "(" + method.parameters( options ).join() + ");</em>");
+			console.log( method.method + "(" + method.parameters( options ).join() );
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
 	});
@@ -623,10 +668,27 @@ Keithley.prototype.command = function( command ) {
 	var module = this;
 	return this.connect().then( function() {
 		return new Promise( function( resolver, rejecter ) {
+
 			module.socket.write( command + "\r\n", function() {
+				console.log( command );
 				resolver();
 			});
 		});
+	});
+}
+
+Keithley.prototype.sequence = function() {
+	var self = this;
+	var args = arguments;
+
+	if( args.length == 1 ) {
+		return self.command( args[ 0 ] );
+	}
+
+	return this.command( args[ 0 ] ).then( function() {
+		Array.prototype.shift.call( args );
+		
+		return self.sequence.apply( self, args );
 	});
 }
 
@@ -648,7 +710,6 @@ Keithley.prototype.commandPrint = function( command ) {
 				function listen( prevData ) {
 
 					module.socket.once( 'data', function( data ) {
-						console.log( ">" + data.toString('ascii') + "< Buffer" );
 						data = prevData + data.toString('ascii');
 						if( data.indexOf("\n") == -1 ) {
 							listen( data );
@@ -733,18 +794,17 @@ Keithley.prototype.uploadScripts = function() {
 		var l = 0;
 		var b = "";
 		for( var m = 0, k = func.length; m < k; m ++ ) {
+	
 			if( l + func[ m ].length > 1024 ) {
 				this.socket.write( b );
-				console.log( b );
 
 				b = "";
 				l = 0;
 
-			} else {
-
-				b += func[ m ] + "\n";
-				l += func[ m ].length + 2;
 			}
+
+			b += func[ m ] + "\n";
+			l += func[ m ].length + 2;
 		}
 
 		this.socket.write( b );

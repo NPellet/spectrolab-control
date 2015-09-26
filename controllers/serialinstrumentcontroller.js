@@ -92,7 +92,6 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			serialPort.on( 'data', function( data ) {
 				response = response + data.toString('ascii');
-	console.log( "new response" );
 				if( ! ( response.indexOf("\r\n") == -1 ) ) {
 					console.log("end");
 					endData( response );
