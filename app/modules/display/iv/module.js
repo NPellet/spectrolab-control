@@ -5,20 +5,25 @@ var moduleProto = require('../graph/module'),
 
 var IV = function( graphOptions ) {
 
-	this.out("makeGraph", graphOptions );
-
-	this.status = {};
-	this.status.xAxisLabel = "Voltage (V)";
-	this.status.yAxisLabel = "Current (mA)";
-	this.status.height = 300;
-
-	this.series = {};
-	this.ivs = {};
-	this.ivsNumber = 0;
+	this.options = graphOptions;	
 };
 
 IV.prototype = new moduleProto.Constructor();
 IV.prototype = extend( IV.prototype, {
+
+	inDom: function( ws ) {
+
+		this.out("makeGraph", this.options, ws );
+
+		this.status = {};
+		this.status.xAxisLabel = "Voltage (V)";
+		this.status.yAxisLabel = "Current (mA)";
+		this.status.height = 300;
+
+		this.series = {};
+		this.ivs = {};
+		this.ivsNumber = 0;
+	},
 
 	setIV: function( name, iv ) {
 

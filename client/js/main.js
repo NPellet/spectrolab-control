@@ -119,8 +119,11 @@ function global( IO, Util, ModuleFactory ) {
 
 	IO.onGlobal( "html", function( html ) {
 		$("#grid").html( html );
-		ModuleFactory.parseDom( $("#grid") );
-	});
+
+		ModuleFactory.parseDom( $("#grid") ).then( function() {
+			IO.writeGlobal( "modulesReady" );
+		} );
+	} );
 
 	IO.onGlobal( "experiment-running", function() {
 

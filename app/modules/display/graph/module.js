@@ -4,7 +4,7 @@ var moduleProto = require('../../../module'),
 
 var GraphDisplay = function( graphOptions ) {
 
-	this.out("makeGraph", graphOptions );
+	this.options = graphOptions;
 	this.series = {};
 };
 
@@ -30,6 +30,11 @@ function waveToData( data ) {
 
 GraphDisplay.prototype = new moduleProto();
 GraphDisplay.prototype = extend( GraphDisplay.prototype, {
+
+	inDom: function( ws ) {
+
+		this.out("makeGraph", this.options, ws ); // Here we need to send it to a single connection
+	},
 
 	newSerie: function( name, data, options ) {
 

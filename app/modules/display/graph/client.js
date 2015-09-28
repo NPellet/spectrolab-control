@@ -14,11 +14,10 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 		if( this.graph ) {
 			return this.graph;
-		} else {
-
-			this.makeGraph();
-			return this.graph;
 		}
+
+		console.trace();
+		throw "Graph does not exist";
 	}
 
 	module.prototype.makeGraph = function( options ) {
@@ -286,22 +285,17 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 		if( status.series ) {
 
 			var series = status.series;
-
 			for( var i in series ) {
 				self.newSerie( series[ i ], 'line' );
 			}
-
 		}
-
 
 		if( status.scatterSeries ) {
 
 			var series = status.scatterSeries;
-
 			for( var i in series ) {
 				self.newSerie( series[ i ], 'scatter' );
 			}
-
 		}
 
 		g.redraw();

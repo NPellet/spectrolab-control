@@ -48,6 +48,7 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 	},
 
+	inDom: function() {},
 
 	getName: function() {
 		return this.name;
@@ -67,16 +68,16 @@ modulePrototype.prototype = extend( events.EventEmitter.prototype, modulePrototy
 
 	streamOn: {},
 
-	streamOut: function( instruction, value ) {
+	streamOut: function( instruction, value, ws ) {
 
 		if( ! this.id ) {
 			this.assignId();
 		}
 
-		stream.moduleOut( this, instruction, value );
+		stream.moduleOut( this, instruction, value, ws );
 	},
 
-	out: function() {
+	out: function( instruction, value, ws ) {
 
 		this.streamOut.apply( this, arguments );
 	},
@@ -273,6 +274,12 @@ modulePrototype.prototype.getSizeHeight = function() {
 	}
 
 	return false;
+}
+
+
+modulePrototype.prototype.sendStatus = function() {
+
+	this.out("setStatus", this.getStatus() );
 }
 
 

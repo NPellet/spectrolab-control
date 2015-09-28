@@ -60,6 +60,7 @@ define( [ 'js/modulefactory' ], function( moduleFactory ) {
 				if( ! module ) {
 					console.warn( "No module with ID " + data.moduleid + " existing." );
 					console.warn( "Message ", data, " has not been transmitted" );
+					return;
 				}
 				var dom = $( "#module-" + data.moduleid );
 
