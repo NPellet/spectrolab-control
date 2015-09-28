@@ -1,17 +1,8 @@
 
 "use strict";
 
-
-var SerialPort = require('serialport').SerialPort,
-	extend = require('extend'),
-	fs = require('fs'),
-	events = require("events"),
-	path = require("path"),
-	Promise = require("bluebird"),
-	Waveform = require("../../../server/waveform");
-
+var Promise = require("bluebird");
 var InstrumentController = require("../../serialinstrumentcontroller");
-
 
 var timeout;
 

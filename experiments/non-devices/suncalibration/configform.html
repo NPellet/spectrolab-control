@@ -1,0 +1,28 @@
+<form>
+  <div class="form-group">
+	  <label for="nbpointscalibrationcurve">Number of levels to generate</label>
+	  <input type="number" class="form-control" id="nbpointscalibrationcurve" name="nbpointscalibrationcurve" placeholder="Enter the number of levels to generate" value="12" />
+  </div>
+
+  <div class="form-group">
+	  <label for="positionreference">Position of reference device</label>
+	  <select class="form-control" id="positionreference" name="positionreference" placeholder="Enter the number of levels to generate">
+		  {% for position in config.devices %}
+		  	<option value="{{ position.position }}" {% if position.position == 7 %} selected="selected" {% endif %}>{{ position.name }}</option>
+		  {% endfor %}
+	  </select>
+  </div>
+
+  <div class="form-group">
+	  <label for="currentat1sun">Current at one sun</label>
+
+	  <div class="input-group">
+	  <input type="number" class="form-control" id="currentat1sun" name="currentat1sun" placeholder="Enter the current at 1 sun" value="{{ config.referenceDiode.currentAt1Sun }}" />
+	      <span class="input-group-addon">A</span>
+	    </div>
+
+
+
+	 
+  </div>
+</form>

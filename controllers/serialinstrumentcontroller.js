@@ -21,6 +21,8 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 		var serialPort;
 
+		serialDevice.emit("connecting");
+
 		serialDevice.log("Attempting to connect to \"" + serialDevice.getName() + "\"");
 
 		/* Handles connection timeout */
@@ -28,6 +30,8 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			serialDevice.emit("connectionerror");
 			rejecter();
+
+			serialDevice.logError("Failed to connect to \"" + serialDevice.getName() + "\"");
 
 			if( serialPort ) {
 				serialPort.close(); // Kills the socket
@@ -60,16 +64,31 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			serialPort.on('close', function() {
 
+				if( timeout ) {
+					clearTimeout( timeout );
+				}
 				serialDevice._serialConnected = false;
+				serialDevice._serialOpening = false;
 
+				serialDevice.logWarning("Disconnected from \"" + serialDevice.getName() + "\"");
+				
 				serialDevice.emit( "disconnected" );
 			});
 
 			serialPort.on('error', function() {
+				
+
+				if( timeout ) {
+					clearTimeout( timeout );
+				}
 
 				serialDevice._serialConnected = false;
+				serialDevice._serialOpening = false;
+
 				
-				serialDevice.emit( "error" );
+				serialDevice.emit( "connectionerror" );
+				serialDevice.logError("Failed to connect to \"" + serialDevice.getName() + "\"");
+
 			});
 
 

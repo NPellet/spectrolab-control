@@ -1,7 +1,7 @@
 
 
 var events = require("events");
-var logger = require("../server/logger");
+var logger = require("../app/logger");
 var util = require("util");
 
 var InstrumentController = function() {};

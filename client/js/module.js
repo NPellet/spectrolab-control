@@ -6,7 +6,7 @@ define( [ 'js/io' ], function( io )  {
 	Module.prototype.init = function() {
 		this._locked = false;
 		this.status = {};
-		this.overlay = $( "<div />" ).addClass("overlay");
+		this.overlay = $( "<div />" ).addClass( "overlay" );
 	}
 
 	Module.prototype.setId = function( id ) {

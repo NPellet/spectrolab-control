@@ -14,19 +14,23 @@ requirejs.config({
 
 	shim: {
 		'bootstrap': [ 'jquery' ],
-		'bootstrap-treeview': [ 'bootstrap', 'jquery' ]
+		'bootstrap-treeview': [ 'bootstrap', 'jquery' ],
+		'lib/jquery.populate/index': [ 'jquery' ],
+		'lib/jquery-serialize-object/jquery.serialize-object': [ 'jquery' ]
 	}
 });
 
-require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstrap-treeview' ] , function( $, ModuleFactory, IO, Util ) {
+require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstrap-treeview',
+'lib/jquery.populate/index', 'lib/jquery-serialize-object/jquery.serialize-object'
 
 
-	ModuleFactory.parseDom( document );
+ ] , function( $, ModuleFactory, IO, Util ) {
+
 
 	IO.setIp( $(document).find('head').find('meta[name=application-meta][data-serverip]').attr('data-serverip') );
 	IO.connect();
 
-	global( IO, Util );
+	global( IO, Util, ModuleFactory );
 } );
 
 
@@ -39,7 +43,7 @@ function loadCss(url) {
 }
 
 
-function global( IO, Util ) {
+function global( IO, Util, ModuleFactory ) {
 
 	var cfgSelected;
 	var experimentStatus = "stopped";
@@ -102,7 +106,6 @@ function global( IO, Util ) {
 	IO.onGlobal( "showModal", function( html ) {
 		var id;
 		html = $( html ).attr('id', ( id = Util.guid() ) );
-		console.log( html );
 		$("body").append( html );
 
 		$("#" + id ).modal( ).on('click', 'button.ok', function() {
@@ -113,6 +116,11 @@ function global( IO, Util ) {
 
 	} );
 
+
+	IO.onGlobal( "html", function( html ) {
+		$("#grid").html( html );
+		ModuleFactory.parseDom( $("#grid") );
+	});
 
 	IO.onGlobal( "experiment-running", function() {
 
@@ -154,56 +162,148 @@ function global( IO, Util ) {
 		$("#abort-experiment").prop( "disabled", true );
 	} );
 
-	IO.onGlobal( "cfg-list", function( cfgList ) {
 
-		cfgSelected = cfgList[ 0 ].path;
 
-		$("#cfg-tree").treeview( {
 
-			data: cfgList,
-			onNodeSelected: function( event, data ) {
 
-				$("#cfg-name").prop( 'value', data.text );
-				$("#cfg-remove").prop( 'disabled', !!data.locked );
+( function() {
 
-				cfgSelected = data.path;
-			},
+	var methodlistDevices, methodlistNonDevices;
+	var cfgSelected;
+	var adding = false;
 
-			onNodeExpanded: function( event, data ) {
+	IO.onGlobal( "method-list-devices", function( list ) {
+		methodlistDevices = list;
+	});
 
-				$("#cfg-name").prop( 'value', data.text );
-				cfgSelected = data.path;
-			}
-		} );
+	IO.onGlobal( "method-list-nondevices", function( list ) {
+		methodlistNonDevices = list;
+	});
+
+	$("#leftpannel").on('click', '.configuremethod', function() {
+
+		methodid = $( this ).parent().data( 'method-id');
+		methodSelected = $( this ).parent().data( 'method' );
+		$( "#modal-configuremethod" ).modal( "show" );
+		configureMethod( methodSelected, methodid );
+
 	} );
 
 
-	IO.onGlobal('logger', function( message ) {
+	$("#leftpannel").on('click', '.device', function() {
+		IO.writeGlobal( $( this ).hasClass('selected') ? 'unselectDevice' : 'selectDevice', $( this ).data('deviceposition') );
+	} );
 
-		var classTr, classText;
-		switch( message.type ) {
 
-			case 'error':
-				classTr = 'danger';
-			break;
 
-			case 'warning':
-				classTr = 'warning';
-			break;
+	$("#leftpannel").on('click', '.instrument', function() {
 
-			case 'log':
-				classTr = '';
-			break;
-
-			case 'ok':
-				classTr = 'success';
-			break;
-
+		if( $( this ).hasClass('connected') || $( this ).hasClass( 'connecting' ) ) {
+			return;
 		}
 
-		classText = classTr !== "" ? 'text-' + classTr : '';
-		var tr = '<tr class="' + classTr + ' ' + classText + '"><td class="time">[' + message.time + '] :</td><td>' + message.message + '</td></tr>'
-		$("#console-main tbody").prepend( tr );
+		IO.writeGlobal( 'connectInstrument', $( this ).data('instrument') );
+	} );
+
+	$('#modal-addmethod').on('shown.bs.modal', function ( e ) {
+	  	  	
+	  	var modal = this;
+	  	var opener = e.relatedTarget;
+
+	  	var data;
+	  	if( $( opener ).data('methodtype') == 'device' ) {
+	  		data = methodlistDevices;
+	  	} else {
+	  		data = methodlistNonDevices;
+	  	}
+
+		$( ".method-list", this ).treeview( {
+
+			data: data,
+			onNodeSelected: function( event, data ) {
+				methodSelected = data.path;
+			}
+		} );
+
+		methodid = 0;
+
+	} );
+
+	$( ".ok", "#modal-addmethod" ).bind('click', function() {
+
+		$( "#modal-addmethod" ).modal( "hide" );
+		$( "#modal-configuremethod" ).modal( "show" );
+		configureMethod( methodSelected, 0 );
+	} );
+
+
+	$( ".ok", "#modal-configuremethod" ).bind('click', function() {
+
+		$( "#modal-configuremethod" ).modal( "hide" );
+		
+		IO.writeGlobal( "configuremethod", { methodid: methodid, method: methodSelected, configuration: $( '#modal-configuremethod .modal-body form' ).serializeObject( ) } );
+
+	} );
+
+
+	function configureMethod( method, methodid ) {
+
+		IO.writeGlobal("getmethodconfiguration", { method: method, methodid: methodid } );
+	}
+
+	IO.onGlobal("methodconfiguration", function( form ) {
+
+		$( "#modal-configuremethod .modal-body" ).html( form.form ).children().populate( form.fill );
+	});
+
+	IO.onGlobal("updateleftpannel", function( html ) {
+		$("#leftpannel").html( html );
+	});
+
+}) ();
+
+
+
+
+	IO.writeGlobal("loggerGetMessages");
+
+	IO.onGlobal('logger', function( message ) {
+
+		if( ! Array.isArray( message ) ) {
+			message = [ message ];
+		}
+
+		$("#console-main tbody").empty();
+
+		for( var i = 0, l = message.length; i < l; i ++ ) {
+			var classTr, classText;
+			switch( message[ i ].type ) {
+
+				case 'error':
+					classTr = 'danger';
+				break;
+
+				case 'warning':
+					classTr = 'warning';
+				break;
+
+				case 'log':
+					classTr = '';
+				break;
+
+				case 'ok':
+					classTr = 'success';
+				break;
+
+			}
+
+			classText = classTr !== "" ? 'text-' + classTr : '';
+			var tr = '<tr class="' + classTr + ' ' + classText + '"><td class="time">[' + message[ i ].time + '] :</td><td>' + message[ i ].message + '</td></tr>'
+			$("#console-main tbody").append( tr );
+
+			
+			$("#console-main-wrapper")[ 0 ].scrollTop = $("#console-main-wrapper")[ 0 ].scrollHeight;
+		}
 	});
 
 	IO.writeGlobal('domReady');
@@ -233,5 +333,9 @@ function global( IO, Util ) {
 
 		$("#more-cfg-pannel").slideToggle();
 	});
+
+
+
+
 
 }

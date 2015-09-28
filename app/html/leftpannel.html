@@ -1,0 +1,89 @@
+
+
+<div class="col-xs-6">
+
+	<ul class="list-group">
+		<li class="title list-group-item">Non-device methods</li>
+
+		{% for method in methods %}
+
+			{% if method._device %}
+
+			{% else %}
+				<li class="method list-group-item" data-method="{{ method.path }}" data-method-id="{{ method.id }}">
+					{{ method.name }}
+					<span class="configuremethod pull-right glyphicon glyphicon-wrench"></span>
+				</li>
+
+			{% endif %}
+			
+		{% endfor %}
+
+		<li class="add list-group-item" data-toggle="modal" data-target="#modal-addmethod" data-methodtype="nondevice">+ Add a method</li>
+	</ul>
+
+
+	<ul class="list-group">
+		<li class="title list-group-item">Device methods</li>
+
+		{% for method in methods %}
+			
+			{% if method._device %}
+				
+				<li class="method list-group-item" data-method="{{ method.path }}" data-method-id="{{ method.id }}">
+					{{ method.name }}
+					<span class="configuremethod pull-right glyphicon glyphicon-wrench"></span>
+				</li>
+
+			{% endif %}
+
+		{% endfor %}
+
+		<li class="add list-group-item" data-toggle="modal" data-target="#modal-addmethod" data-methodtype="device">+ Add a method</li>
+
+		<ul class="list-group">
+			<li class="title list-group-item">Devices</li>
+
+			{% for device in devices %}
+				<li class="device list-group-item {% if device.selected %}selected{% endif %}" data-deviceposition="{{ device.position }}">
+					{{ device.name }}
+				</li>
+			{% endfor %}
+		</ul>
+
+	</ul>
+</div>
+
+
+
+<div class="col-xs-6">
+
+	<ul class="list-group">
+		<li class="title list-group-item">Instruments</li>
+
+
+		{% for instrument in instruments %}
+
+			{% assign instr = instrument[1] %}
+		 	{% assign name = instrument[0] %}
+		 	
+
+
+			<li class="instrument list-group-item {% if instr.selected %}selected{% else %}{% if instr.error %}error{% else %}{% if instr.connecting %}connecting{% endif %}{% endif %}{% endif %}" data-instrument="{{ name }}">
+				{{ instr.name }}
+
+				{% if instr.connected == false %}
+
+					{% if instr.connecting == false %}
+						<span class="pull-right glyphicon glyphicon-log-in"></span>
+					{% else %}
+						<span class="connecting pull-right glyphicon glyphicon-refresh"></span>
+					{% endif %}
+				{% endif %}
+
+			</li>
+				
+		{% endfor %}
+
+	</ul>
+</div>

@@ -1,0 +1,124 @@
+
+
+@mixin animation( $name, $time ) {
+	-webkit-animation:$name $time + s linear infinite;
+    -moz-animation:$name $time + s linear infinite;
+    animation:$name $time + s linear infinite;
+}
+
+
+@mixin transform( $value ) {
+	-moz-transform: $value;
+	-webkit-transform: $value;
+	transform: $value
+}
+
+
+@mixin keyframes($name) {
+  @-webkit-keyframes #{$name} {
+    @content; 
+  }
+  @-moz-keyframes #{$name} {
+    @content;
+  }
+  @-ms-keyframes #{$name} {
+    @content;
+  }
+  @keyframes #{$name} {
+    @content;
+  } 
+}
+
+@include keyframes( spin ) {
+  100% {
+  	@include transform( rotate(360deg) );
+  } 
+}
+
+#leftpannel {
+	
+	border-right: 1px solid #BBBBBB;
+	height: 100vh;
+	margin: 0px;
+	padding: 0px;
+
+	> div {
+		margin: 0px;
+		padding: 0px;
+	}
+
+
+
+	ul {
+		list-style-type: none;
+		margin: 0px;
+		padding: 0px;
+
+		li {
+
+
+			text-indent: 0px;
+			border-bottom: 1px solid #f0f0f0;
+
+			border-radius: 0px;
+
+			&.title {
+				font-weight: bold;
+				font-size: 1.2em;
+				background-color: #e7e7e7;
+				border-bottom: 1px solid #d0d0d0;				
+			}
+
+			&.add {
+				color: #c0c0c0;
+				cursor: pointer;
+			}
+
+			&:hover {
+				background-color: #f0f0f0;
+				color: black;
+			}
+
+			&.selected, &.connected {
+
+				background-color: #dff0d8;
+
+				&:hover {
+					background-color: darken( #dff0d8, 20% );
+				}
+			}
+			
+			&.error {
+
+				background-color: #E8B7B7;
+
+				&:hover {
+					background-color: darken( #E8B7B7, 20% );
+				}
+			}
+
+			
+			.configure {
+				cursor: pointer;
+			}
+
+			&.instrument {
+				cursor: pointer;
+
+
+
+				&.connecting {
+					cursor: default;
+					background-color: #E8DBC5;
+					color: #666666;
+
+					.connecting.glyphicon-refresh {
+						@include animation( spin, 4 );
+					}
+
+				}
+
+			}
+		}
+	}
+}

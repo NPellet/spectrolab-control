@@ -10,23 +10,6 @@ body {
 
 }
 
-#header {
-	height: 45px;
-	background-color: #f0f0f0;
-	color: #505050;
-	
-	width: 100%;
-	font-weight: normal;
-	padding-left: 10px;
-	padding-right: 10px;
-	box-sizing: border-box;
-	border-bottom: 1px solid #505050;
-}
-
-#header #header-main {
-	line-height: 35px;
-}
-
 
 #console-pannel {
 	position: relative;
@@ -46,14 +29,6 @@ body {
 	height: calc( 200px - 73px );
 }
 
-#grid {
-	height: calc( 100vh - 200px - 45px );
-	display: block;
-	position: relative;
-	overflow-y: auto;
-	overflow-x: hidden;
-}
-
 #container {
 	position: relative;
 	height: 100vh;
@@ -69,23 +44,7 @@ body {
 	position: absolute;
 }
 
-
-
 .overlay {
 	position: absolute;
 	background: rgba( 0, 0, 0, 0.1 );
-}
-
-
-#more-cfg-pannel {
-	display: none;
-	
-	background-color: #f0f0f0;
-	position: absolute;
-	width: 100%;
-	z-index: 10000;
-	right: 0px;
-	top: 44px;
-	box-sizing: border-box;
-	border-bottom: 1px solid #505050;
 }

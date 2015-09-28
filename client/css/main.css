@@ -1,0 +1,92 @@
+@-webkit-keyframes spin {
+  100% {
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg); } }
+
+@-moz-keyframes spin {
+  100% {
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg); } }
+
+@-ms-keyframes spin {
+  100% {
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg); } }
+
+@keyframes spin {
+  100% {
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg); } }
+
+#leftpannel {
+  border-right: 1px solid #BBBBBB;
+  height: 100vh;
+  margin: 0px;
+  padding: 0px; }
+  #leftpannel > div {
+    margin: 0px;
+    padding: 0px; }
+  #leftpannel ul {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px; }
+    #leftpannel ul li {
+      text-indent: 0px;
+      border-bottom: 1px solid #f0f0f0;
+      border-radius: 0px; }
+      #leftpannel ul li.title {
+        font-weight: bold;
+        font-size: 1.2em;
+        background-color: #e7e7e7;
+        border-bottom: 1px solid #d0d0d0; }
+      #leftpannel ul li.add {
+        color: #c0c0c0;
+        cursor: pointer; }
+      #leftpannel ul li:hover {
+        background-color: #f0f0f0;
+        color: black; }
+      #leftpannel ul li.selected, #leftpannel ul li.connected {
+        background-color: #dff0d8; }
+        #leftpannel ul li.selected:hover, #leftpannel ul li.connected:hover {
+          background-color: #a3d48e; }
+      #leftpannel ul li.error {
+        background-color: #E8B7B7; }
+        #leftpannel ul li.error:hover {
+          background-color: #cf6a6a; }
+      #leftpannel ul li .configure {
+        cursor: pointer; }
+      #leftpannel ul li.instrument {
+        cursor: pointer; }
+        #leftpannel ul li.instrument.connecting {
+          cursor: default;
+          background-color: #E8DBC5;
+          color: #666666; }
+          #leftpannel ul li.instrument.connecting .connecting.glyphicon-refresh {
+            -webkit-animation: spin 4s linear infinite;
+            -moz-animation: spin 4s linear infinite;
+            animation: spin 4s linear infinite; }
+
+#bottompannel {
+  position: fixed;
+  bottom: 0px;
+  width: 100%; }
+
+#grid #header {
+  height: 45px;
+  background-color: #f0f0f0;
+  color: #505050;
+  width: 100%;
+  font-weight: normal;
+  padding-left: 10px;
+  padding-right: 10px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #505050; }
+
+#grid #header #header-main {
+  line-height: 35px; }
+
+/*# sourceMappingURL=main.css.map */

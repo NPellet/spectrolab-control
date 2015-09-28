@@ -33,12 +33,29 @@ TektronixPWS.prototype.connect = function(  ) {
         return;
       }
 
-      module.log( "Trying to connect to Tektronix PWS on host " + module.params.host + " via VISA" );
+      module.emit("connecting");
+
+      module.log( "Trying to connect to Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+
+      /* Handles connection timeout */
+      var timeout = setTimeout( function() {
+
+        module.emit("connectionerror");
+        rejecter();
+
+        module.logError( "Timeout while reaching Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+
+        if( module.shellInstance ) {
+          module.shellInstance.end();
+        }
+
+      }, 5000 );
+
 
       // Checking if the PWS is reachable
       module.shellInstance = new pythonShell( 'io.py', {
 
-        scriptPath: path.resolve( 'server/util/visa/' ),
+        scriptPath: path.resolve( 'app/util/visa/' ),
         args: [ module.params.host ], // Pass the VISA address
         mode: "text" // Text mode
 
@@ -46,14 +63,20 @@ TektronixPWS.prototype.connect = function(  ) {
 
 
       module.shellInstance.once( "message", function( message ) {
+
+        clearTimeout( timeout );
         if( message == "ok" ) {
           module.connected = true;
-          module.logOk( "Successfully found Tektronix PWS on host " + module.params.host + " via VISA" );
+          module.logOk( "Successfully found Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+
+          module.emit("connected");
+
         } else {
-          module.logError( "Cannot find Tektronix PWS on host " + module.params.host + " via VISA" );
+          module.logError( "Cannot find Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+
+          module.emit("connectionerror");
         }
 
-        module.setVoltage( 2 );
       } );
   } );
 }
