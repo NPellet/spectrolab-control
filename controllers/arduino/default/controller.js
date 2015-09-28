@@ -7,8 +7,7 @@ var SerialPort = require('serialport').SerialPort,
 	fs = require('fs'),
 	events = require("events"),
 	path = require("path"),
-	promise = require("bluebird"),
-	Waveform = require("../../../server/waveform");
+	promise = require("bluebird");
 
 var InstrumentController = require("../../serialinstrumentcontroller");
 

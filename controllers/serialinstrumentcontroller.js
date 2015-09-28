@@ -15,11 +15,13 @@ SerialDevice.prototype = new InstrumentController();
 
 function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
-	serialDevice._serialQueue = [];
+	serialDevice._serialQueue = serialDevice._serialQueue || [];
 
 	return ( serialDevice._serialOpening || ( serialDevice._serialOpening = new Promise( function( resolver, rejecter ) {
 
 		var serialPort;
+
+		serialDevice.emit("connecting");
 
 		serialDevice.log("Attempting to connect to \"" + serialDevice.getName() + "\"");
 
@@ -28,6 +30,8 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			serialDevice.emit("connectionerror");
 			rejecter();
+
+			serialDevice.logError("Failed to connect to \"" + serialDevice.getName() + "\"");
 
 			if( serialPort ) {
 				serialPort.close(); // Kills the socket
@@ -60,16 +64,31 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			serialPort.on('close', function() {
 
+				if( timeout ) {
+					clearTimeout( timeout );
+				}
 				serialDevice._serialConnected = false;
+				serialDevice._serialOpening = false;
 
+				serialDevice.logWarning("Disconnected from \"" + serialDevice.getName() + "\"");
+				
 				serialDevice.emit( "disconnected" );
 			});
 
 			serialPort.on('error', function() {
+				
+
+				if( timeout ) {
+					clearTimeout( timeout );
+				}
 
 				serialDevice._serialConnected = false;
+				serialDevice._serialOpening = false;
+
 				
-				serialDevice.emit( "error" );
+				serialDevice.emit( "connectionerror" );
+				serialDevice.logError("Failed to connect to \"" + serialDevice.getName() + "\"");
+
 			});
 
 
@@ -120,6 +139,8 @@ function serialCall( serialDevice, method ) {
 
 	serialDevice.currentResponse = "";
 
+	serialDevice._serialQueue = serialDevice._serialQueue || [];
+
 	return new Promise( function( resolver, rejecter ) {
 
 		serialDevice._serialQueue.push( { 
@@ -137,7 +158,9 @@ function serialCheckQueue( serialDevice ) {
 
 	if( serialCheckQueue._serialProcessingQueue ) { // Calls are already in progress
 		return;
-	}
+	}	
+
+	serialDevice._serialQueue = serialDevice._serialQueue || [];
 
 	if( serialDevice._serialQueue && serialDevice._serialQueue.length > 0 ) {
 
@@ -150,7 +173,7 @@ function serialCheckQueue( serialDevice ) {
 }
 
 function serialProcessQueue( serialDevice ) {
-
+	
 	if( serialDevice._serialQueue && serialDevice._serialQueue.length == 0 ) {
 
 		serialDevice._serialProcessingQueue = false;

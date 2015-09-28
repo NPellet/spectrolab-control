@@ -7,7 +7,7 @@
 <!-- Outputs all the modules saved in nodejs memory -->
 <link rel="stylesheet" href="_modules.css" />
 <link rel="stylesheet" href="client/lib/bootstrap/dist/css/bootstrap.min.css" />
-<link rel="stylesheet" href="client/lib/bootstrap-treeview/src/css/bootstrap-treeview.css" />
+<!--<link rel="stylesheet" href="client/lib/bootstrap-treeview/src/css/bootstrap-treeview.css" />-->
 
 <meta name="application-meta" data-serverip="{{ ip }}" />
 

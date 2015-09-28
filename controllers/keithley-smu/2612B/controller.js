@@ -6,8 +6,8 @@ var net = require('net'),
 	fs = require('fs'),
 	path = require("path"),
 	promise = require("bluebird"),
-	Waveform = require("../../../server/waveform"),
-	IV = require("../../../server/iv");
+	Waveform = require("../../../app/waveform"),
+	IV = require("../../../app/iv");
 
 var InstrumentController = require("../../instrumentcontroller");
 
@@ -475,7 +475,7 @@ var Keithley = function( params ) {
 Keithley.prototype = new InstrumentController();
 
 Keithley.prototype.connect = function( callback ) {
-
+console.log('conn');
 	var module = this;
 
 	return new Promise( function( resolver, rejecter ) {
@@ -512,16 +512,21 @@ Keithley.prototype.connect = function( callback ) {
 					allowHalfOpen: true
 				});
 
-			self.log("Attempting to connect to Keithley");
+			module.emit("connecting");
+
+			self.log("Attempting to connect to " + module.getName() );
 
 			module.connecting = true;
 			module.socket = socket;
 
 			var timeout = setTimeout( function() {
 
+				self.connected = false;
+				self.connecting = false;
+
 				module.emit("connectionerror");
 				rejecter();
-				self.logError("Error while connecting to Keithley. Request timeout. Check that the Keithley is connected and turned on.")
+				self.logError("Timeout while trying to connect to " + module.getName() + ".")
 				module.socket.destroy(); // Kills the socket
 
 			}, module.params.timeout || 10000 );

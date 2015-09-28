@@ -15,7 +15,11 @@ define( [ 'jquery' ], function( $ ) {
 
     parseDom: function( global ) {
 
+      var modules = [];
       var requiring = 0;
+
+      console.log( $( global ).find( '.module' ) );
+
       $( global )
       .find( '.module' )
       .each( function( ) {
@@ -23,6 +27,7 @@ define( [ 'jquery' ], function( $ ) {
         var dom = $( this ),
           id = dom.attr('data-moduleid'),
           path = dom.attr( 'data-path' );
+
 
         requiring++;
 
@@ -35,8 +40,9 @@ define( [ 'jquery' ], function( $ ) {
             modules[ id ] = module;
 
             requiring--;
-            console.log(requiring);
-            if( requiring == 0) {
+            
+            if( requiring == 0 ) {
+
               exports.allModules( function( module ) {
                 module.onDomReady();
               } );

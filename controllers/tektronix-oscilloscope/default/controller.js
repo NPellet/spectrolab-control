@@ -9,7 +9,7 @@ var
   promise = require("bluebird");
 
 var InstrumentController = require("../../instrumentcontroller");
-var Waveform = require("../../../server/waveform");
+var Waveform = require("../../../app/waveform");
 
 var TektronixOscilloscope = function( params ) {
   this.params = params;
@@ -96,7 +96,7 @@ TektronixOscilloscope.prototype.connect = function(  ) {
 
       // Launches a python instance which will communicate in VXI11 with the scope
       module.shellInstance = new pythonShell( 'io.py', {
-        scriptPath: path.resolve( 'server/util/vxi11/' ),
+        scriptPath: path.resolve( 'app/util/vxi11/' ),
         args: [ module.params.host ], // Pass the IP address
         mode: "text" // Text mode
       } );

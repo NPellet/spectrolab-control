@@ -1,0 +1,52 @@
+
+<div class="form-group">
+<label for="vStart">V<sub>start</sub></label>
+  <div class="input-group">
+  <div class="input-group-addon checkbox"><label style="min-height: initial;"><input type="checkbox" name="forcevstart"> Force </label></div>
+    <input type="text" class="form-control" id="vStart" name="vstart" placeholder="Enter V start" />
+  </div>
+</div>
+
+
+<div class="form-group">
+<label for="vEnd">V<sub>end</sub></label>
+  <div class="input-group">
+  <label class="input-group-addon"><input type="checkbox" name="forcevend"> Force </label>
+    <input type="text" class="form-control" id="vEnd" name="vend" placeholder="Enter V end" />
+  </div>
+</div>
+
+
+<div class="form-group">
+<label for="settlingTime">Settling time</label>
+
+  <div class="input-group">
+    <input type="text" class="form-control" id="settlingTime" name="settlingtime" placeholder="Enter here the settling time" />
+    <div class="input-group-addon">s</div>
+  </div>
+
+</div>
+
+
+
+<div class="form-group">
+<label for="settlingTime">Light bias</label>
+<select multiple name="light[]" class="form-control">
+   {% for light in config.instruments.PowerSupplyWhiteLED.current_sunoutput %}
+     <option value="{{light.current}}">{{light.text}}</option>
+   {% endfor %}
+ </select>
+
+</div>
+
+
+
+<div class="form-group">
+<label for="scanrate">Scan rate</label>
+
+  <div class="input-group">
+    <input type="number" class="form-control" id="settlingTime" name="settlingtime" placeholder="Enter here the scan rate in volt/sec" />
+    <div class="input-group-addon">V/s</div>
+  </div>
+
+</div>

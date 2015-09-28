@@ -58,7 +58,7 @@ Wrapper.prototype.setWidth = function( w ) {
 	return this;
 }
 
-Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions, moduleConstructor ) {
+Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions, moduleConstructor, moduleTitle ) {
 
 	if( ! moduleConstructor ) {
 		var moduleConstructor = require( path.resolve( './server/modules/', moduleType, 'module.js' ) ).Constructor;
@@ -70,6 +70,8 @@ Wrapper.prototype.addModule = function( moduleType, moduleName, moduleOptions, m
 	module.setFolder( path.resolve('./server/modules/', moduleType ) );
 
 	module.setRelativePath( moduleType );
+	module.setTitle( moduleTitle );
+
 
 	this.modules.push( module );
 	this.renderer.addModule( moduleName, module );
