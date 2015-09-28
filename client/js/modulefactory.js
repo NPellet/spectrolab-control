@@ -15,11 +15,12 @@ define( [ 'jquery' ], function( $ ) {
 
     parseDom: function( global ) {
 
-      var modules = [];
+      modules = {};
       var requiring = 0;
 
-      console.log( $( global ).find( '.module' ) );
+      var promises = [];
 
+        console.log('look for it');
       $( global )
       .find( '.module' )
       .each( function( ) {
@@ -29,37 +30,38 @@ define( [ 'jquery' ], function( $ ) {
           path = dom.attr( 'data-path' );
 
 
-        requiring++;
+        promises.push( new Promise( function( resolver, rejecter ) {
 
-        require( [ 'getmodule-' + path ], function( ModuleConstructor ) {
+          require( [ 'getmodule-' + path ], function( ModuleConstructor ) {
 
-            var module = new ModuleConstructor();
-            module.init();
-            module.setId( id );
-            module.setDom( dom );
-            modules[ id ] = module;
+              var module = new ModuleConstructor();
+              module.init();
+              module.setId( id );
+              module.setDom( dom );
+              modules[ id ] = module;
 
-            requiring--;
-            
-            if( requiring == 0 ) {
+              resolver();
+          } );
 
-              exports.allModules( function( module ) {
-                module.onDomReady();
-              } );
+      } ) );
 
-            }
+      });
+
+      return Promise.all( promises ).then( function() {
+
+        exports.allModules( function( module ) {
+        
+          module.onDomReady();
 
         } );
 
       } );
-
     },
 
     allModules: function( callback ) {
 
       for( var i in modules ) {
         callback( modules[ i ] );
-        modules[ i ].getStatus();
       }
 
     }

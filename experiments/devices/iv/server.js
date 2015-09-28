@@ -1,12 +1,16 @@
+var app = require("app/app");
 
-module.exports = function() {
 
-    var self = this;
+module.exports = function( config ) {
 
-    return function *iv( ) {
+    
+    var arduino = app.getInstrument('arduino-digio');
+    var keithley = app.getInstrument('keithley-smu');
 
-      var lights = self.config.lightLevels;
-      var speeds = self.config.scanRates;
+    function *iv( ) {
+
+      var lights = config.lightLevels;
+      var speeds = config.scanRates;
       var voltage;
 
       for( var light = 0, llights = lights.length; light < llights; light ++ ) {
@@ -68,7 +72,13 @@ module.exports = function() {
           yield;
         }
       }
-    }
+   }
+
+   var iv = iv();
+
+   // Start the measurement
+   iv.next();
+
 
   }
 

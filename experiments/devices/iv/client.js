@@ -3,9 +3,9 @@ module.exports = {
 	modules: {
 
 	  IV: {
-	    wrapper: 'iv',
+	    title: "IV measurement",
 	    path: 'display/iv',
-	    width: 10,
+	    width: 30,
 	    height: 20,
 	    top: 0,
 	    left: 0

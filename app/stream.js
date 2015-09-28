@@ -25,7 +25,7 @@ wss.on('connection', function( ws ) {
 		// Global message ?
 		if( jsonParsed.global ) {
 
-			handleGlobal( jsonParsed );
+			handleGlobal( jsonParsed, ws );
 			return;
 		}
 
@@ -34,9 +34,7 @@ wss.on('connection', function( ws ) {
 
 			if( jsonParsed.instruction == "getStatus" ) { // Module is requesting current status
 
-				var output = prepareOutput( allModules[ jsonParsed.moduleid ], "setStatus", allModules[ jsonParsed.moduleid ].getStatus() )
-				this.send( output );
-
+				allModules[ jsonParsed.moduleid ].sendStatus( ws );
 				allModules[ jsonParsed.moduleid ].streamLock();
 
 			} else {
@@ -71,28 +69,31 @@ function prepareOutput( module, instruction, value ) {
 	} );
 }
 
-function handleGlobal( json ) {
+function handleGlobal( json, ws ) {
 
 
 	if( globalCallbacks[ json.instruction ] ) {
 		globalCallbacks[ json.instruction ].map( function( c ) {
-			console.log( json.value );
-			c( json.value );
+			
+			c( json.value, ws );
 		})
 	}
 }
 
 module.exports = {
 
-	moduleOut: function( module, instruction, value ) {
+	moduleOut: function( module, instruction, value, ws ) {
 
 		var output = prepareOutput( module, instruction, value );
 
-		connections.map( function( connection ) {
+		if( ! ws ) {
+			connections.map( function( connection ) {
 
-			connection.send( output );
-		} );
-
+				connection.send( output );
+			} );
+		} else {
+			ws.send( output );
+		}
 	},
 
 	moduleIn: function( moduleid, instruction, callback ) { // Register module callbacks
@@ -108,14 +109,19 @@ module.exports = {
 		globalCallbacks[ instruction ].push( callback );
 	},
 
-	globalOut: function( instruction, value ) {
+	globalOut: function( instruction, value, ws ) {
 
 		var output = JSON.stringify( { instruction: instruction, value: value } );
 
-		connections.map( function( connection ) {
+		if( ! ws ) {
+			connections.map( function( connection ) {
 
-			connection.send( output );
-		} );
+				connection.send( output );
+			} );
+		} else {
+
+			ws.send( output );
+		}
 
 	}
 
