@@ -3,7 +3,7 @@ var config = {
 	instruments: {
 
 
-		"keithley": {
+		"KeithleySMU": {
 			type: "keithley-smu",
 			name: 'Keithley SMU',
 			host: '192.168.0.101',
@@ -41,7 +41,7 @@ var config = {
 					},
 
 					"colors": {
-						"white": 47,
+						"white": 34,
 						"red": 45,
 						"green": 43,
 						"blue": 41
