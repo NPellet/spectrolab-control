@@ -1,30 +1,40 @@
-var app = require("app/app");
 
+module.exports = function( config, app ) {
 
-module.exports = function( config ) {
+  console.log( config );
 
+  
+    var arduino = app.getInstrument('arduinoDigio');
+    var keithley = app.getInstrument('KeithleySMU');
+    var pws = app.getInstrument("PWSWhiteLight");
     
-    var arduino = app.getInstrument('arduino-digio');
-    var keithley = app.getInstrument('keithley-smu');
+    arduino.routeLEDToArduino( "white" );
 
-    function *iv( ) {
 
       var lights = config.lightLevels;
       var speeds = config.scanRates;
       var voltage;
 
-      for( var light = 0, llights = lights.length; light < llights; light ++ ) {
 
-        keithley.writeDigio( 4, 1 );
+    function *iv( ) {
 
-        if( light < 0 ) {
-          arduino.whiteLightOff();
+
+      if( config.measureDark ) {
+        lights.unshift( -1 );
+      }
+
+      for( var lightLevel = 0, l = lights.length; lightLevel < l; lightLevel ++ ) {
+
+        if( lightLevel < 0 ) {
+          arduino.turnLightOff( "white" );
         } else {
-          arduino.setWhiteLightLevel( lights[ light ] );
+          arduino.turnLightOff( "white" );
+          pws.setCurrentLimit( app.getConfig().instruments.PWSWhiteLight.current_sunoutput[ lightLevel ] );
         }
 
+
         setTimeout( function() {
-          self.loopNext();
+          iv.next();
         }, 1000 );
         yield;
 
@@ -32,6 +42,7 @@ module.exports = function( config ) {
         if( self.config.forcevstart ) {
 
           voltage = Math.min( self.config.vstart, 2 );
+
         } else {
 
           keithley.measureVoc( {
@@ -40,13 +51,17 @@ module.exports = function( config ) {
             settlingTime: 1
           }).then( function( v ) {
             voltage = v;
-            self.loopNext();
+            
+            iv.next();
           });
           yield;
 
           voltage = Math.max( 0.2, Math.min( voltage, 2 ) );
         }
+
+
         for( var speed = 0, lspeeds = speeds.length; speed < lspeeds; speed ++ ) {
+
           keithley.sweepIV( {
 
             channel: 'smub',
@@ -58,15 +73,9 @@ module.exports = function( config ) {
 
           }).then( function( iv ) {
 
-              self.progress( "iv", {
+              progressIV( iv, lightLevel );
 
-                iv: iv,
-                scanRate: speeds[ speed ],
-                lightLevel: lights[ light ]
-
-              } );
-
-              self.loopNext();
+              iv.next();
           } );
 
           yield;
@@ -75,10 +84,18 @@ module.exports = function( config ) {
    }
 
    var iv = iv();
-
-   // Start the measurement
    iv.next();
 
+   var igorfile = app.itx();
 
-  }
+   function progressIV( iv, lightLevel ) {
 
+        var itxw = igorfile.newWave( "iv_" + lightLevel );
+        itxw.setWaveform( iv );
+
+        var fileName = app.save( "iv", itx.getFile(), app.getDeviceName(), "itx" );
+
+        //app.getRenderer().getModule("IV")
+   }
+}
+  

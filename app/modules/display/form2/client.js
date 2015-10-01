@@ -9,7 +9,7 @@ define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-se
 	module.prototype.onDomReady = function() {
 		var self = this;
 
-		this.getInnerDom().on("click", "input[type=button]", function( e ) {
+		this.getForm().on("click", "input[type=button]", function( e ) {
 
 			e.stopPropagation();
 
@@ -20,7 +20,7 @@ define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-se
 
 
 
-		this.getInnerDom().on("change keyup", ':input', function() {
+		this.getForm().on("change keyup", ':input', function() {
 
 			var formData = self.getFormData();
 			self.out( "formChanged", { form: formData } );
@@ -29,8 +29,12 @@ define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-se
 		this.setExtraEvents();
 	}
 
+	module.prototype.getForm = function() {
+		return this.getDom().find('form');
+	};
+
 	module.prototype.getFormData = function() {
-		return this.getInnerDom().serializeObject();
+		return this.getForm().serializeObject();
 	};
 
 	module.prototype.setExtraEvents = function() {};
@@ -40,10 +44,10 @@ define(  [ 'js/module', 'bootstrap', 'lib/jquery.populate/index', 'lib/jquery-se
 	}
 
 	module.prototype.populate = function( data ) {
-		this.getInnerDom().populate( data );
+		this.getForm().populate( data );
 	}
 	module.prototype.setHtml = function( html ) {
-		this.getInnerDom().html( html );
+		this.getForm().html( html );
 	}
 
 	module.prototype.in = {

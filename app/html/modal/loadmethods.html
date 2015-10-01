@@ -1,0 +1,31 @@
+{% capture modalcontent %}
+
+<div id="methodslists-tree"></div>
+
+<form class="form">
+
+  	<div class="input-group">
+
+ 		<input type="text" class="form-control" id="cfg-name" placeholder="">
+   		<div class="input-group-btn">
+   			<button type="button" id="cfg-newfolder" class="btn btn-default">New folder</button>
+   			<button type="button" id="cfg-remove" class="btn btn-default">Erase</button>
+   			<button type="button" id="cfg-load" class="btn btn-default">Load</button>
+    		<button type="button" id="cfg-save" class="btn btn-default" type="button">Save</button>
+  		</div>
+  	</div>
+
+</form>
+
+
+
+{% endcapture %}
+
+{% assign modalid="modal-loadmethods" %}
+{% assign modaltitle="Experiment configuration" %}
+{% assign modalok="Ok" %}
+
+{% include modal.tpl %}
+
+
+			

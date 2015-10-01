@@ -33,6 +33,7 @@ require( [ 'jquery', 'js/modulefactory', 'js/io', 'util', 'bootstrap', 'bootstra
 	global( IO, Util, ModuleFactory );
 } );
 
+var cfgSelected;
 
 function loadCss(url) {
     var link = document.createElement("link");
@@ -45,7 +46,7 @@ function loadCss(url) {
 
 function global( IO, Util, ModuleFactory ) {
 
-	var cfgSelected;
+	
 	var experimentStatus = "stopped";
 
 	var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
@@ -83,24 +84,6 @@ function global( IO, Util, ModuleFactory ) {
 			break;
 		}
 	});
-
-
-
-	$("#abort-experiment").on('click', function() {
-
-		btns.prop( 'disabled', true );
-
-		switch( experimentStatus ) {
-
-
-			case 'running':
-
-					IO.writeGlobal( "experiment-abort" );
-
-			break;
-		}
-	});
-
 
 
 	IO.onGlobal( "showModal", function( html ) {
@@ -172,7 +155,7 @@ function global( IO, Util, ModuleFactory ) {
 ( function() {
 
 	var methodlistDevices, methodlistNonDevices;
-	var cfgSelected;
+	
 	var adding = false;
 
 	IO.onGlobal( "method-list-devices", function( list ) {
@@ -244,6 +227,13 @@ function global( IO, Util, ModuleFactory ) {
 
 		$( "#modal-configuremethod" ).modal( "hide" );
 		
+		console.log(
+
+			$( '#modal-configuremethod .modal-body form' ),
+			$( '#modal-configuremethod .modal-body form' ).serializeObject( )
+
+		);
+
 		IO.writeGlobal( "configuremethod", { methodid: methodid, method: methodSelected, configuration: $( '#modal-configuremethod .modal-body form' ).serializeObject( ) } );
 
 	} );
@@ -262,6 +252,36 @@ function global( IO, Util, ModuleFactory ) {
 	IO.onGlobal("updateleftpannel", function( html ) {
 		$("#leftpannel").html( html );
 	});
+
+	$('#modal-loadmethods').on('shown.bs.modal', function ( e ) {
+	  	  	
+		IO.writeGlobal( "loadmethodslists" );
+	} );
+
+	IO.onGlobal( "methodslists", function( methodslists ) {
+
+		$("#methodslists-tree").treeview( {
+
+			data: methodslists,
+			onNodeSelected: function( event, data ) {
+
+				$("#cfg-name").prop( 'value', data.text );
+				$("#cfg-remove").prop( 'disabled', !!data.locked );
+
+				cfgSelected = data.path;
+			},
+
+			onNodeExpanded: function( event, data ) {
+
+				$("#cfg-name").prop( 'value', data.text );
+				cfgSelected = data.path;
+			}
+		} );
+
+
+	});
+
+
 
 }) ();
 
@@ -311,6 +331,9 @@ function global( IO, Util, ModuleFactory ) {
 
 	IO.writeGlobal('domReady');
 
+
+
+
 	$("#cfg-load").on( 'click', function() {
 
 		IO.writeGlobal( "cfg-load", cfgSelected );
@@ -332,12 +355,7 @@ function global( IO, Util, ModuleFactory ) {
 		IO.writeGlobal( "cfg-remove", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
 	});
 
-	$("#more-cfg").on( 'click', function() {
-
-		$("#more-cfg-pannel").slideToggle();
-	});
-
-
+	
 
 
 

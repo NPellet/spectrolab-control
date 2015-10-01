@@ -1,0 +1,54 @@
+
+@mixin animation( $name, $time ) {
+	-webkit-animation:$name $time + s linear infinite;
+    -moz-animation:$name $time + s linear infinite;
+    animation:$name $time + s linear infinite;
+}
+
+
+@mixin transform( $value ) {
+	-moz-transform: $value;
+	-webkit-transform: $value;
+	transform: $value
+}
+
+
+@mixin keyframes($name) {
+  @-webkit-keyframes #{$name} {
+    @content; 
+  }
+  @-moz-keyframes #{$name} {
+    @content;
+  }
+  @-ms-keyframes #{$name} {
+    @content;
+  }
+  @keyframes #{$name} {
+    @content;
+  } 
+}
+
+
+@mixin linear-gradient($direction, $color-stops...) {
+  // Direction has been omitted and happens to be a color-stop
+  @if is-direction($direction) == false {
+    $color-stops: $direction, $color-stops;
+    $direction: 180deg;
+  }
+
+  background: nth(nth($color-stops, 1), 1);
+  background: -webkit-linear-gradient(legacy-direction($direction), $color-stops);
+  background: linear-gradient($direction, $color-stops);
+}
+
+
+@mixin gradient( $angle, $desaturation, $lightening ) {
+	
+	@include linear-gradient( $angle, desaturate( lighten( $color1, $lightening ), $desaturation ) 0%, desaturate( lighten( $color2, $lightening ), $desaturation ) 31%, desaturate( lighten( $color3, $lightening ), $desaturation ) 100% );
+}
+
+@include keyframes( spin ) {
+  100% {
+  	@include transform( rotate(360deg) );
+  } 
+}

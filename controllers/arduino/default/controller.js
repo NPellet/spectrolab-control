@@ -20,11 +20,35 @@ var Arduino = function( params ) {
 	this.serialSetHost( params.host );
 	this.serialSetBaudrate( params.baudrate );
 	this.serialSetOptions( params.options );
+
+	var self = this;
+
 };
 
 Arduino.prototype = new InstrumentController();
 
 Arduino.prototype.connect = Arduino.prototype.serialConnect;
+
+Arduino.prototype.onConnectionInit = function() {
+
+	// 1 is OUT
+	this.initPin( this.params.digital.LEDCard.relays.bypassAFG, 1 );
+	this.initPin( this.params.digital.LEDCard.relays.inverter, 1 );
+
+	for( var i in this.params.digital.LEDCard.relays.colors ) {
+		this.initPin( this.params.digital.LEDCard.relays.colors[ i ], 1 );	
+	}
+	
+	for( var i in this.params.digital.LEDCard.colors ) {
+		this.initPin( this.params.digital.LEDCard.colors[ i ], 1 );	
+	}
+
+}
+
+Arduino.prototype.initPin = function( pinNumber, pinValue ) {
+	return this.serialCommand( "8," + pinNumber + "," + pinValue + ";", -1 );
+}
+
 
 Arduino.prototype.readDigital = function( pinNumber ) {
 
@@ -47,7 +71,7 @@ Arduino.prototype.readAnalog = function( pinNumber ) {
 
 	var self = this;
 	return this
-		.command( "7," + pinNumber + ";" )
+		.serialCommand( "7," + pinNumber + ";" )
 		.then( function( d ) {
 			
 			if( d === undefined ) {
@@ -57,9 +81,9 @@ Arduino.prototype.readAnalog = function( pinNumber ) {
 		});
 }
 
-Arduino.prototype.setDigital = function() {
+Arduino.prototype.setDigital = function( pinNumber, pinValue ) {
 
-	return this.command( "8," + pinNumber + "," + pinValue + ";" );
+	return this.serialCommand( "5," + pinNumber + "," + pinValue + ";" );
 }
 
 
@@ -92,51 +116,78 @@ Arduino.prototype.disableDevices = function() {
 
 Arduino.prototype.bypassLEDCard = function() {
 	// 0 == bypass, 1 == use
-	this.setDigital( this.params.digital.LEDCard.bypassAFG, 0 );
+	this.setDigital( this.params.digital.LEDCard.relays.bypassAFG, 0 );
 }
 
 Arduino.prototype.routeLEDToAFG = function( color, output ) {
 
+
+	for( var i in this.params.digital.LEDCard.relays.colors ) {
+		this.setDigital( this.params.digital.LEDCard.relays.colors[ i ], 0 );
+	}
+
 	if( color = this._checkLEDColor( color ) ) {
 		// Turn ON the AFG routing for this LED
 		// Automatically turns off routing from Arduino
-		this.setDigital( this.params.digital.LEDCard.colors[ color ], 1 );
+		this.setDigital( this.params.digital.LEDCard.relays.colors[ color ], 1 );
 	}
 
 	// Do not bypass the AFG to next card (0 = bypass, 1 = route through LED card)
-	this.setDigital( this.params.digital.LEDCard.bypassAFG, 1 );
+	this.setDigital( this.params.digital.LEDCard.relays.bypassAFG, 1 );
 
 	// If the input is on channel B, we need to turn on the inverter relay
 	// If B, then A is routed to its bypass. If A, then B is routed to its bypass
-	this.setDigital( this.params.digital.LEDCard.inverter, output == "B" );
+	this.setDigital( this.params.digital.LEDCard.relays.inverter, output == "B" );
 }
 
 
-Arduino.prototype.routeLEDToArduino = function( color, output ) {
+Arduino.prototype.routeLEDToArduino = function( color ) {
 
+
+	
 	if( color = this._checkLEDColor( color ) ) {
 		// Turn ON the Arduino routing for this LED
 		// Automatically turns off routing from AFG
-		this.setDigital( this.params.digital.LEDCard.colors[ color ], 0 );
+
+		// Bypasses the LED card for the AFG
+		this.setDigital( this.params.digital.LEDCard.relays.bypassAFG, 0 );
+
+		// 0 is ON for arduino
+		this.setDigital( this.params.digital.LEDCard.relays.colors[ color ], 0 );
+	}
+}
+
+Arduino.prototype.turnLEDOn = function() {
+
+	if( color = this._checkLEDColor( color ) ) {
+
+		this.setDigital( this.params.digital.LEDCard.colors[ color ], 1 ); // Set the pin HIGH
 	}
 }
 
 
+Arduino.prototype.turnLEDOff = function() {
 
-
-"digital": {
-	"LEDCard": {
-		"bypassAFG": 51,
-		"inverter": 49,
-		"colors": {
-			"white": 47,
-			"red": 45,
-			"green": 43,
-			"blue": 41
-		}
+	if( color = this._checkLEDColor( color ) ) {
+		this.setDigital( this.params.digital.LEDCard.colors[ color ], 0 ); // Set the pin HIGH
 	}
 }
 
+Arduino.prototype._checkLEDColor = function( color ) {
+
+	if( this.params.digital.LEDCard.colors[ color ] ) {
+		return color;
+	}
+
+	console.error("Could not find color " + color + ". Returning \"White\"" );
+	return "white";
+}
+
+
+/*
+
+
+*/
 
 
 

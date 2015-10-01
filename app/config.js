@@ -10,18 +10,51 @@ var config = {
 			port: '5025'
 		},
 
-		"arduino": {
+		"arduinoDigio": {
 			type: "arduino",
-			name: 'Arduino',
+			name: 'Arduino DIGIO',
 
 			baudrate: 115200,
-			host: '/dev/cu.usbmodem1421',
+			host: '/dev/cu.usbmodem1411',
 
 			options: {
 			  parity: 'none',
 			  dataBits: 8,
 			  stopBits: 1
-			 }
+			 },
+
+
+
+
+			"digital": {
+				"LEDCard": {
+
+					"relays": {
+						"bypassAFG": 32,
+						"inverter": 30,
+						"colors": {
+							"white": 24,
+							"red": 28,
+							"green": 26,
+							"blue": 22
+						}
+					},
+
+					"colors": {
+						"white": 47,
+						"red": 45,
+						"green": 43,
+						"blue": 41
+					},
+
+					"colornames": {
+						"white": "White",
+						"red": "Red",
+						"green": "Green",
+						"blue": "Blue"
+					}
+				}
+			}
 		},
 
 		"tektronix-functiongenerator": {

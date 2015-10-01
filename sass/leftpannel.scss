@@ -1,53 +1,30 @@
 
-
-@mixin animation( $name, $time ) {
-	-webkit-animation:$name $time + s linear infinite;
-    -moz-animation:$name $time + s linear infinite;
-    animation:$name $time + s linear infinite;
-}
-
-
-@mixin transform( $value ) {
-	-moz-transform: $value;
-	-webkit-transform: $value;
-	transform: $value
-}
-
-
-@mixin keyframes($name) {
-  @-webkit-keyframes #{$name} {
-    @content; 
-  }
-  @-moz-keyframes #{$name} {
-    @content;
-  }
-  @-ms-keyframes #{$name} {
-    @content;
-  }
-  @keyframes #{$name} {
-    @content;
-  } 
-}
-
-@include keyframes( spin ) {
-  100% {
-  	@include transform( rotate(360deg) );
-  } 
-}
+@import 'mixins';
+@import 'variables';
 
 #leftpannel {
 	
-	border-right: 1px solid #BBBBBB;
-	height: 100vh;
-	margin: 0px;
 	padding: 0px;
 
 	> div {
 		margin: 0px;
 		padding: 0px;
+		height: 100%;
+		border-right: 1px solid $color1;
+
+
+		border-right: 1px solid #aac6c4;
+		height: 100vh;
+		margin: 0px;
+		padding: 0px;
+
+		@include gradient( 340deg, 10%, 13% );
+
 	}
 
-
+	> div:last-child li.title {
+		background: #aac6c4 !important;
+	}
 
 	ul {
 		list-style-type: none;
@@ -58,19 +35,24 @@
 
 
 			text-indent: 0px;
-			border-bottom: 1px solid #f0f0f0;
-
+			border-bottom: 1px solid #aac6c4;
+			background-color: transparent;
 			border-radius: 0px;
+
+			border-left-width: 0px;
+			border-right-width: 0px;
 
 			&.title {
 				font-weight: bold;
 				font-size: 1.2em;
-				background-color: #e7e7e7;
-				border-bottom: 1px solid #d0d0d0;				
+				
+				border-bottom: 1px solid #aac6c4;				
+
+				@include gradient( 270deg, 0%, 0% );
 			}
 
 			&.add {
-				color: #c0c0c0;
+				color: $color1;
 				cursor: pointer;
 			}
 
@@ -98,7 +80,7 @@
 			}
 
 			
-			.configure {
+			.configuremethod {
 				cursor: pointer;
 			}
 
@@ -121,4 +103,32 @@
 			}
 		}
 	}
+}
+
+
+@function legacy-direction($value) {
+  @if is-direction($value) == false {
+    @error "Cannot convert `#{$value}` to legacy syntax because it doesn't seem to be a direction.";
+  }
+
+  $conversion-map: (
+    to top          : bottom,
+    to top right    : bottom left,
+    to right top    : left bottom,
+    to right        : left,
+    to bottom right : top left,
+    to right bottom : left top,
+    to bottom       : top,
+    to bottom left  : top right,
+    to left bottom  : right top,
+    to left         : right,
+    to left top     : right bottom,
+    to top left     : bottom right
+  );
+
+  @if map-has-key($conversion-map, $value) {
+    @return map-get($conversion-map, $value);
+  }
+
+  @return 90deg - $value;
 }

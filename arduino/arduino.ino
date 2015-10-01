@@ -1,7 +1,7 @@
  
 // Include the required libraries
 #include <CmdMessenger.h>
-#include <DueTimer.h>
+
 
 // Mustnt conflict / collide with our message payload data. Fine if we use base64 library ^^ above
 char field_separator = ',';
@@ -40,8 +40,8 @@ messengerCallbackFunction messengerCallbacks[] =
 {
   setDigitalPin, // Command 5
   readDigitalPin, // Command 6
-  readAnalogPin, // Command 7
-  deviceOn, // Command 8
+  readAnalogPin,  // Command 7
+  initPin // Command 8
 };
 
 // Set cmdMessage general methods
@@ -163,44 +163,31 @@ void readAnalogPin()
 
 
 
-// ----- DEVICE METHODS
 
-int devicePins[] = { 53, 51, 49, 47, 45, 43, 41, 39 };
 
-void deviceOn( ) {
-  Serial.print("Device on?");
- 
-  Serial.print("Turn on device number:");
+void initPin()
+{
+  
+  int dpin = cmdMessenger.readInt16Arg();
+  int dvalue = cmdMessenger.readInt16Arg();
 
-  int deviceNumber = cmdMessenger.readInt16Arg();
-  Serial.print( deviceNumber );
-  devicesOff();
+   pinMode( dpin, dvalue == 0 ? INPUT : OUTPUT );
 
- _deviceOn( deviceNumber );
+  if( dvalue == 1 ) {
+    digitalWrite( dpin, LOW );
+  }
+    
+Serial.println("Init pin");
+Serial.print( dpin );
+Serial.print( ":");
+Serial.println( dvalue );
   cmdMessenger.sendCmdStart(kANSWER);
-  cmdMessenger.sendCmdArg( deviceNumber );
+  cmdMessenger.sendCmdArg("ok");
   cmdMessenger.sendCmdEnd();
 }
 
-void _deviceOn( int deviceNumber ) {
-  if( devicePins[ deviceNumber ] ) {
-     digitalWrite( devicePins[ deviceNumber ], HIGH );
-  }
-}
 
 
-void devicesOff() {
-  int i = 0;
-  Serial.print("Of all");
-
-  for( i = 0; i < 8; i = i + 1 ) {
-    Serial.print( devicePins[ i ] );
-    digitalWrite( devicePins[ i ], LOW );
-  }
-  
-}
-
-// ----- DEVICE METHODS
 
 
 void setup()
@@ -211,14 +198,6 @@ void setup()
   
   SerialUSB.begin(115200); 
 
-  
-  for( i = 0; i < 8; i = i + 1 ) {
-    Serial.print(devicePins[ i ]);
-    pinMode(devicePins[ i ], OUTPUT);
-    digitalWrite( devicePins[ i ], LOW );
-  }
-  
- 
   // cmdMessenger.discard_LF_CR(); // Useful if your terminal appends CR/LF, and you wish to remove them
   cmdMessenger.printLfCr(); // Make output more readable whilst debugging in Arduino Serial Monitor
   
@@ -276,7 +255,7 @@ bool hasExpired(unsigned long &prevTime, unsigned long interval) {
 // Toggle led state 
 void toggleLed()
 {  
-  Serial.print("toggle");
+  Serial.println  ("toggle");
   ledState = !ledState;
   digitalWrite(kBlinkLed, ledState?HIGH:LOW);
 }  

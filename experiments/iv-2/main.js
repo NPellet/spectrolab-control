@@ -26,7 +26,6 @@ function start() {
 	} );
 }
 
-
 keithley.connect().then( function() {
 
 	setTimeout( start, 10 * 1000 );

@@ -1,0 +1,24 @@
+<form>
+
+
+<div class="form-group">
+<label for="settlingTime">Light bias</label>
+<select name="color" class="form-control">
+   {% for c in config.instruments.arduinoDigio.digital.LEDCard.colornames %}
+    {% assign colorname = c[1] %}
+     <option value="{{colorname}}">{{colorname}}</option>
+   {% endfor %}
+ </select>
+</div>
+
+
+<div class="form-group">
+<label for="settlingTime">AFG Channel</label>
+<select name="channel" class="form-control">
+     <option value="A">A</option>
+     <option value="B">B</option>
+ </select>
+</div>
+
+
+</form>

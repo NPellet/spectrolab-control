@@ -36,8 +36,12 @@
 				<div id="header-main">
 					<form class="form-inline">
 						<button type="button" id="run-experiment" class="btn btn-default">Run</button>
-						<button type="button" id="abort-experiment" class="btn btn-default" disabled="disabled">Abort</button>
 					</form>
+
+					<form class="form-inline">
+						<button type="button" data-toggle="modal" data-target="#modal-loadmethods" class="btn btn-default">Load methods</button>
+					</form>
+
 				</div>
 
 			</div>
@@ -54,6 +58,7 @@
 	<div id="hidden">
 		{% include modal/addmethod %}	
 		{% include modal/configuremethod %}		
+		{% include modal/loadmethods %}		
 	</div>
 </body>
 	
