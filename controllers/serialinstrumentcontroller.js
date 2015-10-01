@@ -52,7 +52,6 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 			// The serial device has been opened
 			serialPort.on("open", function() {
 				clearTimeout( timeout );
-				console.log("OPEN HERE");
 				if( serialDevice.onConnectionInit ) {
 					serialDevice.onConnectionInit();
 				}
@@ -117,7 +116,6 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 			serialPort.on( 'data', function( data ) {
 				response = response + data.toString('ascii');
 				if( ! ( response.indexOf("\r\n") == -1 ) ) {
-					console.log( response );
 					endData( response );
 					response = "";
 				}
@@ -126,7 +124,6 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 		} catch ( error ) {
 
-			console.log( error );
 			serialDevice.logError("Could not connect to \"" + serialDevice.getName() + "\". Connection refused.");
 			serialDevice.emit("connectionerror");
 			rejecter();
@@ -202,7 +199,6 @@ function serialProcessQueue( serialDevice ) {
 		keys.sort();
 		var i = 0;
 
-		console.log( keys, serialDevice._serialQueue );
 
 		while( serialDevice._serialQueue[ keys[ i ] ].length == 0 ) {
 			i ++;

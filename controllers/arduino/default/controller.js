@@ -157,7 +157,7 @@ Arduino.prototype.routeLEDToArduino = function( color ) {
 	}
 }
 
-Arduino.prototype.turnLEDOn = function() {
+Arduino.prototype.turnLEDOn = function( color ) {
 
 	if( color = this._checkLEDColor( color ) ) {
 

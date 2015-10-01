@@ -5,7 +5,8 @@ var
   extend = require('extend'),
   events = require("events"),
   pythonShell = require("python-shell"),
-  promise = require("bluebird");
+  promise = require("bluebird"),
+  path = require("path");
 
 var InstrumentController = require("../../instrumentcontroller");
 
@@ -13,6 +14,7 @@ var TektronixPWS = function( params ) {
   this.params = params;
   this.connected = false;
   this.queue = [];
+  this.connectQueue = [];
 
   var self = this;
 };
@@ -26,6 +28,10 @@ TektronixPWS.prototype.connect = function(  ) {
 
     return new Promise( function( resolver, rejecter ) {
 
+      if( module.connecting ) {
+        return module.connecting;
+      }
+
       // Avoid multiple connection
       if( module.connected ) {
 
@@ -33,6 +39,7 @@ TektronixPWS.prototype.connect = function(  ) {
         return;
       }
 
+      module.connecting = resolver;
       module.emit("connecting");
 
       module.log( "Trying to connect to Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
@@ -49,16 +56,24 @@ TektronixPWS.prototype.connect = function(  ) {
           module.shellInstance.end();
         }
 
-      }, 5000 );
+      }, 10000 );
 
 
       // Checking if the PWS is reachable
-      module.shellInstance = new pythonShell( 'io.py', {
+      module.shellInstance = new pythonShell( 'iovisa.py', {
 
         scriptPath: path.resolve( 'app/util/visa/' ),
         args: [ module.params.host ], // Pass the VISA address
         mode: "text" // Text mode
 
+      }, function( err ) {
+
+        if( err ) {
+
+          console.log( err );
+           module.logError( "Cannot connect to Tektronix PWS (" + module.getName() + "). IO error: " + err );
+
+        }
       } );
 
 
@@ -66,10 +81,16 @@ TektronixPWS.prototype.connect = function(  ) {
 
         clearTimeout( timeout );
         if( message == "ok" ) {
+
+          console.log("ok");
           module.connected = true;
+          module.connecting = false;
           module.logOk( "Successfully found Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
 
           module.emit("connected");
+
+          resolver();
+
 
         } else {
           module.logError( "Cannot find Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
@@ -82,14 +103,21 @@ TektronixPWS.prototype.connect = function(  ) {
 }
 
 TektronixPWS.prototype.command = function( command ) {
-
+    
+    var self = this;
     return new Promise( function( resolver, rejecter ) {
+      
+      self.connect().then( function() {
 
-      this.shellInstance.on( "message", function( message ) {
-        resolver( message );
+        self.shellInstance.on( "message", function( message ) {
+
+          console.log("RETURN: " + message );
+          resolver( message );
+        } );
+
+        self.shellInstance.send( command );
+
       } );
-
-      this.shellInstance.send( command )
 
     } );
 }

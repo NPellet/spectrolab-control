@@ -1,27 +1,20 @@
- 
+/**
+ * Arduino library for the Due
+ * Controls the digio pins (devices, LEDs, lasers)
+ * @author Norman Pellet
+ * @year 2015  
+ */
+
 // Include the required libraries
 #include <CmdMessenger.h>
+#include <DueTimer.h>
+
+// Initializes the command messenger
+CmdMessenger cmdMessenger = CmdMessenger(SerialUSB, ",", ";");
+
+#define TIME_RTC 300000                            // Temps du RTC en us-> 500ms
 
 
-// Mustnt conflict / collide with our message payload data. Fine if we use base64 library ^^ above
-char field_separator = ',';
-char command_separator = ';';
-
-// Attach a new CmdMessenger object to the USB Data Serial port
-CmdMessenger cmdMessenger = CmdMessenger(SerialUSB, field_separator, command_separator);
-
-unsigned long previousToggleLed = 0;   // Last time the led was toggled
-bool ledState                   = 0;   // Current state of Led
-const int kBlinkLed             = 13;  // Pin of internal Led
-
-
-// ------------------ C M D L I S T I N G ( T X / R X ) ---------------------
-
-// We can define up to a default of 50 cmds total, including both directions (send + recieve)
-// and including also the first 4 default command codes for the generic error handling.
-// If you run out of message slots, then just increase the value of MAXCALLBACKS in CmdMessenger.h
-
-// Commands we send from the Arduino to be received on the PC
 enum
 {
   kCOMM_ERROR = 000,    // Lets Arduino report serial port comm error back to the PC (only works for some comm errors)
@@ -33,16 +26,14 @@ enum
   kSEND_CMDS_END,       // Mustnt delete this line
 };
 
-// Commands we send from the PC and want to recieve on the Arduino.
-// We must define a callback function in our Arduino program for each entry in the list below vv.
-// They start at the address kSEND_CMDS_END defined ^^ above as 004
 messengerCallbackFunction messengerCallbacks[] =
 {
   setDigitalPin, // Command 5
   readDigitalPin, // Command 6
-  readAnalogPin,  // Command 7
-  initPin // Command 8
+  readAnalogPin, // Command 7
+  deviceOn, // Command 8
 };
+
 
 // Set cmdMessage general methods
 void arduino_ready() {
@@ -67,7 +58,6 @@ void attach_callbacks(messengerCallbackFunction* callbacks)
   }
 }
 
-#define TIME_RTC 300000                            // Temps du RTC en us-> 500ms
 
 
 
@@ -163,28 +153,43 @@ void readAnalogPin()
 
 
 
+// ----- DEVICE METHODS
 
+int devicePins[] = { 53, 51, 49, 47, 45, 43, 41, 39 };
 
-void initPin()
-{
-  
-  int dpin = cmdMessenger.readInt16Arg();
-  int dvalue = cmdMessenger.readInt16Arg();
+void deviceOn( ) {
+  Serial.print("Device on?");
+ 
+  Serial.print("Turn on device number:");
 
-   pinMode( dpin, dvalue == 0 ? INPUT : OUTPUT );
+  int deviceNumber = cmdMessenger.readInt16Arg();
+  Serial.print( deviceNumber );
+  devicesOff();
 
-  if( dvalue == 1 ) {
-    digitalWrite( dpin, LOW );
-  }
-    
-Serial.println("Init pin");
-Serial.print( dpin );
-Serial.print( ":");
-Serial.println( dvalue );
+ _deviceOn( deviceNumber );
   cmdMessenger.sendCmdStart(kANSWER);
-  cmdMessenger.sendCmdArg("ok");
+  cmdMessenger.sendCmdArg( deviceNumber );
   cmdMessenger.sendCmdEnd();
 }
+
+void _deviceOn( int deviceNumber ) {
+  if( devicePins[ deviceNumber ] ) {
+     digitalWrite( devicePins[ deviceNumber ], HIGH );
+  }
+}
+
+void devicesOff() {
+  int i = 0;
+  Serial.print("Of all");
+
+  for( i = 0; i < 8; i = i + 1 ) {
+    Serial.print( devicePins[ i ] );
+    digitalWrite( devicePins[ i ], LOW );
+  }
+  
+}
+
+// ----- DEVICE METHODS
 
 
 
@@ -194,10 +199,18 @@ void setup()
 {
   int i;
   // Listen on serial connection for messages from the pc
-  Serial.begin(9600); // Arduino Uno, Mega, with AT8u2 USB
-  
-  SerialUSB.begin(115200); 
+  Serial.begin(9600); // Initializes Serial communication (for debugging)
+  SerialUSB.begin(115200); // Initializes Serial communication (for serial communication with frontend)
 
+  /**  
+   *  Initializes the devices to off
+   */
+  for( i = 0; i < 8; i = i + 1 ) {
+    Serial.print(devicePins[ i ]);
+    pinMode(devicePins[ i ], OUTPUT);
+    digitalWrite( devicePins[ i ], LOW );
+  }
+  
   // cmdMessenger.discard_LF_CR(); // Useful if your terminal appends CR/LF, and you wish to remove them
   cmdMessenger.printLfCr(); // Make output more readable whilst debugging in Arduino Serial Monitor
   
@@ -206,57 +219,19 @@ void setup()
   cmdMessenger.attach(unknownCmd);
   // Attach my application's user-defined callback methods
   attach_callbacks(messengerCallbacks);
-
   arduino_ready();  
 
   // Set up ADC/DAC
   analogWriteResolution( 12 );
   analogReadResolution( 12 ); 
 }
-    
-// ------------------ M A I N ( ) --------------------------------------------
 
-// Timeout handling
-long timeoutInterval = 2000; // 2 seconds
-long previousMillis = 0;
-int counter = 0;
-
-void timeout()
-{
-  // blink
-  if (counter % 2)
-    digitalWrite(13, HIGH);
-  else
-    digitalWrite(13, LOW);
-  counter ++;
-}
 
 void loop()
 {
   // Process incoming serial data, if any
   cmdMessenger.feedinSerialData();
-  // Toggle LED periodically. If the LED does not toggle every 2000 ms, 
-  // this means that cmdMessenger are taking a longer time than this  
-  if (hasExpired(previousToggleLed,2000)) // Toggle every 2 secs
-  {
-    toggleLed();  
-  } 
 }
 
-// Returns if it has been more than interval (in ms) ago. Used for periodic actions
-bool hasExpired(unsigned long &prevTime, unsigned long interval) {
-  if (  millis() - prevTime > interval ) {
-    prevTime = millis();
-    return true;
-  } else     
-    return false;
-}
 
-// Toggle led state 
-void toggleLed()
-{  
-  Serial.println  ("toggle");
-  ledState = !ledState;
-  digitalWrite(kBlinkLed, ledState?HIGH:LOW);
-}  
 

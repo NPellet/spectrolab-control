@@ -647,11 +647,13 @@ Keithley.prototype._callMethod = function( method, options ) {
 					data = prevData + data.toString('ascii');
 			
 					if( data.indexOf("keithley:end;") == -1 ) {
-						console.log("Not found");
+					
 						listen( data );
 					} else {
 						
 						data = data.replace("keithley:end;", "" );
+
+						console.log( data );
 						end( data );
 
 					}

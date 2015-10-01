@@ -15,7 +15,7 @@ var config = {
 			name: 'Arduino DIGIO',
 
 			baudrate: 115200,
-			host: '/dev/cu.usbmodem1411',
+			host: '/dev/cu.usbmodem14211',
 
 			options: {
 			  parity: 'none',
@@ -74,7 +74,7 @@ var config = {
 		"PowerSupplyWhiteLED": {
 			type: 'tektronix-powersupply',
 			name: 'PWS - White LEDs',
-			host: 'USB0::0x0699::0x0392::C011451::INSTR',
+			host: 'USB0::0x0699::0x0392::C011453::INSTR',
 
 			current_sunoutput: [
 
@@ -88,7 +88,7 @@ var config = {
 		"PowerSupplyColoredLED": {
 			type: 'tektronix-powersupply',
 			name: 'PWS - Colored LEDs',
-			host: ''
+			host: 'USB0::0x0699::0x0392::C011451::INSTR'
 		},
 
 		'OBIS 420m': {

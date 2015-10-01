@@ -12,14 +12,20 @@ except NameError: pass
 
 def main():
     
+  
+
     usage = 'usage: %prog [options] <host>'
     parser = OptionParser(usage=usage)
     parser.add_option('--always-check-esr', action='store_true',
             dest='check_esr',
             help='Check the error status register after every command')
 
+    
+    
+
     (options, args) = parser.parse_args()
     logging.basicConfig()
+ 
 
     if len(args) < 1:
         print(parser.format_help())
@@ -29,19 +35,18 @@ def main():
 
     rm = visa.ResourceManager()
 
-    
 
     inst = rm.open_resource( host )
     #inst.query("*IDN?")
     
-    print( rm.list_resources() );
+    #print( rm.list_resources() );
 
-    #print( "ok" )
+    print( "ok" )
     sys.stdout.flush()
 
     # std in    
     while True:
-        print("ok");
+    
         cmd = sys.stdin.readline()
         is_query = cmd.split(' ')[0][-2] == '?'
         try:

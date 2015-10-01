@@ -24,4 +24,5 @@ function measurej( channel, stime )
 	channel.source.output = channel.OUTPUT_OFF
 	printnumber( current / pts )	-- Binary output
 
+	print("keithley:end;");
 end
