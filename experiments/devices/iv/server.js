@@ -1,9 +1,6 @@
 
 module.exports = function( config, app ) {
 
-  console.log( config );
-
-  
     var arduino = app.getInstrument('arduinoDigio');
     var keithley = app.getInstrument('KeithleySMU');
     var pws = app.getInstrument("PWSWhiteLight");

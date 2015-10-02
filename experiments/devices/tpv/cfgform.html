@@ -1,0 +1,33 @@
+<form>
+
+
+<div class="form-group">
+  <label for="pulsecolor">Pulse color</label>
+  <select name="pulsecolor" class="form-control">
+     {% for c in config.instruments.arduinoDigio.digital.LEDCard.colornames %}
+      {% assign colorname = c[1] %}
+       <option value="{{colorname}}">{{colorname}}</option>
+     {% endfor %}
+   </select>
+</div>
+
+
+<div class="form-group">
+  <label for="pulsecolor">AFG Channel</label>
+  <select name="pulsecolor" class="form-control">
+    <option value="A">A</option>
+    <option value="B">B</option>
+  </select>
+</div>
+
+
+<div class="form-group">
+<label for="averaging">Number of averagings</label>
+    <input type="number" class="form-control" id="averagings" name="averagings" placeholder="Enter here the number of averagings" />
+</div>
+
+
+
+
+
+</form>
