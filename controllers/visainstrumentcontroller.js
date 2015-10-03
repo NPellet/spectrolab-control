@@ -1,4 +1,6 @@
 
+"use strict";
+
 var pythonShell = require("python-shell");
 var path = require("path");
 var instrumentcontroller = require("./instrumentcontroller");
@@ -73,12 +75,9 @@ VISAInstrumentController.prototype.connect = function(  ) {
           module.connected = true;
           module.connecting = false;
           module.logOk( "Successfully found VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
-
           module.turnOff();
-
           module.emit("connected");
 
-          console.log('RESOLVE');
           resolver();
 
 
@@ -96,7 +95,7 @@ VISAInstrumentController.prototype.query = function( command ) {
     
     var self = this;
     return new Promise( function( resolver, rejecter ) {
-console.log( command );
+
       self.connect().then( function() {
         
         setTimeout( function() {
@@ -105,7 +104,7 @@ console.log( command );
 
             resolver( message );
           } );
-
+console.log( command );
           self.shellInstance.send( command );  
 
         }, 100 );

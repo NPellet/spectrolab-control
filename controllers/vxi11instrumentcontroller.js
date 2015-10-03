@@ -14,11 +14,15 @@ VXI11InstrumentController.prototype.query = function( command ) {
 
 	var instrument = this;
 	return new Promise( function( resolver, rejecter ) {
+
 		if( ! instrument.shellInstance ) {
 			rejecter("Instrument has no python shell associated");
 		}
+
 		var query = command;
 		var ask = query.indexOf('?') > -1;
+
+
 		if( ask ) {
 
 			function listen( prevData ) {
@@ -125,7 +129,6 @@ VXI11InstrumentController.prototype.connect = function( ) {
 	}
 
 	return promise;
-
 }
 
 module.exports = VXI11InstrumentController;
