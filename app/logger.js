@@ -34,7 +34,15 @@ logger.log = function( message ) {
 	} );
 }
 
+logger.info = function( message ) {
+	logger._log( {
+		type: "info",
+		message: message
+	} );
+}
+
 logger.error = function( message ) {
+	console.error( message );
 	logger._log( {
 		type: "error",
 		message: message

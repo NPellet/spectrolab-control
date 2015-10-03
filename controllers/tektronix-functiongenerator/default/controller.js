@@ -85,8 +85,8 @@ TektronixAFG.prototype.connect = function(  ) {
 			try {
 
 				// Launches a python instance which will communicate in VXI11 with the scope
-				module.shellInstance = new pythonShell( 'io.py', {
-					scriptPath: path.resolve( 'server/util/vxi11/' ),
+				module.shellInstance = new pythonShell( 'iovxi.py', {
+					scriptPath: path.resolve( 'app/util/vxi11/' ),
 					args: [ module.params.host ], // Pass the IP address
 					mode: "text" // Text mode
 				} );
@@ -111,12 +111,12 @@ TektronixAFG.prototype.connect = function(  ) {
 					}
 				});
 
-				module.shellInstance.on( 'error', function() {
+				module.shellInstance.on( 'error', function( error ) {
 
 			//		rejecter( module );
 					module.emit("connectionerror");
 					module.connected = false;
-					module.logError("Error while connecting to Tektronix AFG. Check connection and cables. You may have to reboot it");
+					module.logError("Error while connecting to Tektronix AFG. Check connection and cables. You may have to reboot it. Error was: " + error );
 				});
 
 				module.shellInstance.on( 'message', function( data ) {
@@ -175,7 +175,6 @@ TektronixAFG.prototype.connect = function(  ) {
 function query( module, query ) {
 
 		var ask = query.indexOf('?') > -1;
-console.log( query );
 		return new Promise( function( resolver, rejecter ) {
 
 			if( ask ) {
@@ -496,14 +495,26 @@ TektronixAFG.prototype.wait = function() {
 
 
 function getChannel( channel ) {
+	if( channel.toLowerCase ) {
+		channel = channel.toLowerCase();
+
+		if( channel == "a" ) {
+			return 1;
+		} else if( channel == "b" ) {
+			return 2;
+		}
+	}
+
 	channel = parseInt( channel );
 
 	if( channel == 1 || channel == 2 ) {
 		return channel;
 	}
-	console.log( channel );
+
+	
+
 	console.trace();
-	throw "Channel invalid";
+	throw "Channel " + channel + " invalid";
 }
 
 

@@ -6,11 +6,15 @@ function measurej( channel, stime )
 	if channel == nil then channel = smua end	-- Default to smua if no smu is specified.
 	if stime == nil then stime = 0.04 end	-- Default settlingtime = 0.04 s
 
+	channel.source.highc = 0;
 	channel.source.func = channel.OUTPUT_DCVOLTS
 	channel.source.output = channel.OUTPUT_ON
 	channel.source.levelv = 0
 	channel.source.autorangev = channel.AUTORANGE_ON
+	
 	display.smub.measure.func = display.MEASURE_DCAMPS;
+  	channel.measure.autozero = channel.AUTOZERO_ON
+  	channel.measure.autorangei = channel.AUTORANGE_ON;
 
 	delay( stime )
 

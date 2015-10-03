@@ -318,6 +318,11 @@ function global( IO, Util, ModuleFactory ) {
 					classTr = 'success';
 				break;
 
+
+				case 'info':
+					classTr = 'primary';
+				break;
+
 			}
 
 			classText = classTr !== "" ? 'text-' + classTr : '';

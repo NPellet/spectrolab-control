@@ -29,7 +29,11 @@ TektronixPWS.prototype.connect = function(  ) {
     return new Promise( function( resolver, rejecter ) {
 
       if( module.connecting ) {
-        return module.connecting;
+        return new Promise( function( resolver ) { 
+          module.connecting.then( function() {
+            resolver();
+          });
+        });
       }
 
       // Avoid multiple connection
@@ -39,7 +43,7 @@ TektronixPWS.prototype.connect = function(  ) {
         return;
       }
 
-      module.connecting = resolver;
+      module.connecting = this;
       module.emit("connecting");
 
       module.log( "Trying to connect to Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
@@ -82,13 +86,15 @@ TektronixPWS.prototype.connect = function(  ) {
         clearTimeout( timeout );
         if( message == "ok" ) {
 
-          console.log("ok");
           module.connected = true;
           module.connecting = false;
           module.logOk( "Successfully found Tektronix PWS (" + module.getName() + ") on host " + module.params.host + " via VISA" );
 
+          module.turnOff();
+
           module.emit("connected");
 
+          console.log('RESOLVE');
           resolver();
 
 
@@ -106,16 +112,20 @@ TektronixPWS.prototype.command = function( command ) {
     
     var self = this;
     return new Promise( function( resolver, rejecter ) {
-      
+
       self.connect().then( function() {
+        
+        setTimeout( function() {
+          
+          self.shellInstance.once( "message", function( message ) {
 
-        self.shellInstance.on( "message", function( message ) {
+            resolver( message );
+          } );
 
-          console.log("RETURN: " + message );
-          resolver( message );
-        } );
+          self.shellInstance.send( command );  
 
-        self.shellInstance.send( command );
+        }, 100 );
+        
 
       } );
 
@@ -135,7 +145,7 @@ TektronixPWS.prototype.turnOn = function() {
 }
 
 TektronixPWS.prototype.turnOff = function() {
-  return this.command("SOURce:OUTPut:STATe ON");
+  return this.command("SOURce:OUTPut:STATe OFF");
 }
 
 function getVoltage( v ) {

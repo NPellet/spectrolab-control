@@ -166,7 +166,7 @@ Arduino.prototype.turnLEDOn = function( color ) {
 }
 
 
-Arduino.prototype.turnLEDOff = function() {
+Arduino.prototype.turnLEDOff = function( color ) {
 
 	if( color = this._checkLEDColor( color ) ) {
 		this.setDigital( this.params.digital.LEDCard.colors[ color ], 0 ); // Set the pin HIGH

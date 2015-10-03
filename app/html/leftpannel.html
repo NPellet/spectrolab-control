@@ -69,7 +69,7 @@
 		 	
 
 
-			<li class="instrument list-group-item {% if instr.selected %}selected{% else %}{% if instr.error %}error{% else %}{% if instr.connecting %}connecting{% endif %}{% endif %}{% endif %}" data-instrument="{{ name }}">
+			<li class="instrument list-group-item {% if instr.connected %}connected{% else %}{% if instr.error %}error{% else %}{% if instr.connecting %}connecting{% endif %}{% endif %}{% endif %}" data-instrument="{{ name }}">
 				{{ instr.name }}
 
 				{% if instr.connected == false %}

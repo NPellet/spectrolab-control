@@ -31,24 +31,22 @@ var TektronixOscilloscope = function( params ) {
         var running = true;
 
         var element = queue.shift();
-
         self.connect().then( function() {
 
             query( self, element.command ).then( function( data ) {
-
               element.promiseResolve( data );
-
+  running = false;
+              self.commandRunner.next();
             }, function( data ) {
-
               if( element.command != "*OPC?" ) {
                 self.logError("Error on oscilloscope while running command \"" + element.command + "\". Response: " + data );
               }
               element.promiseReject( { data: data, command: element.command } );
-
-            } ).finally( function() {
-
-              running = false;
+  running = false;
               self.commandRunner.next();
+            } ).finally( function() {
+         //     running = false;
+              //self.commandRunner.next();
 
             });
         });
@@ -82,8 +80,7 @@ TektronixOscilloscope.prototype.connect = function(  ) {
         return;
       }
 
-      console.log( "Trying to connect to host " + module.params.host + " via VXI11" );
-
+      module.log( "Trying to connect to Tektronix Oscilloscope on host " + module.params.host + " via VXI11" );
 
       var timeout = setTimeout( function() {
         module.shellInstance.end( function() {
@@ -95,7 +92,7 @@ TektronixOscilloscope.prototype.connect = function(  ) {
 
 
       // Launches a python instance which will communicate in VXI11 with the scope
-      module.shellInstance = new pythonShell( 'io.py', {
+      module.shellInstance = new pythonShell( 'iovxi.py', {
         scriptPath: path.resolve( 'app/util/vxi11/' ),
         args: [ module.params.host ], // Pass the IP address
         mode: "text" // Text mode
@@ -107,26 +104,40 @@ TektronixOscilloscope.prototype.connect = function(  ) {
 */
 
       module.connected = true;
+      module.emit("connecting");
+      module.connecting = true;
 
       module.shellInstance.once( 'message', function( data ) {
 
+          module.connecting = false;
+console.log( data );
           if( data == "IO:connected" ) {
 
             // Timeout is fine
-            clearTimeout( timeout );
-            timeout = null;
+
+            if( timeout ) {
+              clearTimeout( timeout );
+              timeout = null;
+            }
 
             module.getErrors().then( function() {
+console.log("b");
+              module.stopAquisition();
+              console.log("a");
+              module.connected = true;
+              module.emit("connected");
+              module.logOk("Connected to Tektronix Oscilloscope on host " + module.params.host + " via VXI11" );
 
               resolver( module );
-              module.stopAquisition();
-              module.emit("connected");
-
             });
 
           } else if( data == "IO:unreachable") {
             rejecter( module );
             module.emit("connectionerror");
+
+          
+            module.connected = false;
+            module.logError("Unexpected response from Tektronix Oscilloscope during connection. Response was : " + data );
           }
       });
     } );
@@ -192,7 +203,6 @@ function query( module, query ) {
         }
 
         listen("");
-
         module.shellInstance.send( query );
 
       } else {
@@ -207,6 +217,8 @@ function query( module, query ) {
 
 TektronixOscilloscope.prototype.getErrors = function() {
   var self = this;
+
+
   this.command("*ESR?"); // Read errors from the Status Event Register. Put then into the queue
 
   return new Promise( function( resolver ) {
@@ -218,7 +230,7 @@ TektronixOscilloscope.prototype.getErrors = function() {
       while( true ) {
 
         self.command("SYSTEM:ERROR:NEXT?").then( function( error ) {
-
+console.log( error );
             error = error.split(',');
             var errorCode = parseInt( error[ 0 ] );
             var errorMessage = error[ 1 ].replace( /"/g, '' );

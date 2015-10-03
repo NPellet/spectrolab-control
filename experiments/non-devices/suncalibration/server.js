@@ -9,19 +9,22 @@ module.exports = function( config, app ) {
 	var PWS = app.getInstrument("PowerSupplyWhiteLED");
 	var Keithley = app.getInstrument("KeithleySMU");
 
+	PWS.setCurrentLimit( 0.7 );
 
 	return new Promise( function( resolver, rejecter ) {
 
 		var calibrationCurve = [];
-		var maxCurrent = 1; // 1A ABSOLUTE maximum per LED
-		var nbpointscalibration = 100;
+		var minVoltage = 20;
+		var maxVoltage = 29; // 1A ABSOLUTE maximum per LED
+		var nbpointscalibration = 60;
 
 		function processCalibration() {
 
 			// Easiest implementation: Consider absolute linearity of the photodiode (good for Centronic 5T series, for example)
 
-			var calibrationCurve = calibrationCurve.map( function( pair ) {
-				pair[ 1 ] /= config.currentAt1Sun;
+			calibrationCurve = calibrationCurve.map( function( pair ) {
+				pair[ 1 ] /= config.currentat1sun;
+				return pair;
 			});
 
 			// current vs sun intensity (1 = 1 sun)
@@ -34,28 +37,29 @@ module.exports = function( config, app ) {
 			// Spread across the remaining range, starting at one sun
 			if( oneSunIndex ) {
 				for( var i = 0, l = config.nbpointscalibrationcurve - 1; i < l; i ++ ) { // -2 because one point already exists
+
+					if( Math.floor( ( 1 - i / ( l + 1 ) ) * oneSunIndex ) < 0 ) {
+						break;
+					}
+
 					retainedCalibration.push( calibrationCurve[ Math.floor( ( 1 - i / ( l + 1 ) ) * oneSunIndex ) ] );
 				}
 			}
 
-			var jsonOutput = {};
-
+			var jsonOutput = [];
 			for( var i = retainedCalibration.length - 1 ; i >= 0; i -- ) {
-
-				jsonOutput.push( { current: retainedCalibration[ i ][ 0 ], sun: retainedCalibration[ i ][ 1 ], text: ( retainedCalibration[ i ][ 1 ] * 100 ).toPrecision( 4 ) } );
+				jsonOutput.push( { voltage: retainedCalibration[ i ][ 0 ], sun: retainedCalibration[ i ][ 1 ], text: ( retainedCalibration[ i ][ 1 ] * 100 ).toPrecision( 4 ) + "% sun" } );
 			}
 
-			app.getConfig().instruments.PowerSupplyWhiteLED.current_sunoutput = jsonOutput;
-
-			console.log( app.getConfig() );
-		//	app.saveConfig();
-
+			app.getConfig().instruments.PowerSupplyWhiteLED.voltage_sunoutput = jsonOutput;
+			app.saveConfig();
+			app.getLogger().log( "Calibration terminated ! " + jsonOutput.push + " calibration points created. Maximum sun intensity: " + jsonOutput[ jsonOutput.length - 1 ].text + ". Minimum sun intensity: " + jsonOutput[ 0 ].text );
 			resolver();
 		}
 
 		function findCalibrationPoint( sunIntensity ) {
 
-			for( var i = 0, l = nbpointscalibration - 2; i < l ; i ++ ) {
+			for( var i = 0, l = calibrationCurve.length; i < l ; i ++ ) {
 				if( calibrationCurve[ i ][ 1 ] < sunIntensity && calibrationCurve[ i + 1 ][ 1 ] > sunIntensity ) {
 					return i;
 				}
@@ -68,24 +72,28 @@ module.exports = function( config, app ) {
 
 
 			i = i || 0;
-console.log( "NUM:", nbpointscalibration, i );
-			if( i > nbpointscalibration - 1 ) {
+
+
+			if( i > nbpointscalibration ) {
+
+				PWS.turnOff();
 				processCalibration();
 				return new Promise( function( resolver ) { resolver(); } );
 			}
 
 
-			levelRatio = ( Math.exp( i / nbpointscalibration ) - 1 ) / ( Math.E - 1 ); // Between 0 and 1
+			levelRatio = ( Math.exp( i / nbpointscalibration * 2  ) - 1 ) / ( Math.exp( 2 ) - 1 ); // Between 0 and 1
 
-			console.log( levelRatio, maxCurrent );
-			current = Math.round( maxCurrent * levelRatio * 1000 ) / 1000;
+			voltage = Math.round( ( maxVoltage - minVoltage ) * levelRatio * 10000 ) / 10000 + minVoltage;
 
 			
 
 			return new Promise( function( resolver, rejecter ) { 
 
-				PWS.setCurrentLimit( current ).then( function() {
+				PWS.turnOff();
+				PWS.setVoltageLimit( voltage ).then( function() {
 
+					PWS.turnOn();
 					setTimeout( function() {
 		
 						Keithley.measureJ( {
@@ -96,8 +104,16 @@ console.log( "NUM:", nbpointscalibration, i );
 							voltage: 0
 
 						} ).then( function( jsc ) {
-console.log('CALIBRATED ' + i );
-							calibrationCurve.push( [ current, jsc ] );
+
+							
+							if( jsc > 0 ) {
+								app.getLogger().info( "Diode current @" + voltage + "V: " + jsc + "A (sun intensity: " + Math.round( jsc / config.currentat1sun * 100000 ) / 1000 + "%). Skipping."  );
+
+							} else {
+								app.getLogger().info( "Diode current @" + voltage + "V: " + jsc + "A (sun intensity: " + Math.round( jsc / config.currentat1sun * 100000 ) / 1000 + "%)"  );
+								calibrationCurve.push( [ voltage, jsc ] );								
+							}
+
 							calibrate( i + 1 ).then( function() {
 								resolver();
 							} );
@@ -117,7 +133,7 @@ console.log('CALIBRATED ' + i );
 
 		// Running variables
 		var levelRation,
-			current;
+			voltage;
 
 		// Let's run a a calibration curve over 100 channels
 	//	ArduinoStage.translateToPosition( config.referencePosition ).then( function() {

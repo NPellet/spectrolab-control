@@ -2,13 +2,13 @@
 module.exports = {
   modules: {
 
-    IV: {
-      title: "IV measurement",
-      path: 'display/iv',
+    vocDecay: {
+      title: "Transient photovoltage",
+      path: 'display/graph',
       width: 30,
       height: 20,
-      top: 0,
-      left: 0
+      top: 2,
+      left: 2
     }
 
   },

@@ -1,6 +1,6 @@
 
 var public = {}
-
+var os = require('os');
 public.guid = function() {
 	// http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
