@@ -182,7 +182,7 @@ module.exports = function( config, app ) {
 
 	    }, 5000 );
 	    
-	    return oscilloscope.ready().then( function() {
+	    return oscilloscope.whenready().then( function() {
 	      afg.disableChannels();
 	      return oscilloscope.getWaves();
 	    })
@@ -213,7 +213,7 @@ module.exports = function( config, app ) {
 
 
 
-	    return oscilloscope.ready().then( function() {
+	    return oscilloscope.whenready().then( function() {
 	      afg.enableBurst( 1 );
 	      afg.enableBurst( 2 );
 
@@ -326,7 +326,7 @@ module.exports = function( config, app ) {
 
 	    afg.getErrors();
 
-	    return oscilloscope.ready();
+	    return oscilloscope.whenready();
 	  }
 
 

@@ -49,6 +49,8 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 		try {
 
 			serialPort = new SerialPort( host, extend( options, { baudrate: baudrate } ) );
+
+
 			// The serial device has been opened
 			serialPort.on("open", function() {
 				clearTimeout( timeout );
@@ -98,16 +100,15 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			var response = "";
 			function endData( data ) {
-
-				if( serialDevice._serialCurrentQueue ) {
-
-					serialDevice._serialCurrentQueue.resolver( data );
+				
+			
+				if( serialDevice.serialResolver ) {
 
 					serialPort.drain( function() {
 
 						serialPort.flush( function() {
 
-							serialProcessQueue( serialDevice );
+							serialDevice.serialResolver();
 						});
 					});
 				}
@@ -141,138 +142,20 @@ function serialCall( serialDevice, method, priority ) {
 
 	serialDevice.currentResponse = "";
 
-	serialDevice._serialQueue = serialDevice._serialQueue || {};
-	serialDevice._serialQueue[ priority ] = serialDevice._serialQueue[ priority ] || [];
+	serialDevice.command( method, priority );
 
-	
-	return new Promise( function( resolver, rejecter ) {
 
-		serialDevice._serialQueue[ priority ].push( { 
-			method: method, 
-			resolver: resolver, 
-			rejecter: rejecter 
-		} );
-
-		 serialCheckQueue( serialDevice );
-
-	} );
 }
 
-function serialCheckQueue( serialDevice ) {
 
-	if( serialCheckQueue._serialProcessingQueue ) { // Calls are already in progress
-		return;
-	}	
-
-	serialDevice._serialQueue = serialDevice._serialQueue || {};
-
-	var serialNumberInQueue = 0;
-
-	for( var q in serialDevice._serialQueue ) {
-		serialNumberInQueue += serialDevice._serialQueue[ q ].length;
-	}
-	
-	if( serialNumberInQueue ) {
-
-		serialDevice.serialReady = new Promise( function( resolver ) {
-			serialDevice._serialReadyResolver = resolver;
-		});
-
-		serialProcessQueue( serialDevice );
-	}
-}
-
-function serialProcessQueue( serialDevice ) {
-	
-	if( serialDevice._serialQueue && serialDevice._serialQueue.length == 0 ) {
-
-		serialDevice._serialProcessingQueue = false;
-		serialDevice._serialReadyResolver();
-		return;
-	}
-
-	serialDevice._serialProcessingQueue = true;
-
-	return serialDevice.serialConnect().then( function( serialPort ) {
-
-		var keys = Object.keys( serialDevice._serialQueue );
-		keys.sort();
-		var i = 0;
-
-
-		while( serialDevice._serialQueue[ keys[ i ] ].length == 0 ) {
-			i ++;
-
-			if( i == keys.length ) {
-				return "No more queue. Error";
-			}
-		}
-
-
-		var queueElement = serialDevice._serialQueue[ keys[ i ] ].shift();
-
-
-
-		var timeout;
-
-		setTimeout( function() {
-
-			serialPort.write( queueElement.method + "\n\r", function( err, results ) {
-
-				if( err ) {
-					throw err;
-				}
-
-				if( timeout ) {
-					clearTimeout( timeout );
-				}
-
-			} );
-
-
-		}, 20 );
-		
-		// The request has just been sent...
-		timeout = setTimeout( function() {
-			
-			console.log('Serial port timeout. Closing connection');
-
-			serialDevice.closeSerial( ).then( function() {
-
-				console.log('Connection closed. Re-opening connection');
-
-				serialDevice.serialConnect( ).then( function() {
-
-					console.log('Connection reopened');
-
-					serialDevice._serialQueue.unshift( queueElement );
-					serialProcessQueue( serialDevice );
-
-				} );
-
-			} );
-
-		}, 10000 );
-
-
-		serialDevice._serialCurrentQueue = queueElement;
-
-	});
-}
-
-SerialDevice.prototype.serialConnect = function( ) {
+SerialDevice.prototype.connect = function( ) {
 
 	var self = this;
 
 	if( this.serialCheckConnection() ) {
-
-
 		return new Promise( function( resolver ) { resolver( self._serialPort ); } );
-
 	} else {
-
 		return serialConnect( this, this.serialGetHost(), this.serialGetBaudrate(), this.serialGetOptions() );
-
 	}
 
 }
@@ -284,7 +167,7 @@ SerialDevice.prototype.serialClose = function() {
 
 	return new Promise( function( resolver, rejecter ) {
 
-		serialDevice.serialPort.close( function( ) {
+		serialDevice._serialPort.close( function( ) {
 
 			serialDevice._serialConnected = false;
 			resolver();
@@ -297,10 +180,6 @@ SerialDevice.prototype.serialCheckConnection = function() {
 	return this._serialConnected;
 }
 
-SerialDevice.prototype.serialCommand = function( command, priority ) {
-
-	return serialCall( this, command, priority || 1 );
-}
 
 SerialDevice.prototype.serialGetHost = function( ) {
 	return this._serialHost;
@@ -324,6 +203,59 @@ SerialDevice.prototype.serialGetOptions = function() {
 
 SerialDevice.prototype.serialSetOptions = function( options ) {
 	this._serialOptions = options;
+}
+
+
+SerialDevice.prototype.query = function( command, queueElement ) {
+
+	var instrument = this;
+
+	return new Promise( function( resolver, rejecter ) {
+
+		instrument.serialResolver = resolver;
+		instrument.serialRejecter = rejecter;
+
+		var timeout;
+
+		setTimeout( function() {
+
+			instrument._serialPort.write( command + "\n\r", function( err, results ) {
+
+				if( err ) {
+					throw err;
+				}
+
+				if( timeout ) {
+					clearTimeout( timeout );
+				}
+
+			} );
+
+
+		}, 20 );
+		
+		// The request has just been sent...
+		timeout = setTimeout( function() {
+			
+			console.log('Serial port timeout. Closing connection');
+
+			instrument.closeSerial( ).then( function() {
+
+				console.log('Connection closed. Re-opening connection');
+
+				instrument.serialConnect( ).then( function() {
+
+					console.log('Connection reopened');
+					instrument._queue.unshift( queueElement );
+					rejecter();
+					
+				} );
+
+			} );
+
+		}, 10000 );
+
+	} );
 }
 
 module.exports = SerialDevice;

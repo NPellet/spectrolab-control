@@ -27,7 +27,6 @@ var Arduino = function( params ) {
 
 Arduino.prototype = new InstrumentController();
 
-Arduino.prototype.connect = Arduino.prototype.serialConnect;
 
 Arduino.prototype.onConnectionInit = function() {
 
@@ -46,7 +45,7 @@ Arduino.prototype.onConnectionInit = function() {
 }
 
 Arduino.prototype.initPin = function( pinNumber, pinValue ) {
-	return this.serialCommand( "8," + pinNumber + "," + pinValue + ";", -1 );
+	return this.command( "8," + pinNumber + "," + pinValue + ";", -1 );
 }
 
 
@@ -54,7 +53,7 @@ Arduino.prototype.readDigital = function( pinNumber ) {
 
 	var self = this;
 	return this
-		.serialCommand( "6," + pinNumber + ";" )
+		.command( "6," + pinNumber + ";" )
 		.then( function ( d ) { return self.parseCommandResponse( d ); } )
 		.then( function( d ) {
 			
@@ -71,7 +70,7 @@ Arduino.prototype.readAnalog = function( pinNumber ) {
 
 	var self = this;
 	return this
-		.serialCommand( "7," + pinNumber + ";" )
+		.command( "7," + pinNumber + ";" )
 		.then( function( d ) {
 			
 			if( d === undefined ) {
@@ -83,7 +82,7 @@ Arduino.prototype.readAnalog = function( pinNumber ) {
 
 Arduino.prototype.setDigital = function( pinNumber, pinValue ) {
 
-	return this.serialCommand( "5," + pinNumber + "," + pinValue + ";" );
+	return this.command( "5," + pinNumber + "," + pinValue + ";" );
 }
 
 
@@ -191,20 +190,6 @@ Arduino.prototype._checkLEDColor = function( color ) {
 
 
 
-
-
-
-
-
-
-
-Arduino.prototype.command = function() {
-	return this
-		.serialCommand( cmd )
-		.then( function( d ) {
-			return self._parseCommandResponse( d );
-		} );
-}
 
 Arduino.prototype._parseCommandResponse = function( response ) {
 

@@ -8,212 +8,18 @@ var
   pythonShell = require("python-shell"),
   promise = require("bluebird");
 
-var InstrumentController = require("../../instrumentcontroller");
+var InstrumentController = require("../../vxi11instrumentcontroller");
 var Waveform = require("../../../app/waveform");
 
 var TektronixOscilloscope = function( params ) {
   this.params = params;
   this.connected = false;
   this.queue = [];
-
-
-  var self = this;
-  function *runCommands( queue ) {
-
-    while( true ) {
-
-        while( queue.length == 0 ) {
-
-          self.emit("queueEmpty");
-          yield;
-        }
-
-        var running = true;
-
-        var element = queue.shift();
-        self.connect().then( function() {
-
-            query( self, element.command ).then( function( data ) {
-              element.promiseResolve( data );
-  running = false;
-              self.commandRunner.next();
-            }, function( data ) {
-              if( element.command != "*OPC?" ) {
-                self.logError("Error on oscilloscope while running command \"" + element.command + "\". Response: " + data );
-              }
-              element.promiseReject( { data: data, command: element.command } );
-  running = false;
-              self.commandRunner.next();
-            } ).finally( function() {
-         //     running = false;
-              //self.commandRunner.next();
-
-            });
-        });
-
-        yield;
-
-        // Does nothing if next is called and the process is running already
-        while( running ) {
-          yield;
-        }
-    }
-  }
-
-  this.commandRunner = runCommands( this.queue );
-  this.runCommands();
 };
 
 
 TektronixOscilloscope.prototype = new InstrumentController();
 
-TektronixOscilloscope.prototype.connect = function(  ) {
-
-    var module = this;
-
-    return new Promise( function( resolver, rejecter ) {
-
-      // Avoid multiple connection
-      if( module.connected ) {
-
-        resolver();
-        return;
-      }
-
-      module.log( "Trying to connect to Tektronix Oscilloscope on host " + module.params.host + " via VXI11" );
-
-      var timeout = setTimeout( function() {
-        module.shellInstance.end( function() {
-          module.emit("connectionerror");
-        });
-
-
-      }, module.params.timeout || 10000 );
-
-
-      // Launches a python instance which will communicate in VXI11 with the scope
-      module.shellInstance = new pythonShell( 'iovxi.py', {
-        scriptPath: path.resolve( 'app/util/vxi11/' ),
-        args: [ module.params.host ], // Pass the IP address
-        mode: "text" // Text mode
-      } );
-
-    /*	module.shellInstance.on("message", function( data ) {
-        console.log( data );
-      })
-*/
-
-      module.connected = true;
-      module.emit("connecting");
-      module.connecting = true;
-
-      module.shellInstance.once( 'message', function( data ) {
-
-          module.connecting = false;
-console.log( data );
-          if( data == "IO:connected" ) {
-
-            // Timeout is fine
-
-            if( timeout ) {
-              clearTimeout( timeout );
-              timeout = null;
-            }
-
-            module.getErrors().then( function() {
-console.log("b");
-              module.stopAquisition();
-              console.log("a");
-              module.connected = true;
-              module.emit("connected");
-              module.logOk("Connected to Tektronix Oscilloscope on host " + module.params.host + " via VXI11" );
-
-              resolver( module );
-            });
-
-          } else if( data == "IO:unreachable") {
-            rejecter( module );
-            module.emit("connectionerror");
-
-          
-            module.connected = false;
-            module.logError("Unexpected response from Tektronix Oscilloscope during connection. Response was : " + data );
-          }
-      });
-    } );
-
-  }
-
-  TektronixOscilloscope.prototype.runCommands = function() {
-
-    this.commandRunner.next();
-  }
-
-  TektronixOscilloscope.prototype.command = function( command ) {
-
-    var self = this;
-
-    return new Promise( function( resolver, rejecter ) {
-
-      self.queue.push( {
-
-        command: command,
-        promiseResolve: resolver,
-        promiseReject: rejecter
-      } );
-
-      self.runCommands();
-    }).catch( function( error ) {
-      // Reset queue
-      throw error;
-      self.queue = [];
-    });
-  }
-
-
-  TektronixOscilloscope.prototype.commands = function( commands ) {
-    var self = this;
-    commands.map( function( cmd ) {
-      self.command(cmd);
-    } );
-  }
-
-
-function query( module, query ) {
-
-    var ask = query.indexOf('?') > -1;
-
-    return new Promise( function( resolver, rejecter ) {
-
-      if( ask ) {
-
-        function listen( prevData ) {
-
-          module.shellInstance.once( 'message', function( data ) {
-
-            data = prevData + data.toString('ascii');
-            data = data.replace("\n", "");
-            if( data.indexOf( "ERROR" ) > -1 ) {
-              rejecter( data );
-            } else {
-              resolver( data );
-            }
-
-          } );
-        }
-
-        listen("");
-        module.shellInstance.send( query );
-
-      } else {
-
-        module.shellInstance.send( query );
-        resolver();
-      }
-
-
-    } );
-}
 
 TektronixOscilloscope.prototype.getErrors = function() {
   var self = this;
@@ -230,7 +36,7 @@ TektronixOscilloscope.prototype.getErrors = function() {
       while( true ) {
 
         self.command("SYSTEM:ERROR:NEXT?").then( function( error ) {
-console.log( error );
+
             error = error.split(',');
             var errorCode = parseInt( error[ 0 ] );
             var errorMessage = error[ 1 ].replace( /"/g, '' );
@@ -515,7 +321,7 @@ TektronixOscilloscope.prototype.get50Ohms = function( channel ) {
 
   channel = getChannel( channel );
 
-  return this.query( channel + ":TERMINATION?" ).then( function( val ) {
+  return this.command( channel + ":TERMINATION?" ).then( function( val ) {
 
 
   });
@@ -903,7 +709,7 @@ TektronixOscilloscope.prototype.setVCursorsPosition = function( cursorNumber, po
 
 
 
-TektronixOscilloscope.prototype.ready = function( delay ) {
+TektronixOscilloscope.prototype.whenready = function( delay ) {
   //this.command( "*OPC" );
   var self = this;
 
@@ -912,7 +718,7 @@ TektronixOscilloscope.prototype.ready = function( delay ) {
     if( data == 0 ) {
       return true;
     }
-    return self.command( "*OPC?" ).then( function( data ) {
+    return self.command( "*OPC?", -2 ).then( function( data ) {
       if( delay ) {
         return new Promise( function( resolver, rejecter ) {
           setTimeout( resolver, delay * 1000 );
@@ -922,7 +728,7 @@ TektronixOscilloscope.prototype.ready = function( delay ) {
       }
 
     }, function( data ) {
-      return self.ready();
+      return self.whenready();
     });
 
   })
@@ -939,49 +745,6 @@ function processData( data ) {
   return data.split(",").map( parseFloat );
 }
 
-
-function callCommand( instance, cmd, ask ) {
-
-  var queries = instance.queries;
-
-
-  var promise = new Promise( function( resolver, rejecter ) {
-
-    if( ask ) {
-
-      function listen( prevData ) {
-
-        instance.once( 'data', function( data ) {
-
-          data = prevData + data.toString('ascii');
-          if( data.indexOf("\n") == -1 ) {
-            listen( data );
-          } else {
-
-            if( data.indexOf( cmd ) == 0 ) { // The response is exactly what has been requested
-              resolver( data );
-            } else {
-              throw "The oscilloscope response was unexpected. Message : " + data;
-            }
-          }
-
-        } );
-      }
-
-      listen("");
-      instance.send( cmd + "?" );
-
-    } else {
-
-      instance.send( cmd );
-    }
-
-  } );
-
-
-
-  return promise;
-}
 
 module.exports = TektronixOscilloscope;
 
