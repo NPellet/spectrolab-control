@@ -4,7 +4,6 @@
 var
   extend = require('extend'),
   events = require("events"),
-  pythonShell = require("python-shell"),
   promise = require("bluebird"),
   path = require("path");
 
@@ -15,6 +14,13 @@ var TektronixPWS = function( params ) {
   this.connected = false;
   this.queue = [];
   this.connectQueue = [];
+
+  var self = this;
+  
+  this.on("connected", function() {
+    self.turnOff( -1 );
+  });
+
 
   var self = this;
 };
@@ -30,12 +36,12 @@ TektronixPWS.prototype.setCurrentLimit = function( voltage ) {
   return this.command("SOURce:CURRent:LEVel " + getCurrent( voltage ) );
 }
 
-TektronixPWS.prototype.turnOn = function() {
-  return this.command("SOURce:OUTPut:STATe ON");
+TektronixPWS.prototype.turnOn = function( priority ) {
+  return this.command("SOURce:OUTPut:STATe ON", priority );
 }
 
-TektronixPWS.prototype.turnOff = function() {
-  return this.command("SOURce:OUTPut:STATe OFF");
+TektronixPWS.prototype.turnOff = function( priority ) {
+  return this.command("SOURce:OUTPut:STATe OFF", priority );
 }
 
 function getVoltage( v ) {

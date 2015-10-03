@@ -53,7 +53,9 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 
 			// The serial device has been opened
 			serialPort.on("open", function() {
+
 				clearTimeout( timeout );
+				
 				if( serialDevice.onConnectionInit ) {
 					serialDevice.onConnectionInit();
 				}
@@ -101,7 +103,7 @@ function serialConnect( serialDevice, host, baudrate, options, timeoutTime ) {
 			var response = "";
 			function endData( data ) {
 				
-			
+
 				if( serialDevice.serialResolver ) {
 
 					serialPort.drain( function() {
@@ -218,7 +220,7 @@ SerialDevice.prototype.query = function( command, queueElement ) {
 		var timeout;
 
 		setTimeout( function() {
-
+console.log( command );
 			instrument._serialPort.write( command + "\n\r", function( err, results ) {
 
 				if( err ) {

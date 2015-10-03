@@ -75,7 +75,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
           module.connected = true;
           module.connecting = false;
           module.logOk( "Successfully found VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
-          module.turnOff();
+          
           module.emit("connected");
 
           resolver();
@@ -104,7 +104,7 @@ VISAInstrumentController.prototype.query = function( command ) {
 
             resolver( message );
           } );
-console.log( command );
+console.log( command, self.getName() );
           self.shellInstance.send( command );  
 
         }, 100 );
