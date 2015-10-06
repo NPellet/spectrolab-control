@@ -66,6 +66,10 @@
         background-color: #dff0d8; }
         #leftpannel ul li.selected:hover, #leftpannel ul li.connected:hover {
           background-color: #a3d48e; }
+      #leftpannel ul li.running {
+        background-color: #F7ECA1; }
+        #leftpannel ul li.running:hover {
+          background-color: #efd943; }
       #leftpannel ul li.error {
         background-color: #E8B7B7; }
         #leftpannel ul li.error:hover {
@@ -83,10 +87,22 @@
             -moz-animation: spin 4s linear infinite;
             animation: spin 4s linear infinite; }
 
+[contenteditable="true"].single-line {
+  white-space: nowrap;
+  width: 200px;
+  overflow: hidden; }
+  [contenteditable="true"].single-line br {
+    display: none; }
+  [contenteditable="true"].single-line * {
+    display: inline;
+    white-space: nowrap; }
+
 #bottompannel {
   position: fixed;
   bottom: 0px;
   width: 100%; }
+  #bottompannel .panel-heading {
+    background-color: #aac6c4; }
 
 #grid {
   padding: 0px;

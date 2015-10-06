@@ -172,35 +172,35 @@
 	},
 	"devices": [
 		{
-			"name": "Position 1",
+			"name": "Device 1",
 			"position": 0
 		},
 		{
-			"name": "Position 2",
+			"name": "Device 2",
 			"position": 1
 		},
 		{
-			"name": "Position 3",
+			"name": "Device 3",
 			"position": 2
 		},
 		{
-			"name": "Position 4",
+			"name": "Device 4",
 			"position": 3
 		},
 		{
-			"name": "Position 5",
+			"name": "Device 5",
 			"position": 4
 		},
 		{
-			"name": "Position 6",
+			"name": "Device 6",
 			"position": 5
 		},
 		{
-			"name": "Position 7",
+			"name": "Device 7",
 			"position": 6
 		},
 		{
-			"name": "Position 8",
+			"name": "Device 8",
 			"position": 7
 		}
 	],

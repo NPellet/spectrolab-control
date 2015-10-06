@@ -87,6 +87,9 @@ VXI11InstrumentController.prototype.connect = function( ) {
 				mode: "text" // Text mode
 			} );
 
+
+			module.emit("connecting");
+
 			// At this point we are already connected. No asynchronous behaviour with python
 			instrument.shellInstance.once( 'message', function( data ) {
 
@@ -110,12 +113,14 @@ VXI11InstrumentController.prototype.connect = function( ) {
 			instrument.shellInstance.on( 'error', function( error ) {
 
 		//		rejecter( module );
-				instrument.emit("connectionerror");
+				instrument.connecting = false;
 				instrument.connected = false;
+				instrument.emit("connectionerror");
+				
 				instrument.logError("Error while connecting to " + instrument.getName() + " . Check connection and cables. You may have to reboot it. Error was: " + error );
 			});
 
-	
+			instrument.shellInstance.send("connect\n");
 
 		} catch( e ) {
 			instrument.emit("connectionerror");

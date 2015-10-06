@@ -46,7 +46,17 @@
 
 			{% for device in devices %}
 				<li class="device list-group-item {% if device.selected %}selected{% endif %}" data-deviceposition="{{ device.position }}">
-					{{ device.name }}
+					<span contentEditable="true" class="single-line">
+						{{ device.name }}
+					</span> (Pos {{ device.position }})
+
+					&nbsp;
+
+					{% if device.selected %}
+						<span class="pull-right deviceselect glyphicon glyphicon-check"></span>
+					{% else %}
+						<span class="pull-right deviceselect glyphicon glyphicon-unchecked"></span>
+					{% endif %}
 				</li>
 			{% endfor %}
 		</ul>

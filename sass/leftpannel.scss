@@ -69,6 +69,15 @@
 					background-color: darken( #dff0d8, 20% );
 				}
 			}
+
+			&.running {
+
+				background-color: #F7ECA1;
+
+				&:hover {
+					background-color: darken( #F7ECA1, 20% );
+				}
+			}
 			
 			&.error {
 
@@ -105,6 +114,23 @@
 	}
 }
 
+[contenteditable="true"] {
+
+	&.single-line {
+	    white-space: nowrap;
+	    width:200px;
+	    overflow: hidden;
+
+	    br {
+	    	display: none;
+	    }
+
+	    * {
+			display: inline;
+			white-space: nowrap;
+	    }
+	} 
+}
 
 @function legacy-direction($value) {
   @if is-direction($value) == false {

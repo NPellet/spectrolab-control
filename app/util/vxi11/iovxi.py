@@ -95,12 +95,6 @@ def main():
     if len(args) > 1:
         name = args[1]
 
-    v = vxi11.Instrument(host, name)
-    v.open()
-
-    print("IO:connected");
-    sys.stdout.flush();
-
 
     #print("Enter command to send. Quit with 'q'. Read with '?'.")
 
@@ -109,6 +103,15 @@ def main():
 
     while True:
         cmd = sys.stdin.readline()
+
+
+        if cmd == "connect\n":
+            v = vxi11.Instrument(host, name)
+            v.open()
+            print("IO:connected");
+            sys.stdout.flush();
+            continue
+
     	is_query = cmd.split(' ')[0][-2] == '?'
         try:
             if is_query:

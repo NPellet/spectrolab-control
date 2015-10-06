@@ -50,14 +50,7 @@ function global( IO, Util, ModuleFactory ) {
 	var experimentStatus = "stopped";
 
 	var btns = $("#experiment-run .run input").add( $("#experiment-run .abort input") );
-	var deviceName = $("#device-name");
-
-	deviceName.on('keyup blur change', function() {
-
-		var value = $( this ).prop( 'value' );
-		IO.writeGlobal( "deviceName", value );
-	});
-
+	
 
 	$("#run-experiment").on('click', function() {
 
@@ -85,70 +78,71 @@ function global( IO, Util, ModuleFactory ) {
 		}
 	});
 
+	$( "#erase-methods" ).on( "click", function() {
 
-	IO.onGlobal( "showModal", function( html ) {
-		var id;
-		html = $( html ).attr('id', ( id = Util.guid() ) );
-		$("body").append( html );
-
-		$("#" + id ).modal( ).on('click', 'button.ok', function() {
-
-			IO.writeGlobal( 'modalOk' );
-			$("#" + id ).modal( 'hide' );
-		});
-
+		IO.writeGlobal("erasemethods");
 	} );
+
 
 
 	IO.onGlobal( "html", function( html ) {
-		$("#grid").html( html );
 
-		ModuleFactory.parseDom( $("#grid") ).then( function() {
+		$("#grid-content").html( html );
+
+		ModuleFactory.parseDom( $("#grid-content") ).then( function() {
 			IO.writeGlobal( "modulesReady" );
 		} );
-	} );
-
-	IO.onGlobal( "experiment-running", function() {
-
-		experimentStatus = "running";
-		$("#run-experiment").prop("disabled", false ).html("Pause");
-		$("#run-experiment").prop( "disabled", false );
-		$("#abort-experiment").prop( "disabled", false );
-	} );
-
-
-	IO.onGlobal( "experiment-pausing", function() {
-
-		experimentStatus = "pausing";
-		$("#run-experiment").prop("disabled", true ).html("Pausing...");
-		$("#abort-experiment").prop( "disabled", true );
 
 	} );
 
-	IO.onGlobal( "experiment-aborting", function() {
+	IO.onGlobal( "state", function( state ) {
 
-		experimentStatus = "pausing";
-		$("#run-experiment").prop("disabled", true );
-		$("#abort-experiment").prop( "disabled", true ).html("Aborting...");
+		if( state.modal ) {
 
+			var modal = $( "#modal-modal" ).modal( );
+
+			if( state.modal.countdown ) {
+
+				var countdown = $( "<span>Auto ok in <span class='timer'></span></span>" );
+				modal.find(".modal-body .countdown").html( countdown );
+
+				window.setInterval( function() {
+
+					countdown.children(".timer").html( Math.round( state.modal.remaining ) + "s" );
+					state.modal.remaining -= 1;
+
+				}, 1000 );
+
+			}
+
+			modal.find( ".modal-body .text" ).html( state.modal.text );
+			modal.find( ".modal-title" ).html( state.modal.title );
+			modal.find( ".ok" ).html( state.modal.buttonText );
+
+		} else {
+			
+			$( "#modal-modal" ).modal( "hide" )			
+		}
+
+
+		if( state.method ) {
+
+			$("#leftpannel .method")
+				.removeClass("running")
+				.find(".glyphicon")
+				.remove()
+				.end()
+				.filter("[data-method-id=" + state.method + "]")
+				.addClass('running')
+				.append('<span class="pull-right glyphicon glyphicon-record"></span>');
+		}
 	} );
 
+	$("#modal-modal" ).on('click', 'button.ok', function() {
 
-	IO.onGlobal( "experiment-paused", function() {
-
-		experimentStatus = "paused";
-		$("#run-experiment").prop("disabled", false ).html("Resume experiment");
-		$("#abort-experiment").prop( "disabled", false );
-	} );
-
-	IO.onGlobal( "experiment-stopped", function() {
-
-		experimentStatus = "stopped";
-		$("#run-experiment").prop("disabled", false ).html("Run experiment");
-		$("#abort-experiment").prop( "disabled", true );
-	} );
-
-
+		IO.writeGlobal( 'modalOk' );
+		$( "#modal-modal" ).modal( 'hide' );
+	});
 
 
 
@@ -176,9 +170,27 @@ function global( IO, Util, ModuleFactory ) {
 	} );
 
 
-	$("#leftpannel").on('click', '.device', function() {
-		IO.writeGlobal( $( this ).hasClass('selected') ? 'unselectDevice' : 'selectDevice', $( this ).data('deviceposition') );
+	$("#leftpannel").on('click', '.deviceselect', function( e ) {
+
+			IO.writeGlobal( $( this ).parent().hasClass('selected') ? 'unselectDevice' : 'selectDevice', $( this ).parent().data('deviceposition') );
+
 	} );
+
+
+	$("#leftpannel").on('input', ".device span", function( e ) {
+
+		
+	} );
+
+
+	$("#leftpannel").on('keyup', ".device span", function( e ) {
+
+		if( e.keyCode === 13 ) {
+			$( this ).blur();
+			IO.writeGlobal( "devicename", { position: $( this ).parent().data('deviceposition'), name: $( this ).text().trim() } );
+		}
+	} );
+
 
 
 
@@ -226,14 +238,7 @@ function global( IO, Util, ModuleFactory ) {
 	$( ".ok", "#modal-configuremethod" ).bind('click', function() {
 
 		$( "#modal-configuremethod" ).modal( "hide" );
-		
-		console.log(
-
-			$( '#modal-configuremethod .modal-body form' ),
-			$( '#modal-configuremethod .modal-body form' ).serializeObject( )
-
-		);
-
+	
 		IO.writeGlobal( "configuremethod", { methodid: methodid, method: methodSelected, configuration: $( '#modal-configuremethod .modal-body form' ).serializeObject( ) } );
 
 	} );
@@ -289,6 +294,7 @@ function global( IO, Util, ModuleFactory ) {
 
 
 	IO.writeGlobal("loggerGetMessages");
+	IO.writeGlobal("getState");
 
 	IO.onGlobal('logger', function( message ) {
 
@@ -337,27 +343,28 @@ function global( IO, Util, ModuleFactory ) {
 	IO.writeGlobal('domReady');
 
 
-
-
 	$("#cfg-load").on( 'click', function() {
 
-		IO.writeGlobal( "cfg-load", cfgSelected );
+		IO.writeGlobal( "loadmethods", cfgSelected );
+
+		$('#modal-loadmethods').modal("hide");
 	});
 
 
 	$("#cfg-save").on( 'click', function() {
 
-		IO.writeGlobal( "cfg-save", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+		IO.writeGlobal( "savemethods", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+		$('#modal-loadmethods').modal("hide");
 	});
 
 	$("#cfg-newfolder").on( 'click', function() {
 
-		IO.writeGlobal( "cfg-newfolder", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+		IO.writeGlobal( "newfoldermethods", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
 	});
 
 	$("#cfg-remove").on( 'click', function() {
 
-		IO.writeGlobal( "cfg-remove", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
+		IO.writeGlobal( "removemethods", { file: $("#cfg-name").prop('value'), path: cfgSelected } );
 	});
 
 	

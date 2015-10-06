@@ -32,22 +32,27 @@ def main():
         sys.exit(1)
 
     host = args[0]
-
     rm = visa.ResourceManager()
-
-
-    inst = rm.open_resource( host )
-    #inst.query("*IDN?")
-    
-    #print( rm.list_resources() );
-
-    print( "ok" )
-    sys.stdout.flush()
 
     # std in    
     while True:
-    
+        
         cmd = sys.stdin.readline()
+
+
+        if cmd == "connect\n":
+            inst = rm.open_resource( host )
+            response = inst.query("*IDN?")
+            
+            if( response ):
+                print( "ok" )
+                sys.stdout.flush()
+                
+            else:
+                raise Exception("Cannot find VISA device")
+            
+            continue
+
         is_query = cmd.split(' ')[0][-2] == '?'
         try:
             if is_query:

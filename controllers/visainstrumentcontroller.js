@@ -40,7 +40,11 @@ VISAInstrumentController.prototype.connect = function(  ) {
       /* Handles connection timeout */
       var timeout = setTimeout( function() {
 
+        module.connected = false;
+        module.connecting = false;
+
         module.emit("connectionerror");
+        
         rejecter();
 
         module.logError( "Timeout while reaching VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
@@ -58,17 +62,23 @@ VISAInstrumentController.prototype.connect = function(  ) {
         args: [ module.params.host ], // Pass the VISA address
         mode: "text" // Text mode
 
-      }, function( err ) {
-        if( err ) {
-
-           module.logError( "Cannot connect to VISA resource (" + module.getName() + "). IO error: " + err );
-
-        }
       } );
 
+     module.shellInstance.once( "error", function( error ) {
+console.log( error );
+        clearTimeout( timeout );
+    //    rejecter( module );
+        module.connected = false;
+        module.connecting = false;
+        module.emit("connectionerror");
+
+        rejecter();
+
+        module.logError("Error while connecting to " + module.getName() + " . Check connection and cables. You may have to reboot it. Error was: " + error );
+      });
 
       module.shellInstance.once( "message", function( message ) {
-
+console.log( message );
         clearTimeout( timeout );
         if( message == "ok" ) {
 
@@ -88,6 +98,10 @@ VISAInstrumentController.prototype.connect = function(  ) {
         }
 
       } );
+
+
+      module.shellInstance.send("connect\n");
+
   } );
 }
 
@@ -104,7 +118,7 @@ VISAInstrumentController.prototype.query = function( command ) {
 
             resolver( message );
           } );
-console.log( command, self.getName() );
+
           self.shellInstance.send( command );  
 
         }, 100 );

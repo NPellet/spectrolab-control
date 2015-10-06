@@ -35,14 +35,25 @@
 
 				<div id="header-main">
 					<form class="form-inline">
-						<button type="button" id="run-experiment" class="btn btn-default">Run</button>
-					</form>
+						<button type="button" id="run-experiment" class="btn btn-default">
+							Run
+						</button>
 
-					<form class="form-inline">
-						<button type="button" data-toggle="modal" data-target="#modal-loadmethods" class="btn btn-default">Load methods</button>
+						<button type="button" data-toggle="modal" data-target="#modal-loadmethods" class="btn btn-default">
+							Load methods
+						</button>
+
+						<button type="button" id="erase-methods" class="btn btn-default">
+							Erase methods
+						</button>
+
 					</form>
 
 				</div>
+
+			</div>
+
+			<div id="grid-content">
 
 			</div>
 
@@ -59,6 +70,7 @@
 		{% include modal/addmethod %}	
 		{% include modal/configuremethod %}		
 		{% include modal/loadmethods %}		
+		{% include modal/modal %}		
 	</div>
 </body>
 	
