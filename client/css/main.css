@@ -74,7 +74,7 @@
         background-color: #E8B7B7; }
         #leftpannel ul li.error:hover {
           background-color: #cf6a6a; }
-      #leftpannel ul li .configuremethod {
+      #leftpannel ul li .configuremethod, #leftpannel ul li .deviceselect {
         cursor: pointer; }
       #leftpannel ul li.instrument {
         cursor: pointer; }

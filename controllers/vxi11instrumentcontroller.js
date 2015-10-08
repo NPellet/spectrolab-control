@@ -22,7 +22,6 @@ VXI11InstrumentController.prototype.query = function( command ) {
 		var query = command;
 		var ask = query.indexOf('?') > -1;
 
-
 		if( ask ) {
 
 			function listen( prevData ) {
@@ -35,9 +34,15 @@ VXI11InstrumentController.prototype.query = function( command ) {
 		            data = data.replace("\n", "");
 
 
-		            if( data.indexOf( "ERROR" ) > -1 && command !== "*OPC?") {
-		              console.log("Found error in response. Error is " + data );
-		              rejecter( data );
+		            if( data.indexOf( "ERROR" ) > -1 ) {
+
+		            	if( command == "*OPC?" ) {
+		            	  console.log("Found error in response. Error is " + data );
+		            	  rejecter( { nolog: true, continueprocess: true } );
+		            	} else {
+		            	  rejecter( data );
+		            	}
+		             
 		            } else {
 		              resolver( data );
 		            }
@@ -55,6 +60,7 @@ VXI11InstrumentController.prototype.query = function( command ) {
 			instrument.shellInstance.send( query );
 			resolver();
 		}
+
 
 	} );
 }
@@ -78,7 +84,27 @@ VXI11InstrumentController.prototype.connect = function( ) {
 
 		instrument.log( "Trying to connect to " + instrument.getName() + "  on host " + instrument.params.host + " via VXI11" );
 
-		try {
+		      /* Handles connection timeout */
+	      var timeout = setTimeout( function() {
+
+	        instrument.connected = false;
+	        instrument.connecting = false;
+
+	        instrument.emit("connectionerror");
+	        
+	        rejecter();
+
+	        instrument.logError( "Timeout while reaching LXI resource (" + instrument.getName() + ") on host " + instrument.params.host + " via VXI11" );
+
+	        if( instrument.shellInstance ) {
+	          instrument.shellInstance.end();
+	        }
+
+	      }, 10000 );
+
+
+
+	//	try {
 
 			// Launches a python instance which will communicate in VXI11 with the scope
 			instrument.shellInstance = new pythonShell( 'iovxi.py', {
@@ -88,30 +114,25 @@ VXI11InstrumentController.prototype.connect = function( ) {
 			} );
 
 
-			module.emit("connecting");
+			instrument.emit("connecting");
 
 			// At this point we are already connected. No asynchronous behaviour with python
 			instrument.shellInstance.once( 'message', function( data ) {
 
-				if( data == "IO:connected" ) {
+				console.log( data );
+				clearTimeout( timeout );
+				instrument.connecting = false;
+				instrument.connected = true;
 
-					instrument.connecting = false;
-					instrument.connected = true;
+				instrument.logOk("Connected to " + instrument.getName() + "  on host " + instrument.params.host + " via VXI11. Resource name " + data );
+				resolver( instrument );
+				instrument.emit("connected");
 
-					instrument.logOk("Connected to " + instrument.getName() + "  on host " + instrument.params.host + " via VXI11" );
-					resolver( instrument );
-					instrument.emit("connected");
-
-				} else {
-			//		rejecter( module );
-					instrument.emit("connectionerror");
-					instrument.connected = false;
-					instrument.logError("Unexpected response from " + instrument.getName() + " during connection. Response was : " + data );
-				}
+			
 			});
 
 			instrument.shellInstance.on( 'error', function( error ) {
-
+				clearTimeout( timeout );
 		//		rejecter( module );
 				instrument.connecting = false;
 				instrument.connected = false;
@@ -120,13 +141,15 @@ VXI11InstrumentController.prototype.connect = function( ) {
 				instrument.logError("Error while connecting to " + instrument.getName() + " . Check connection and cables. You may have to reboot it. Error was: " + error );
 			});
 
-			instrument.shellInstance.send("connect\n");
+			instrument.shellInstance.send("connect");
 
-		} catch( e ) {
+	/*	} catch( e ) {
+	
 			instrument.emit("connectionerror");
 			instrument.logError("Cannot reach " + instrument.getName() + " . Check connection and cables. You may have to reboot it");
-	//		rejecter();
+			rejecter();
 		}
+		*/
 	} );
 
 	if( ! instrument.connected ) {

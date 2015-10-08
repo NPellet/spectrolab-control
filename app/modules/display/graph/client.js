@@ -53,7 +53,7 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 	}
 
 	module.prototype.newSerie = function( data, type ) {
-
+console.log( data );
 		var module = this;
 		var g = this.checkGraph();
 		if( serie = g.getSerie( data.name ) ) {

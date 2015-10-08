@@ -15,7 +15,7 @@ module.exports = function( config, app ) {
 	arduino.routeLEDToArduino( "white" );
 
 	var perturbationIteration = 0.1;
-	var perturbationValue = 6.4;
+	var perturbationValue = 7.5;
 
 	var recordLength = 10000;
 	var timescale = 5e-3;
@@ -58,58 +58,8 @@ module.exports = function( config, app ) {
 
 			afg.disableBurst( config.afgChannel );
 
-			/* KEITHLEY SETUP */
-			keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-			keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
-			keithley.command( "smub.source.highc = smub.ENABLE;" ); // Turn the output off
 
-
-			/* OSCILLOSCOPE SETUP */
-			oscilloscope.enableAveraging();
-
-			oscilloscope.setCoupling( 1, "AC");
-			oscilloscope.setCoupling( 2, "GND");
-			oscilloscope.setCoupling( 3, "DC");
-			oscilloscope.setCoupling( 4, "GND");
-
-			oscilloscope.disable50Ohms( 1 );
-			oscilloscope.setRecordLength( recordLength );
-
-			oscilloscope.setVerticalScale( 1, 1e-3 );
-			oscilloscope.setVerticalScale( 3, 2 );
-			oscilloscope.setPosition( 1, -2 );
-			oscilloscope.setOffset( 1, 0 );
-
-			oscilloscope.setTriggerToChannel( 3 ); // Set trigger on switch channel. Can also use down trigger from Channel 1
-			oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
-			oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
-			oscilloscope.setTriggerLevel( 0.7 ); // TTL down
-			oscilloscope.setTriggerRefPoint( 15 );
-
-			oscilloscope.enableChannels();
-
-			oscilloscope.setTriggerMode("NORMAL");
-			oscilloscope.setHorizontalScale( config.pulsewidth );
-
-			oscilloscope.setMeasurementType( 1, "AMPLITUDE" );
-			oscilloscope.setMeasurementSource( 1, 1 );
-			oscilloscope.enableMeasurement( 1 );
-
-			oscilloscope.setMeasurementType( 2, "MEAN" );
-			oscilloscope.setMeasurementSource( 2, 1 );
-			oscilloscope.enableMeasurement( 2 );
-
-			oscilloscope.setMeasurementType( 3, "Pk2Pk" );
-			oscilloscope.setMeasurementSource( 3, 1 );
-			oscilloscope.enableMeasurement( 3 );
-
-			oscilloscope.setMeasurementType( 4, "FALL" );
-			oscilloscope.setMeasurementSource( 4, 1 );
-			oscilloscope.enableMeasurement( 4 );
-
-			oscilloscope.stopAfterSequence( true );
-
-	 	 	  return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
+	 	 	return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
 		}
 
 
@@ -141,7 +91,7 @@ module.exports = function( config, app ) {
 
 				app.getLogger().info("Setting current to white LED. Voltage: " + levels[ i ].voltage + "V. Sun intensity: " + levels[ i ].text );
 				
-				Promise.all( [ PWSWhite.setVoltageLimit( levels[ i ].voltage ), PWSWhite.turnOn(), PWSColor.turnOn(), afg.enableChannel( 1 ) ], oscilloscope.setHorizontalScale( config.pulsewidth  ) ).then( function() {
+				Promise.all( [ PWSWhite.setVoltageLimit( levels[ i ].voltage ), PWSWhite.turnOn(), PWSColor.turnOn(), afg.enableChannel( 1 ) ] ).then( function() {
 					
 					perturbation( ).then( function( d ) {
 						TPV = d;
@@ -182,9 +132,7 @@ module.exports = function( config, app ) {
 			var self = this;
 			
 			PWSColor.setVoltageLimit( perturbationValue );
-			oscilloscope.setVerticalScale( 1, 2e-3 );
-
-
+		
 			var level = 4e-3;
 
 			return new Promise( function( resolver, rejecter ) {
@@ -196,11 +144,37 @@ module.exports = function( config, app ) {
 					var max = false;
 
 					perturbationValue -= perturbationIteration;
+					var nbpoints = 1000;
 
-					oscilloscope.setNbAverage( config.trialaveraging );
-					oscilloscope.stopAfterSequence( false );
+					keithley.tpv( {
+
+						channel: "smub",
+						npoints: nbpoints,
+						ncycles: 3,
+						delaybetweenpoints: config.pulsewidth * 5 / nbpoints
+
+					}).then( function( w ) {
+
+
+						var diff = Math.abs( w.getMax() - w.getMin() );
+
+						if( perturbed < level && max == false && perturbationValue < 15 ) {
+
+
+						}
+						/*
+
+						renderer.getModule( "tpv" ).newSerie( "tpv", w );
+						renderer.getModule( "tpv" ).autoscale();
+*/
+
+					});
 					
-					while( true ) {
+				/*	setTimeout( function() {
+						keithley.getErrors();	
+					}, 2000 )
+				*/	
+					/*while( true ) {
 
 						if( perturbed < level && max == false && perturbationValue < 15 ) {
 
@@ -297,7 +271,7 @@ module.exports = function( config, app ) {
 							
 							break;
 						}
-					}
+					}*/
 				}
 
 				var pert = perturbator();

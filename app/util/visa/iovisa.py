@@ -41,41 +41,43 @@ def main():
 
 
         if cmd == "connect\n":
+          
             inst = rm.open_resource( host )
             response = inst.query("*IDN?")
-            
-            if( response ):
-                print( "ok" )
+            if response:
+                print( response )
                 sys.stdout.flush()
-                
             else:
                 raise Exception("Cannot find VISA device")
-            
-            continue
+            sys.stdout.flush();
 
-        is_query = cmd.split(' ')[0][-2] == '?'
-        try:
-            if is_query:
-                if len(cmd) > 1:
-                    response = inst.query(cmd)
-                    print( response )
+        else:
+            print cmd
+            sys.stdout.flush();
+            is_query = cmd.split(' ')[0][-2]
+
+            try:
+                if is_query:
+                    if len(cmd) > 1:
+                        response = inst.query(cmd)
+                        print( response )
+                    else:
+                        raise Exception("Cannot execute an empty command")
                 else:
-                    raise Exception("Cannot execute an empty command")
-            else:
-                inst.write( cmd ) # Write command to device and do not expect a response
-                print( cmd )
+                    inst.write( cmd ) # Write command to device and do not expect a response
+                    print( cmd )
 
-            sys.stdout.flush() # Send message to node
+                sys.stdout.flush() # Send message to node
 
-            if options.check_esr:
-                esr = int(inst.ask('*ESR?').strip())
-                if esr != 0:
-                    print('Warning: ESR was %d' % esr)
-        except Exception:
-            e = sys.exc_info()[1]
-            print('ERROR: %s' % e)
-            sys.stdout.flush()
-        
+                if options.check_esr:
+                    esr = int(inst.ask('*ESR?').strip())
+                    if esr != 0:
+                        print('Warning: ESR was %d' % esr)
+            except Exception:
+                e = sys.exc_info()[1]
+                print('ERROR: %s' % e)
+                sys.stdout.flush()
+            
     inst.close()
 
 if __name__ == '__main__':

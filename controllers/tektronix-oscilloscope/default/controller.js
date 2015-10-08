@@ -15,6 +15,8 @@ var TektronixOscilloscope = function( params ) {
   this.params = params;
   this.connected = false;
   this.queue = [];
+
+  this.init();
 };
 
 
@@ -506,6 +508,7 @@ TektronixOscilloscope.prototype.getMeasurementMean = function( ) {
 
   if( arguments.length == 1 ) {
     return this.command("MEASUrement:" + getMeasurementNumber( arguments[ 0 ] ) + ":MEAN?");
+
   }
 
   return this.all( "MEASUrement:%s:MEAN?", Array.prototype.map.call( arguments, getMeasurementNumber ), function( val ) { return parseFloat( val ); } );
@@ -517,6 +520,11 @@ TektronixOscilloscope.prototype.all = function( method, args, processing ) {
   return Promise.all( args.map( function( a ) {
     return self.command( method.replace( "%s", a ) ).then( processing );
   }));
+}
+
+TektronixOscilloscope.prototype.getMeasurementValue = function( measNum ) {
+  measNum = getMeasurementNumber( measNum );
+  return this.command("MEASUrement:" + measNum + ":VALue?").then( function( val ) { return parseFloat( val ); });
 }
 
 TektronixOscilloscope.prototype.getMeasurementMin = function( measNum ) {
@@ -713,12 +721,16 @@ TektronixOscilloscope.prototype.whenready = function( delay ) {
   //this.command( "*OPC" );
   var self = this;
 
-  return this.command("BUSY?").then( function( data ) {
-
+  return this.command("BUSY?", -2 ).then( function( data ) {
+    console.log( "BUSY: " + data );
     if( data == 0 ) {
       return true;
     }
+
     return self.command( "*OPC?", -2 ).then( function( data ) {
+
+      console.log("OPC: " + data );
+      
       if( delay ) {
         return new Promise( function( resolver, rejecter ) {
           setTimeout( resolver, delay * 1000 );

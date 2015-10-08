@@ -13,6 +13,7 @@ module.exports = function( config, app ) {
 	
 
 	return new Promise( function( resolver, rejecter ) {
+	    app.getLogger().info("Starting charge extraction measurement ");
 
 			
 		config.pulsetime = parseFloat( config.pulsetime );
@@ -30,7 +31,7 @@ module.exports = function( config, app ) {
 		var perturbationValue = 6.4;
 
 	    var preTrigger = 10;
-	    var recordLength = 100000;
+	    var recordLength = 10000;
 	    var yscales = {};
 
 	    setup();
@@ -73,79 +74,100 @@ module.exports = function( config, app ) {
 
 	        oscilloscope.setOffset( 2, 0 );
 
-	        app.getLogger().info("Pulsing... (Waiting time about " + ( ( config.pulsetime + config.delaytime ) + 1 ) * config.averaging + " s)");
 
+	        var done = false;
+	        var horizontalscale = config.timebase;
+	        var yscale = 1e-3;
+	        var finalCurrent = new Waveform();
+	        var time = false;
 
-	        pulse( yscales[ lightLevel ] ).then( function( w ) {
+	        while( ! done ) {
 
-	          app.getLogger().info("Pulsing done");
-	          oscilloscope.getMeasurementMean( 1, 2 ).then( function( measurements ) {
+    		    oscilloscope.setHorizontalScale( Math.round( horizontalscale * Math.pow( 10, 6 ) ) / Math.pow( 10, 6 ) );
+console.log("Set scale");
 
-	              if( measurements[ 0 ] < 2 * yscales[ lightLevel ] && yscales[ lightLevel ] > 1e-3 ) {
+	   	        app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
+	   	        	QExtr.next();
+	   	        });
+	   	        yield;
 
-	                oscilloscope.setOffset( 2, measurements[ 1 ] );
-	                yscales[ lightLevel ] = measurements[ 0 ] / 7;
-	                breakit = true;
+	   	        app.getLogger().info("Pulsing with horizontale timescale of: " + horizontalscale + "s and vertical scale " + yscale + "V... (Waiting time about " + ( ( config.pulsetime + config.delaytime ) + 1 ) * config.averaging + " s)");
 
-	              } else {
-
+		        pulse( yscale ).then( function( w ) {
+		          	app.getLogger().info("Pulsing done");
 	                current = w[ 2 ];
 	                voltage = w[ 1 ];
-
-	              }
-
-				QExtr.next();
-
-	          } );
-
-	        } );
-	        yield;
-
-	        if( breakit ) {
-	          continue;
-	        }
-
-  	        app.getLogger().info("Pulsing dark... (Waiting time about " + ( ( config.timebase * 20 ) * config.blankaveraging ) + " s)");
+					QExtr.next();
+		        } );
+		        yield;
 
 
-	        pulseBlank(  ).then( function( w ) {
+	  	        app.getLogger().info("Pulsing dark... (Waiting time about " + ( ( config.timebase * 20 ) * config.blankaveraging ) + " s)");
+		        pulseBlank(  ).then( function( w ) {
+		          current.subtract( w[ 2 ] );
+		          voltage.subtract( w[ 1 ] );
+		          QExtr.next();
+		        });
+		        yield;
 
-	          current.subtract( w[ 2 ] );
-	          voltage.subtract( w[ 1 ] );
-	          
-	          QExtr.next();
-	        });
-	        yield;
 
-	        current.divide( 50 );
+		        current.shiftX( current.getXDeltaBetween( 0, 0.1 * recordLength ) );
 
-	        var voc = voltage.average( recordLength * 0.05, recordLength * 0.09 );
-	        var charges = current.integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
+		        if( horizontalscale == 1e-6 ) {
+		        	index = false;
+		        } else {
+			        var index = current.findLevel( 8 * yscale, {
+			        	box: 1,
+			        	edge: 'descending',
+			        	rounding: 'after',
+			        	direction: 'descending',
+			        	rangeP: [ 0, recordLength ]
+			        } );
+			    }
+		     
+		        if( index ) {
+		        	yscale *= 10;
 
-	        results.vocs.push( voc );
-	        results.charges.push( charges );
-	        results.lightLevels.push( lightLevel );
-	        results.currentWaves.push( current );
-	        results.voltageWaves.push( voltage );
-	        results.lastCurrentWave = current;
-	        
-	        progress( results );
+		        	horizontalscale = Math.max( 1e-6, - current.getXDeltaBetween( 0.1 * recordLength, index ) / 3 );
+		        	done = false;
+   		  	        app.getLogger().info("Found overshoot at index " + index + ". New horizontal scale: " + horizontalscale + "s, vertical scale: " + yscale + "V");
+
+		        } else {
+		        	done = true;
+		        }
+
+				finalCurrent.push( current.subset( index || Math.round( 0.1 * recordLength ), time ? current.getIndexFromX( time ) : recordLength - 1 ), current.getIndexFromX( time ), time );
+		        time = current.getXFromIndex( index );
+
+				var voc = voltage.average( 0, 0.05 * recordLength );
 	      }
 
+	      	finalCurrent.sortX();
+	      	var charges = finalCurrent.integrateP( 0, finalCurrent.getDataLength() - 1 );
 
-	      oscilloscope.disableChannels();
-	    }
+		    results.vocs.push( voc );
+		    results.charges.push( charges );
+		    results.lightLevels.push( lightLevel );
+		    results.currentWaves.push( finalCurrent );
+		    results.voltageWaves.push( voltage );
+		    results.lastCurrentWave = finalCurrent;
+		    
+		    progress( results );
+	  }
+
+	    oscilloscope.disableChannels();
 
 
+	}
 	  function pulse( vscale ) {
 
 	    var nb = config.averaging;
 
+		oscilloscope.stopAquisition();
 	    oscilloscope.setNbAverage( nb );
 	    oscilloscope.clear();
-	    oscilloscope.startAquisition();
-
-	    oscilloscope.setVerticalScale( 2, vscale );
+  	    oscilloscope.setVerticalScale( 2, vscale );
+	    
 
 
 	    afg.setShape( 1, "PULSE" );
@@ -173,19 +195,33 @@ module.exports = function( config, app ) {
 	    afg.setPulseDelay( 2, config.pulsetime );
 
 	    afg.wait();
+		oscilloscope.startAquisition();
 
-	    setTimeout( function() {
-		  
-		  afg.enableChannel( 1 );
-	      afg.enableChannel( 2 );
-	      afg.trigger();
+	    return new Promise( function( resolver ) {
 
-	    }, 5000 );
-	    
-	    return oscilloscope.whenready().then( function() {
-	      afg.disableChannels();
-	      return oscilloscope.getWaves();
+	    	setTimeout( function() {
+			  
+	   	    
+
+			  afg.enableChannel( 1 );
+		      afg.enableChannel( 2 );
+		      afg.trigger();
+
+		      oscilloscope.whenready().then( function() {
+
+		     	 	afg.disableChannels();
+			  		
+
+		      		oscilloscope.getWaves().then( function( w ) {
+		      			resolver( w );
+		      		});
+		    	})
+
+		    }, 5000 );
+		    
+		    
 	    })
+	    
 
 	  }
 
@@ -212,14 +248,27 @@ module.exports = function( config, app ) {
 	    afg.enableChannels( );
 
 
+	    return new Promise( function( resolver, rejecter ) {
 
-	    return oscilloscope.whenready().then( function() {
-	      afg.enableBurst( 1 );
-	      afg.enableBurst( 2 );
+	    	setTimeout( function() {
+		  
+				afg.enableChannels( );
+			    oscilloscope.whenready().then( function() {
 
-	      afg.disableChannels();
-	      return oscilloscope.getWaves();
-	    } );
+			      afg.enableBurst( 1 );
+			      afg.enableBurst( 2 );
+				
+			      afg.disableChannels();
+			      oscilloscope.getWaves().then( function( w ) {
+			      	resolver( w );
+			      });
+			    } );
+
+		      }, 2000 );
+
+
+	    })
+ 		
 	  }
 
 	  function setup() {
@@ -271,7 +320,6 @@ module.exports = function( config, app ) {
 	    oscilloscope.enableAveraging();
 
 
-	    oscilloscope.setHorizontalScale( timeBase );
 
 	    oscilloscope.setCursors( "VBArs" );
 	    oscilloscope.setCursorsMode( "INDependent" );
@@ -284,7 +332,7 @@ module.exports = function( config, app ) {
 	    oscilloscope.setMeasurementType( 1, "PK2PK" );
 	    oscilloscope.setMeasurementSource( 1, 2 );
 	    oscilloscope.enableMeasurement( 1 );
-	    oscilloscope.setMeasurementGating( "CURSOR" );
+	    oscilloscope.setMeasurementGating( "OFF" );
 
 	    oscilloscope.setMeasurementType( 2, "MINImum" );
 	    oscilloscope.setMeasurementSource( 2, 2 );
@@ -326,7 +374,7 @@ module.exports = function( config, app ) {
 
 	    afg.getErrors();
 
-	    return oscilloscope.whenready();
+	    return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
 	  }
 
 

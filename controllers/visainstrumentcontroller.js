@@ -54,7 +54,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
         }
 
       }, 10000 );
-
+console.log("Connecting");
       // Checking if the PWS is reachable
       module.shellInstance = new pythonShell( 'iovisa.py', {
 
@@ -65,8 +65,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
       } );
 
      module.shellInstance.once( "error", function( error ) {
-console.log( error );
-        clearTimeout( timeout );
+
     //    rejecter( module );
         module.connected = false;
         module.connecting = false;
@@ -74,33 +73,23 @@ console.log( error );
 
         rejecter();
 
-        module.logError("Error while connecting to " + module.getName() + " . Check connection and cables. You may have to reboot it. Error was: " + error );
+        module.logError("Error while connecting to " + module.getName() + ". Check connection and cables. You may have to reboot the instrument. Error was: " + error );
       });
 
-      module.shellInstance.once( "message", function( message ) {
-console.log( message );
-        clearTimeout( timeout );
-        if( message == "ok" ) {
-
+      module.shellInstance.once( "message", function( data ) {
+          clearTimeout( timeout );
           module.connected = true;
           module.connecting = false;
-          module.logOk( "Successfully found VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+          module.logOk( "Successfully found VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA. Resource name: " + data );
           
           module.emit("connected");
 
           resolver();
 
-
-        } else {
-          module.logError( "Cannot find VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
-
-          module.emit("connectionerror");
-        }
-
       } );
 
-
-      module.shellInstance.send("connect\n");
+console.log("Connecting");
+      module.shellInstance.send("connect");
 
   } );
 }

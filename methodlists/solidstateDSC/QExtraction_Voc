@@ -1,0 +1,1 @@
+[{"id":"f3b3cdcd-2cba-467c-a492-7a6e80d3d196","path":"./experiments/devices/qextraction_voc","name":"Charge extraction (Voc)","_device":true,"config":{"pulsetime":0.5,"delaytime":0.5,"vscale":"0.001","timebase":50000,"averaging":10,"blankaveraging":10}}]

@@ -12,6 +12,8 @@ var TektronixAFG = function( params ) {
 	this.params = params;
 	this.connected = false;
 	this.queue = [];
+
+	this.init();
 };
 
 
@@ -283,11 +285,11 @@ TektronixAFG.prototype.setTriggerInternal = function() {
 TektronixAFG.prototype.setTriggerExternal = function() {
 	this.command("TRIGGER:SEQUENCE:SOURCE EXTERNAL");
 }
-
+/*
 TektronixAFG.prototype.ready = function() {
 	this.command( "*OPC" );
 	return this.command( "*OPC?" );
-}
+}*/
 
 
 TektronixAFG.prototype.wait = function() {

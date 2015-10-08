@@ -138,6 +138,11 @@ Waveform.prototype = {
 		}
 	},
 
+	sortX: function() {
+		Waveform.sort( this.getXWave(), [ this.getXWave(), this ] );
+	},
+
+
 	setXUnit: function( xUnit ) {
 		this.xUnit = xUnit;
 	},
@@ -559,6 +564,11 @@ Waveform.prototype = {
 
 	_integrateP: function( from, to ) {
 
+		if( ! from && ! to ) {
+			from = 0;
+			to = this.getDataLength() - 1;
+		}
+
 		from = Math.round( from );
 		to = Math.round( to );
 		var l = to - from + 1;
@@ -588,8 +598,11 @@ Waveform.prototype = {
 				var xWave = this.getXWave().getData();
 				for( ; from <= to ; from ++ ) {
 
-					deltaTot += xWave[ from + 1] - xWave[ from ]
-					sum += this.data[ from ] * ( xWave[ from + 1] - xWave[ from ] );
+					if( xWave.length > from ) {
+
+						deltaTot += xWave[ from + 1 ] - xWave[ from ]
+						sum += this.data[ from ] * ( xWave[ from + 1] - xWave[ from ] );
+					}
 				}
 			}
 		} else {
@@ -743,6 +756,7 @@ Waveform.prototype = {
 
 			box: 1,
 			edge: 'ascending',
+			direction: 'ascending',
 			rounding: 'before',
 			rangeP: [ 0, this.data.length ],
 
@@ -761,7 +775,27 @@ Waveform.prototype = {
 			box ++;
 		}
 
-		for( var i = options.rangeP[ 0 ]; i < options.rangeP[ 1 ]; i ++ ) {
+		if( options.direction == "descending" ) {
+			var i = options.rangeP[ 1 ],
+				l = options.rangeP[ 0 ],
+				increment = -1;
+		} else {
+			var i = options.rangeP[ 0 ],
+				l = options.rangeP[ 1 ],
+				increment = +1;
+		}
+console.log( i, l, increment );
+		for(; ; i += increment ) {
+
+			if( options.direction == "descending" ) {
+				if( i < l ) {
+					break;
+				}
+			} else {
+				if( i > l ) {
+					break;
+				}
+			}
 
 			if( i < options.rangeP[ 0 ] + ( box - 1 ) / 2 ) {
 				continue;
@@ -1116,35 +1150,47 @@ Waveform.prototype = {
 	}
 }
 
-	Waveform.sort = function( keyWave, wavesToSort ) {
+Waveform.sort = function( keyWave, wavesToSort ) {
 
-		var dataKey = keyWave.getData().slice( 0 );
+	var dataKey = keyWave.getData().slice( 0 );
 
-		var global = [],
-		arrZipped
+	var global = [],
+	arrZipped
 
-		for( var i = 0; i < dataKey.length; i ++ ) {
-			arrZipped = [ dataKey[ i ] ];
+	for( var i = 0; i < dataKey.length; i ++ ) {
+		arrZipped = [ dataKey[ i ] ];
 
-			for( var j = 0; j < wavesToSort.length; j ++ ) {
-				arrZipped.push( wavesToSort[ j ].get( i ) );
-			}
-			global.push( arrZipped );
+		for( var j = 0; j < wavesToSort.length; j ++ ) {
+			arrZipped.push( wavesToSort[ j ].get( i ) );
 		}
+		global.push( arrZipped );
+	}
 
-		global.sort( function( a, b ) {
-			return a[ 0 ] - b[ 0 ];
-		});
+	global.sort( function( a, b ) {
+		return a[ 0 ] - b[ 0 ];
+	});
 
 
-		for( var i = 0; i < dataKey.length; i ++ ) {
+	for( var i = 0; i < dataKey.length; i ++ ) {
 
-			for( var j = 0; j < wavesToSort.length; j ++ ) {
+		for( var j = 0; j < wavesToSort.length; j ++ ) {
 
-				wavesToSort[ j ].set( i, global[ i ][ j + 1 ] );
-			}
+			wavesToSort[ j ].set( i, global[ i ][ j + 1 ] );
 		}
 	}
+}
+
+Waveform.average = function( ) {
+
+	var w1 = arguments[ 0 ];
+	for( var i = 1, l = arguments.length; i < l; i ++ ) {
+		w1.add( arguments[ i ] );
+	}
+
+	w1.divideBy( arguments.length );
+
+	return w1;
+}
 
 function getIndexInterpolate( value, valueBefore, valueAfter, indexBefore, indexAfter ) {
 		return ( value - valueBefore ) / ( valueAfter - valueBefore ) * ( indexAfter - indexBefore ) + indexBefore;

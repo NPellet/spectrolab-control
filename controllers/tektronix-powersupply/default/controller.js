@@ -22,6 +22,8 @@ var TektronixPWS = function( params ) {
   });
 
 
+  this.init();
+
   var self = this;
 };
 

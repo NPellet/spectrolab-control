@@ -28,6 +28,52 @@ var methods = {
 	},
 
 
+	'tpv': {
+		defaults: {
+			 channel: 'smua',
+			 npoints: '2000',
+			 ncycles: '1',
+			 delaybetweenpoints: '0.0002'
+		},
+
+		method: 'tpv',
+		parameters: function( options ) {
+			return [ options.channel, options.npoints, options.ncycles, options.delaybetweenpoints ]
+		}, 
+
+		processing: function( data, options ) {
+
+			var ws = [];
+			data = data.split(/,[\t\r\s\n]*/);
+			var wX = new Waveform();
+console.log( data );
+			for( var j = 0; j < options.ncycles; j ++ ) {
+
+				var w = new Waveform();
+
+				var dataFinal = [], dataFinalX = [];
+				for( var i = options.npoints * j; i < ( options.npoints * ( j + 1 ) ); i += 2 ) {
+					dataFinal.push( parseFloat( data[ i ] ) );
+					dataFinalX.push( parseFloat( data[ i + 1 ] ) );
+				}
+
+				w.setData( dataFinal );
+
+				if( j == 0 ) {
+					wX.setData( dataFinalX );
+				}
+
+				ws.push( w );
+			}
+
+			var w = Waveform.average.apply( Waveform, ws );
+			w.setXWave( wX );
+			return w;
+		}
+
+	},
+
+
 	'sweepIV': {
 		defaults: {
 			channel: 'smua',
@@ -470,12 +516,16 @@ var Keithley = function( params ) {
 	this.params = params;
 	this.connected = false;
 	this.queue = [];
+	this.init();
+
+	this._readyresolver();
+
 };
 
 Keithley.prototype = new InstrumentController();
 
 Keithley.prototype.connect = function( callback ) {
-console.log('conn');
+
 	var module = this;
 
 	return new Promise( function( resolver, rejecter ) {
@@ -583,9 +633,9 @@ console.log('conn');
 			});
 
 			module.socket.on("data", function( d ) {
-				console.log( "Keithley response : " );
-				console.log( d.toString('ascii') );
-				console.log(" End Keithley response");
+		//		console.log( "Keithley response : " );
+		//		console.log( d.toString('ascii') );
+		//		console.log(" End Keithley response");
 			})
 
 
@@ -652,8 +702,7 @@ Keithley.prototype._callMethod = function( method, options ) {
 					} else {
 						
 						data = data.replace("keithley:end;", "" );
-
-						console.log( data );
+			//			console.log( data );
 						end( data );
 
 					}
@@ -663,7 +712,6 @@ Keithley.prototype._callMethod = function( method, options ) {
 			listen("");
 			
 			module.log( "Keithley method: <em>" + method.method + "(" + method.parameters( options ).join() + ");</em>");
-			console.log( method.method + "(" + method.parameters( options ).join() );
 			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
 		});
 	});
@@ -755,27 +803,40 @@ Keithley.prototype.checkConnection = function() {
 
 // NOT STABLE
 Keithley.prototype.getErrors = function() {
-	return;
 	
 		var self = this;
 		this.commandPrint("print( errorqueue.count );").then( function( errorCount ) {
 			console.log("Raw error count: " + errorCount );
-			errorCount = parseInt( errorCount );
+			errorCount = parseFloat( errorCount );
 			console.log( "Error count: " + errorCount );
-			for( var i = 0; i < errorCount; i ++ ) {
+			
+			var i = 0;
 
-				self.commandPrint("errorCode, message, severity, errorNode = errorqueue.next(); print( errorCode, message );").then( function( error ) {
-					console.log('___');
+			if( errorCount == 0 ) {
+				return;
+			}
+
+			function nexterror() {
+				self.commandPrint("errorCode, message, severity, errorNode = errorqueue.next(); print( errorCode, message );").then( function( error ) {		
 					console.log( error );
-					console.log('----');
+
+					i++;
+					if( i >= errorCount ) {
+						return;
+					}
+
+					nexterror();
 				} );
 			}
+				
+			nexterror();
 		});
 }
 
 
 Keithley.prototype.uploadScripts = function() {
 
+	var self = this;
 	try {
 		this.checkConnection();
 	} catch( e ) {
@@ -823,6 +884,10 @@ Keithley.prototype.uploadScripts = function() {
 
 	this.socket.write("endscript\r\n");
 	this.socket.write("SpetroscopyScripts.save()\r\n");
+
+	setTimeout( function() {
+		self.getErrors();
+	}, 5000 );
 }
 
 module.exports = Keithley;

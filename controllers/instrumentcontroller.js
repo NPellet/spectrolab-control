@@ -8,6 +8,10 @@ var InstrumentController = function() {};
 
 util.inherits( InstrumentController, events.EventEmitter );
 
+InstrumentController.prototype.init = function() {
+	makeReadyPromise( this );
+}
+
 InstrumentController.prototype.log = function( message ) {
 	logger.log( message );
 }
@@ -36,6 +40,8 @@ InstrumentController.prototype.getName = function( ) {
 InstrumentController.prototype.command = function( command, priority ) {
 
 	var instrument = this;
+
+	makeReadyPromise( instrument );
 
 	this._queue = this._queue || {};
 	this._queue[ priority ] = this._queue[ priority ] || [];
@@ -73,12 +79,7 @@ function checkQueue( instrument ) {
 	
 	if( processesInQueue > 0 ) {
 
-		instrument.ready = new Promise( function( resolver, rejecter ) {
-			
-			instrument._readyresolver = resolver;
-			instrument._readyrejecter = rejecter;
-		});
-
+		makeReadyPromise( instrument );
 		processQueue( instrument );
 	} else {
 		instrument._processingQueue = false;
@@ -96,7 +97,7 @@ function processQueue( instrument ) {
 	
 	var processesInQueue = 0;
 
-	for( q in instrument._queue ) {
+	for( var q in instrument._queue ) {
 		processesInQueue += instrument._queue[ q ].length;
 	}
 	
@@ -134,13 +135,34 @@ function processQueue( instrument ) {
 			instrument._currentQueue.resolver( response );
 			processQueue( instrument );
 
-		}, function() {
+		}, function( data ) {
 
-			instrument.logError("Query error for instrument " + instrument.getName() + ". Query was: " + queueElement.command );
+			if( ! data.nolog ) {
+				instrument.logError("Query error for instrument " + instrument.getName() + ". Query was: " + queueElement.command );	
+			}
+			
 			instrument._currentQueue.rejecter();
+
+			if( data.continueprocess ) {
+				processQueue( instrument );
+			}
 		});
 
 	});
+}
+
+function makeReadyPromise( instrument ) {
+
+	if( instrument.ready ) {
+		return;
+	}
+
+	instrument.ready = new Promise( function( resolver, rejecter ) {
+		
+		instrument._readyresolver = resolver;
+		instrument._readyrejecter = rejecter;
+	});
+
 }
 
 module.exports = InstrumentController;

@@ -105,11 +105,23 @@ def main():
         cmd = sys.stdin.readline()
 
 
-        if cmd == "connect\n":
-            v = vxi11.Instrument(host, name)
-            v.open()
-            print("IO:connected");
-            sys.stdout.flush();
+        if cmd == "connect\n": 
+            try:
+                v = vxi11.Instrument(host, name)
+                v.open()
+                
+            except Exception:
+                e = sys.exc_info()[1]
+                raise e
+                sys.stdout.flush();
+            
+            v.write("*IDN?")
+            response = v.read() 
+           
+            if response:
+                print( response )
+            sys.stdout.flush()
+        
             continue
 
     	is_query = cmd.split(' ')[0][-2] == '?'

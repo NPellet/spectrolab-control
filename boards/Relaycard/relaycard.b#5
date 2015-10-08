@@ -38,7 +38,7 @@
 <layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
 <layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
 <layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
-<layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
 <layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
@@ -162,10 +162,6 @@
 <text x="77.47" y="8.89" size="1.778" layer="1" font="vector" ratio="15">8</text>
 <text x="80.01" y="16.51" size="1.778" layer="1" font="vector" ratio="15">8</text>
 <text x="80.01" y="33.02" size="1.778" layer="1" font="vector" ratio="15">1</text>
-<hole x="104.14" y="88.9" drill="2"/>
-<hole x="2.54" y="55.88" drill="2.2"/>
-<hole x="2.54" y="43.18" drill="2.2"/>
-<hole x="106.68" y="5.08" drill="2.2"/>
 </plain>
 <libraries>
 <library name="SparkFun-LED">
