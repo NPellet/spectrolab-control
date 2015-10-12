@@ -9,7 +9,7 @@ var net = require('net'),
 	Waveform = require("../../../app/waveform"),
 	IV = require("../../../app/iv");
 
-var InstrumentController = require("../../instrumentcontroller");
+var InstrumentController = require("../../socketinstrumentcontroller");
 
 
 var methods = {
@@ -46,7 +46,7 @@ var methods = {
 			var ws = [];
 			data = data.split(/,[\t\r\s\n]*/);
 			var wX = new Waveform();
-console.log( data );
+
 			for( var j = 0; j < options.ncycles; j ++ ) {
 
 				var w = new Waveform();
@@ -512,143 +512,15 @@ console.log( data );
 }
 
 
-var Keithley = function( params ) {
-	this.params = params;
+var Keithley = function( ) {
+
 	this.connected = false;
 	this.queue = [];
-	this.init();
-
-	this._readyresolver();
-
+	
 };
 
 Keithley.prototype = new InstrumentController();
 
-Keithley.prototype.connect = function( callback ) {
-
-	var module = this;
-
-	return new Promise( function( resolver, rejecter ) {
-
-		// Avoid multiple connection
-		if( module.connected ) {
-
-			module.socket.removeAllListeners( 'data' );
-
-
-			if( callback ) {
-				callback();
-			}
-
-			resolver();
-			return;
-		}
-
-		if( module.connecting ) {
-
-			module.queue.push( resolver );
-			return;
-		}
-
-
-
-		try {
-			// Connect by raw TCP sockets
-
-			var self = module,
-				socket = net.createConnection( {
-					port: module.params.port,
-					host: module.params.host,
-					allowHalfOpen: true
-				});
-
-			module.emit("connecting");
-
-			self.log("Attempting to connect to " + module.getName() );
-
-			module.connecting = true;
-			module.socket = socket;
-
-			var timeout = setTimeout( function() {
-
-				self.connected = false;
-				self.connecting = false;
-
-				module.emit("connectionerror");
-				rejecter();
-				self.logError("Timeout while trying to connect to " + module.getName() + ".")
-				module.socket.destroy(); // Kills the socket
-
-			}, module.params.timeout || 10000 );
-
-
-			module.socket.on('connect', function() {
-
-				self.connected = true;
-				self.connecting = false;
-
-				clearTimeout( timeout );
-
-				module.sequence("ABORT", "digio.writeport(0)", "format.byteorder=format.LITTLEENDIAN" ).then( function() {
-
-			
-					self.socket.removeAllListeners( 'data' );
-					
-					setTimeout( function() {
-						self.command("SpetroscopyScripts();");
-
-						self.emit("connected");
-						module.logOk("Connected to Keithley on host " + module.params.host + " on port " + module.params.port );
-
-						self.queue.map( function( resolver ) {
-							resolver();
-						});
-
-						self.queue = [];
-
-					}, 500);
-
-
-				});
-
-				// It's connected...
-				
-		//		self.getErrors();
-
-			
-
-
-			//	self.flushErrors();
-
-			//	self.command("format.data=format.REAL32");
-
-				
-					
-			});
-
-			module.socket.on('end', function() {
-				console.log('Keithley is being disconnected');
-				module.socket.removeAllListeners( 'data' );
-				self.emit("disconnected");
-			});
-
-			module.socket.on("data", function( d ) {
-		//		console.log( "Keithley response : " );
-		//		console.log( d.toString('ascii') );
-		//		console.log(" End Keithley response");
-			})
-
-
-			module.queue.push( resolver );
-
-		} catch( error ) {
-
-			module.emit("connectionerror");
-			rejecter( error );
-		}
-
-	} );
-};
 
 
 for( var i in methods ) {
@@ -657,127 +529,15 @@ for( var i in methods ) {
 
 		Keithley.prototype[ j ] = function( options ) {
 			var self = this;
-//			self.getErrors();
-			return this._callMethod( methods[ j ], options ).then( function( results ) {
-	//			self.getErrors();
-				return results;
-			});
+			var options = extend( true, options, method.defaults );
+
+			this.log( "Keithley method: <em>" + method.method + "(" + method.parameters( options ).join() + ");</em>");
+
+			return this.command( method.method + "(" + method.parameters( options ).join() + ");" );
 		}
 
 	}) ( i );
 
-}
-
-
-Keithley.prototype._callMethod = function( method, options ) {
-
-	var module = this;
-
-	return this.connect().then( function() {
-		return new Promise( function( resolver, rejecter ) {
-
-			options = extend( true, {}, method.defaults, options );
-
-			if( typeof options == "function" ) {
-				callback = options;
-				options = {};
-			}
-
-			function end( data ) {
-				data = data.replace("\n", "");
-				if( method.processing ) {
-					data = method.processing( data, options );
-				}
-				resolver( data );
-			}
-
-			function listen( prevData ) {
-
-				module.socket.once( 'data', function( data ) {
-					data = prevData + data.toString('ascii');
-			
-					if( data.indexOf("keithley:end;") == -1 ) {
-					
-						listen( data );
-					} else {
-						
-						data = data.replace("keithley:end;", "" );
-			//			console.log( data );
-						end( data );
-
-					}
-				} );
-			}
-
-			listen("");
-			
-			module.log( "Keithley method: <em>" + method.method + "(" + method.parameters( options ).join() + ");</em>");
-			module.socket.write( method.method + "(" + method.parameters( options ).join() + ");\r\n");
-		});
-	});
-
-}
-
-Keithley.prototype.command = function( command ) {
-
-	var module = this;
-	return this.connect().then( function() {
-		return new Promise( function( resolver, rejecter ) {
-
-			module.socket.write( command + "\r\n", function() {
-				console.log( command );
-				resolver();
-			});
-		});
-	});
-}
-
-Keithley.prototype.sequence = function() {
-	var self = this;
-	var args = arguments;
-
-	if( args.length == 1 ) {
-		return self.command( args[ 0 ] );
-	}
-
-	return this.command( args[ 0 ] ).then( function() {
-		Array.prototype.shift.call( args );
-		
-		return self.sequence.apply( self, args );
-	});
-}
-
-Keithley.prototype.commandPrint = function( command ) {
-
-	var module = this;
-	return this.connect().then( function() {
-
-		return new Promise( function( resolver, rejecter ) {
-
-				function end( data ) {
-					data = data.replace("\n", "");
-					if( method.processing ) {
-						data = method.processing( data, options );
-					}
-					resolver( data );
-				}
-
-				function listen( prevData ) {
-
-					module.socket.once( 'data', function( data ) {
-						data = prevData + data.toString('ascii');
-						if( data.indexOf("\n") == -1 ) {
-							listen( data );
-						} else {
-							resolver( data );
-						}
-					} );
-				}
-
-				listen("");
-				module.socket.write( command + "\r\n" );
-		});
-	});
 }
 
 

@@ -8,12 +8,11 @@ var
 var InstrumentController = require("../../vxi11instrumentcontroller");
 var pythonShell = require("python-shell"); // Used to communicate through VXI11 with the Tektronix AFG
 
-var TektronixAFG = function( params ) {
-	this.params = params;
+var TektronixAFG = function( ) {
+	
 	this.connected = false;
 	this.queue = [];
 
-	this.init();
 };
 
 

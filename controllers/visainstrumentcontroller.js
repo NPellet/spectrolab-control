@@ -54,7 +54,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
         }
 
       }, 10000 );
-console.log("Connecting");
+
       // Checking if the PWS is reachable
       module.shellInstance = new pythonShell( 'iovisa.py', {
 
@@ -88,7 +88,7 @@ console.log("Connecting");
 
       } );
 
-console.log("Connecting");
+
       module.shellInstance.send("connect");
 
   } );

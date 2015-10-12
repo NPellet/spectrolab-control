@@ -9,8 +9,8 @@ var
 
 var InstrumentController = require("../../visainstrumentcontroller");
 
-var TektronixPWS = function( params ) {
-  this.params = params;
+var TektronixPWS = function( ) {
+  
   this.connected = false;
   this.queue = [];
   this.connectQueue = [];
@@ -20,9 +20,6 @@ var TektronixPWS = function( params ) {
   this.on("connected", function() {
     self.turnOff( -1 );
   });
-
-
-  this.init();
 
   var self = this;
 };

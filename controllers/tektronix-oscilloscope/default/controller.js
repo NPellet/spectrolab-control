@@ -11,12 +11,11 @@ var
 var InstrumentController = require("../../vxi11instrumentcontroller");
 var Waveform = require("../../../app/waveform");
 
-var TektronixOscilloscope = function( params ) {
-  this.params = params;
+var TektronixOscilloscope = function(  ) {
+  
   this.connected = false;
   this.queue = [];
 
-  this.init();
 };
 
 

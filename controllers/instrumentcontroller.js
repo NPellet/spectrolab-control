@@ -8,8 +8,9 @@ var InstrumentController = function() {};
 
 util.inherits( InstrumentController, events.EventEmitter );
 
-InstrumentController.prototype.init = function() {
+InstrumentController.prototype.init = function( config ) {
 	makeReadyPromise( this );
+	this.config = config;
 }
 
 InstrumentController.prototype.log = function( message ) {
@@ -35,6 +36,10 @@ InstrumentController.prototype.setName = function( name ) {
 InstrumentController.prototype.getName = function( ) {
 	return this.name;
 }
+
+InstrumentController.prototype.getConfig = function( ) {
+	return this.config;
+};
 
 
 InstrumentController.prototype.command = function( command, priority ) {
