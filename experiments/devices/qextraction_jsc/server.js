@@ -13,9 +13,9 @@ module.exports = function( config, app ) {
 	
 
 	return new Promise( function( resolver, rejecter ) {
-	    app.getLogger().info("Starting charge extraction measurement ");
 
-			
+	    app.getLogger().info("Starting charge extraction experiment at 50 Ohm load");
+	
 		config.pulsetime = parseFloat( config.pulsetime );
 		config.delaytime = parseFloat( config.delaytime );
 		config.timebase = parseFloat( config.timebase ) * 1e-6;
@@ -27,14 +27,12 @@ module.exports = function( config, app ) {
 
 		arduino.routeLEDToAFG( "white" );
 
-	    
 	    var recordLength = 10000;
 	    var yscales = {};
 
 	    setup();
 
 	    function *QExtr(  ) {
-
 
 	      oscilloscope.setRecordLength( recordLength );
 
@@ -44,12 +42,12 @@ module.exports = function( config, app ) {
 
 	      yield;
 
-	      app.getLogger().info("Starting charge extraction measurement ");
+	      app.getLogger().info("Starting charge extraction measurement at jsc ");
 
 	      var lightLevel = 0;
 
 	      var results = {
-	        vocs: [],
+	        jscs: [],
 	        charges: [],
 	        lightLevels: [],
 	        currentWaves: [],
@@ -74,14 +72,16 @@ module.exports = function( config, app ) {
 
 	        var done = false;
 	        var horizontalscale = config.timebase;
-	        var yscale = 1e-3;
+
+	        var inityscale = 80e-3;
+	        var yscale = config.vscale;
+
 	        var finalCurrent = new Waveform();
 	        var time = false;
 
 	        while( ! done ) {
 
     		    oscilloscope.setHorizontalScale( Math.round( horizontalscale * Math.pow( 10, 6 ) ) / Math.pow( 10, 6 ) );
-console.log("Set scale");
 
 	   	        app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
 	   	        	QExtr.next();
@@ -107,189 +107,102 @@ console.log("Set scale");
 		        });
 		        yield;
 
+   				var jsc = current.average( recordLength * 0.09, recordLength * 0.1 );
+				var charges = current.integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
 
-		        current.shiftX( current.getXDeltaBetween( 0, 0.1 * recordLength ) );
-
-		        if( horizontalscale == 1e-6 ) {
-		        	index = false;
-		        } else {
-			        var index = current.findLevel( 8 * yscale, {
-			        	box: 1,
-			        	edge: 'descending',
-			        	rounding: 'after',
-			        	direction: 'descending',
-			        	rangeP: [ 0, recordLength ]
-			        } );
-			    }
-		     
-		        if( index ) {
-		        	yscale *= 10;
-
-		        	horizontalscale = Math.max( 1e-6, - current.getXDeltaBetween( 0.1 * recordLength, index ) / 3 );
-		        	done = false;
-   		  	        app.getLogger().info("Found overshoot at index " + index + ". New horizontal scale: " + horizontalscale + "s, vertical scale: " + yscale + "V");
-
-		        } else {
-		        	done = true;
-		        }
-
-				finalCurrent.push( current.subset( index || Math.round( 0.1 * recordLength ), time ? current.getIndexFromX( time ) : recordLength - 1 ), current.getIndexFromX( time ), time );
-		        time = current.getXFromIndex( index );
-
-				var voc = voltage.average( 0, 0.05 * recordLength );
+				if( jsc < yscale / 3 ) {
+					yscale /= 2
+					continue;
+				} else {
+					yscale = inityscale;
+				}
 	      }
 
-	      	finalCurrent.sortX();
-	      	var charges = finalCurrent.integrateP( 0, finalCurrent.getDataLength() - 1 );
-
-		    results.vocs.push( voc );
-		    results.charges.push( charges );
-		    results.lightLevels.push( lightLevel );
-		    results.currentWaves.push( finalCurrent );
-		    results.voltageWaves.push( voltage );
-		    results.lastCurrentWave = finalCurrent;
-		    
-		    progress( results );
+      	
+	    results.jscs.push( jscs );
+	    results.charges.push( charges );
+	    results.lightLevels.push( lightLevel );
+	    results.currentWaves.push( current );
+	    results.voltageWaves.push( voltage );
+	    results.lastCurrentWave = current;
+	    
+	    progress( results );
 	  }
 
 	    oscilloscope.disableChannels();
 
 
 	}
-	  function pulse( vscale ) {
 
-	    var nb = config.averaging;
-
-		oscilloscope.stopAquisition();
+	function pulse( vscale, nb ) {
+		
 	    oscilloscope.setNbAverage( nb );
 	    oscilloscope.clear();
-  	    oscilloscope.setVerticalScale( 2, vscale );
-	    
-
-
-	    afg.setShape( 1, "PULSE" );
-	    afg.setVoltageLow( 1, 0 );
-	    afg.setVoltageHigh( 1, 4 );
-	    afg.enableBurst( 1 );
-
-
+	    oscilloscope.setTriggerMode("NORMAL");
+	    oscilloscope.stopAfterSequence( true );
 	    afg.setBurstNCycles( 1, nb );
-	    afg.setBurstNCycles( 2, nb );
 
-	    afg.setPulseHold( 1 , "WIDTH" );
-	    afg.setBurstTriggerDelay(  1, 0 );
-	    afg.setBurstNCycles( 1, nb );
-	    afg.setPulseLeadingTime( 1, 9e-9 );
-	    afg.setPulseTrailingTime( 1, 9e-9 );
-	    afg.setPulseDelay( 1, 0 );
-	    afg.setPulsePeriod( 1, ( config.pulsetime + config.delaytime ) + 1 );
-	    afg.setPulseWidth( 1, config.pulsetime );
-
-
-
-	    afg.setPulsePeriod( 2, ( config.pulsetime + config.delaytime ) + 1 );
-	    afg.setPulseWidth( 2, config.delaytime );
-	    afg.setPulseDelay( 2, config.pulsetime );
-
-	    afg.wait();
-		oscilloscope.startAquisition();
+	    oscilloscope.setVerticalScale( 3, vscale );
+	    oscilloscope.startAquisition();
 
 	    return new Promise( function( resolver ) {
 
-	    	setTimeout( function() {
-			  
-	   	    
+		    setTimeout( function() {
 
-			  afg.enableChannel( 1 );
-		      afg.enableChannel( 2 );
+		      afg.enableChannels( );
 		      afg.trigger();
 
-		      oscilloscope.whenready().then( function() {
+		      oscilloscope.whenready( ).then( function() {
+			  	afg.disableChannels();
+		    	oscilloscope.getWaves().then( function( w ) {
+		    		resolver( w );
+		    	});
+			  });
 
-		     	 	afg.disableChannels();
-			  		
+		    }, 2000 );
 
-		      		oscilloscope.getWaves().then( function( w ) {
-		      			resolver( w );
-		      		});
-		    	})
-
-		    }, 5000 );
-		    
-		    
-	    })
-	    
-
+		});
 	  }
 
 
-	  function pulseBlank(  ) {
+	  function pulseBlank( nb ) {
 
 	    var nb = config.blankaveraging;
-
-	    afg.disableChannels();
-	    oscilloscope.setNbAverage( nb );
-	    oscilloscope.clear();
-	    oscilloscope.startAquisition();
-
-	    afg.disableBurst( 1 );
-	    afg.disableBurst( 2 );
-
-	    afg.setPulseDelay( 2, 0 );
-	    afg.setPulsePeriod( 2, config.timebase * 20 );
-	    afg.setPulseWidth( 2, config.timebase * 10 );
-	    afg.setShape( 1, "DC" );
-	    afg.setVoltageOffset( 1, 0 );
-
-	    afg.wait();
-	    afg.enableChannels( );
+		var self = experiment;
+    	oscilloscope.setTriggerMode("AUTO");
+    	oscilloscope.stopAfterSequence( false );
+		oscilloscope.setNbAverage( nb );
+		oscilloscope.setHorizontalScale( config.timebase );
+		oscilloscope.clear();
+		oscilloscope.startAquisition();
 
 
-	    return new Promise( function( resolver, rejecter ) {
-
-	    	setTimeout( function() {
-		  
-				afg.enableChannels( );
-			    oscilloscope.whenready().then( function() {
-
-			      afg.enableBurst( 1 );
-			      afg.enableBurst( 2 );
-				
-			      afg.disableChannels();
-			      oscilloscope.getWaves().then( function( w ) {
-			      	resolver( w );
-			      });
-			    } );
-
-		      }, 2000 );
-
-
-	    })
- 		
+		return app.wait( 10 ).then( function() {
+			return oscilloscope.getWaves();
+		})
 	  }
 
 	  function setup() {
 
-	    var nbAverage = config.averaging;
+	   var nbAverage = config.averaging;
 	    var pulsetime = config.pulsetime;
 	    var delaytime = config.delaytime;
 	    var timeBase = config.timebase;
 	    var vscale = config.vscale;
 
-	    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-	    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+	    oscilloscope.setTriggerMode("AUTO");
+	    oscilloscope.stopAfterSequence( false );
 
-	    oscilloscope.stopAfterSequence( true );
 
 	    oscilloscope.disable50Ohms( 2 );
-	    oscilloscope.disable50Ohms( 3 );
+	    oscilloscope.enable50Ohms( 3 );
 	    oscilloscope.disable50Ohms( 1 );
 	    oscilloscope.disable50Ohms( 4 );
-	    oscilloscope.setTriggerMode("NORMAL");
 
-	    oscilloscope.setVerticalScale( 2, vscale ); // 200mV over channel 3
-	    oscilloscope.setVerticalScale( 1, 300e-3 ); // 200mV over channel 3
+	    oscilloscope.setHorizontalScale( timeBase );
+	    oscilloscope.setVerticalScale( 3, vscale ); // 200mV over channel 3
 	    oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
+
 	    oscilloscope.setTriggerCoupling( "AC" ); // Trigger coupling should be AC
 
 	    oscilloscope.setCoupling( 1, "DC");
@@ -297,45 +210,31 @@ console.log("Set scale");
 	    oscilloscope.setCoupling( 3, "DC");
 	    oscilloscope.setCoupling( 4, "DC");
 
-	    oscilloscope.setTriggerToChannel( 4 ); // Set trigger on switch channel
+	    oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel
 	    oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
-	    oscilloscope.setTriggerSlope( 4, "RISE"); // Trigger on bit going up
+	    oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
 	    oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
 	    oscilloscope.setTriggerLevel( 0.7 ); // Set trigger to 0.7V
+
 	    oscilloscope.enableChannels();
 
 	    oscilloscope.setPosition( 2, -4 );
-	    oscilloscope.setPosition( 1, -4 );
-
-	    oscilloscope.setPosition( 3, 0 );
+	    oscilloscope.setPosition( 3, -4 );
+	    oscilloscope.setPosition( 1, 0 );
 	    oscilloscope.setPosition( 4, 0 );
 
 	    oscilloscope.setOffset( 1, 0 );
 	    oscilloscope.setOffset( 2, 0 );
 	    oscilloscope.setOffset( 3, 0 );
 	    oscilloscope.setOffset( 4, 0 );
+
 	    oscilloscope.enableAveraging();
+	    oscilloscope.disableCursors( );
 
-
-
-	    oscilloscope.setCursors( "VBArs" );
-	    oscilloscope.setCursorsMode( "INDependent" );
-	    oscilloscope.setCursorsSource( 2 );
-	    oscilloscope.enableCursors( 2 );
-	    oscilloscope.setVCursorsPosition( 2, timeBase * 7 );
-	    oscilloscope.setVCursorsPosition( 1, 900e-9 ); // 5%
-	    oscilloscope.setVCursorsPosition( 1, 900e-9 ); // 5%
-
-	    oscilloscope.setMeasurementType( 1, "PK2PK" );
-	    oscilloscope.setMeasurementSource( 1, 2 );
+	    oscilloscope.setMeasurementType( 1, "AMPlitude" );
+	    oscilloscope.setMeasurementSource( 1, 3 );
 	    oscilloscope.enableMeasurement( 1 );
 	    oscilloscope.setMeasurementGating( "OFF" );
-
-	    oscilloscope.setMeasurementType( 2, "MINImum" );
-	    oscilloscope.setMeasurementSource( 2, 2 );
-	    oscilloscope.enableMeasurement( 2 );
-
-
 
 
 	    /* AFG SETUP */
@@ -345,31 +244,27 @@ console.log("Set scale");
 	    var pulseChannel = 1;
 	    afg.enableBurst( pulseChannel );
 	    afg.setShape( pulseChannel, "PULSE" );
-	    afg.setVoltageLow( pulseChannel, 0 );
-	    afg.setVoltageHigh( pulseChannel, 4 );
 	    afg.setPulseHold( pulseChannel , "WIDTH" );
 	    afg.setBurstTriggerDelay(  pulseChannel, 0 );
 	    afg.setBurstNCycles( pulseChannel, nbAverage );
+	    afg.setVoltageLow( pulseChannel, 0 );
+	    afg.setVoltageHigh( pulseChannel, 1.5 );
 	    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
 	    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
 	    afg.setPulseDelay( pulseChannel, 0 );
 	    afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
 	    afg.setPulseWidth( pulseChannel, pulsetime );
 
-	    var pulseChannel = 2;
-	    afg.enableBurst( pulseChannel );
-	    afg.setShape( pulseChannel, "PULSE" );
-	    afg.setPulseHold( pulseChannel , "WIDTH" );
-	    afg.setBurstTriggerDelay(  pulseChannel, 0 );
-	    afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
-	    afg.setVoltageLow( pulseChannel, 0 );
-	    afg.setVoltageHigh( pulseChannel, 1.5 );
-	    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
-	    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
+	    afg.setShape( 2, "DC" );
+	    afg.setVoltageOffset( 2, 0 );
+
+	    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+	    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
 
 	    afg.disableChannels( ); // Set the pin LOW
 
 	    afg.getErrors();
+
 
 	    return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
 	  }
