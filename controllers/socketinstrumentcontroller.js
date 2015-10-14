@@ -1,5 +1,5 @@
 
-var pythonShell = require("python-shell");
+var net = require('net');
 var path = require("path");
 
 var instrumentcontroller = require("./instrumentcontroller");
@@ -10,40 +10,47 @@ var SocketInstrumentController = function() {};
 util.inherits( SocketInstrumentController, instrumentcontroller );
 
 
-SocketInstrumentController.prototype.query = function( command ) {
+SocketInstrumentController.prototype.query = function( command, element ) {
 
 	var instrument = this;
-
+console.log( command, element.options );
 	return new Promise( function( resolver, rejecter ) {
+		if( element.options.waitForResponse ) {
 
-		function end( data ) {
-			data = data.replace("\n", "");
-			if( method.processing ) {
-				data = method.processing( data, options );
-			}
-			resolver( data );
-		}
+			function end( data ) {
+				data = data.replace("\n", "");
 
-		function listen( prevData ) {
-
-			instrument.socket.once( 'data', function( data ) {
-				data = prevData + data.toString('ascii');
-		
-				if( data.indexOf("keithley:end;") == -1 ) {
-				
-					listen( data );
-				} else {
-					
-					data = data.replace("keithley:end;", "" );
-		//			console.log( data );
-					end( data );
-
+				if( element.options.dataprocessing ) {
+					data = element.options.dataprocessing( data, element.options.dataprocessingoptions );
 				}
-			} );
-		}
 
-		listen("");
-	
+				resolver( data );
+			}
+
+			function listen( prevData ) {
+
+				instrument.socket.once( 'data', function( data ) {
+					data = prevData + data.toString('ascii');
+					
+					if( data.indexOf("keithley:end;") == -1 ) {
+					
+						listen( data );
+					} else {
+						
+						data = data.replace("keithley:end;", "" );
+			//			console.log( data );
+						end( data );
+
+					}
+				} );
+			}
+
+			listen("");
+
+		} else {
+			resolver();
+		}
+		
 		instrument.socket.write( command + "\r\n" );
 	} );
 }
@@ -112,13 +119,13 @@ SocketInstrumentController.prototype.connect = function( ) {
 
 				clearTimeout( timeout );
 
-				module.commands("ABORT", "digio.writeport(0)", "format.byteorder=format.LITTLEENDIAN" ).then( function() {
+				self.commands( 0, { waitForResponse: false }, "ABORT", "digio.writeport(0)", "format.byteorder=format.LITTLEENDIAN" ).then( function() {
 
 					self.socket.removeAllListeners( 'data' );
 					
 					setTimeout( function() {
 
-						self.command("SpetroscopyScripts();"); // Load the scripts
+						self.command("SpetroscopyScripts();", 0, { waitForResponse: false } ); // Load the scripts
 						module.logOk("Connected to Keithley on host " + module.config.host + " on port " + module.config.port );
 
 						self.emit("connected");

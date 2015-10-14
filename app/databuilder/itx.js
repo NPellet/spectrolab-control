@@ -129,14 +129,14 @@ IgorWave.prototype = {
 
 			// Adding the x axis unit
 			stringScaling += ", \"" + ( this.waveform.getXUnit( ) || "" ) + "\"";
-			stringScaling += ", " + this.name + ";";
+			stringScaling += ", '" + this.name + "'";
 			stringScaling += "\n";
 
 			string += stringScaling
 		}
 
 		if( this.waveform.hasYUnit( ) ) {
-			string += "x SetScale y 0, 0,\"" + ( this.waveform.getYUnit( ) || "" ) + "\", " + this.name + ";\n";
+			string += "x SetScale y 0, 0,\"" + ( this.waveform.getYUnit( ) || "" ) + "\", '" + this.name + "'\n";
 		}
 
 		return string;

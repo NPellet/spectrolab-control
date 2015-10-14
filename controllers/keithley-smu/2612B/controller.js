@@ -1,8 +1,7 @@
 
 "use strict";
 
-var net = require('net'),
-	extend = require('extend'),
+var	extend = require('extend'),
 	fs = require('fs'),
 	path = require("path"),
 	promise = require("bluebird"),
@@ -12,36 +11,7 @@ var net = require('net'),
 var InstrumentController = require("../../socketinstrumentcontroller");
 
 
-var methods = {
-
-	'sourcev': {
-		defaults: {
-			bias: 0,
-			channel: 'smua',
-			complianceV: 1
-		},
-
-		method: 'sourcev',
-		parameters: function( options ) {
-			return [ options.channel, options.bias, options.complianceV ]
-		}
-	},
-
-
-	'tpv': {
-		defaults: {
-			 channel: 'smua',
-			 npoints: '2000',
-			 ncycles: '1',
-			 delaybetweenpoints: '0.0002'
-		},
-
-		method: 'tpv',
-		parameters: function( options ) {
-			return [ options.channel, options.npoints, options.ncycles, options.delaybetweenpoints ]
-		}, 
-
-		processing: function( data, options ) {
+var tpctpvprocess = function( data, options ) {
 
 			var ws = [];
 			data = data.split(/,[\t\r\s\n]*/);
@@ -69,9 +39,71 @@ var methods = {
 			var w = Waveform.average.apply( Waveform, ws );
 			w.setXWave( wX );
 			return w;
-		}
+		};
 
+
+var methods = {
+
+	'sourcev': {
+		defaults: {
+			bias: 0,
+			channel: 'smua',
+			complianceV: 1
+		},
+
+		method: 'sourcev',
+		parameters: function( options ) {
+			return [ options.channel, options.bias, options.complianceV ]
+		}
 	},
+
+
+
+	'tpv': {
+		defaults: {
+			 channel: 'smua',
+			 npoints: 2000,
+			 ncycles: 1,
+			 nplc: 0.001,
+			 delay: 0
+		},
+
+		method: 'tpv',
+		parameters: function( options ) {
+			return [ options.channel, options.npoints, options.ncycles, options.nplc, options.delay ]
+		}, 
+
+		processing: tpctpvprocess
+	},
+
+	'tpc': {
+		defaults: {
+			 channel: 'smua',
+			 npoints: 2000,
+			 ncycles: 1,
+			 nplc: 0.001,
+			 delay: 0
+		},
+
+		method: 'tpc',
+		parameters: function( options ) {
+			return [ options.channel, options.npoints, options.ncycles, options.nplc, options.delay ]
+		}, 
+
+		processing: function( data, options ) {
+
+			var returnarray;
+			var reg = /\(current:([0-9.e-]*)[\r\n]*\)/g;
+			if( ( returnarray = reg.exec( data ) ) !== null ) {
+				var dccurrent = parseFloat( returnarray[ 1 ] );
+				data = data.replace(reg, "" );
+			}
+			var w = tpctpvprocess( data, options );
+
+			return { current: dccurrent, wave: w };
+		}
+	},
+
 
 
 	'sweepIV': {
@@ -525,18 +557,18 @@ Keithley.prototype = new InstrumentController();
 
 for( var i in methods ) {
 
-	( function( j ) {
+	( function( j, method ) {
 
 		Keithley.prototype[ j ] = function( options ) {
-			var self = this;
-			var options = extend( true, options, method.defaults );
+			var self = this,
+				options = extend( true, {}, method.defaults, options );
 
 			this.log( "Keithley method: <em>" + method.method + "(" + method.parameters( options ).join() + ");</em>");
 
-			return this.command( method.method + "(" + method.parameters( options ).join() + ");" );
+			return this.command( method.method + "(" + method.parameters( options ).join() + ");", 0, { waitForResponse: true, dataprocessing: method.processing, dataprocessingoptions: options } );
 		}
 
-	}) ( i );
+	}) ( i, methods[ i ] );
 
 }
 
@@ -565,7 +597,7 @@ Keithley.prototype.checkConnection = function() {
 Keithley.prototype.getErrors = function() {
 	
 		var self = this;
-		this.commandPrint("print( errorqueue.count );").then( function( errorCount ) {
+		this.command("print( errorqueue.count );print(\"keithley:end;\");", 0, { waitForResponse: true } ).then( function( errorCount ) {
 			console.log("Raw error count: " + errorCount );
 			errorCount = parseFloat( errorCount );
 			console.log( "Error count: " + errorCount );
@@ -577,7 +609,7 @@ Keithley.prototype.getErrors = function() {
 			}
 
 			function nexterror() {
-				self.commandPrint("errorCode, message, severity, errorNode = errorqueue.next(); print( errorCode, message );").then( function( error ) {		
+				self.command("errorCode, message, severity, errorNode = errorqueue.next(); print( errorCode, message, errorNode, severity ); print(\"keithley:end;\");", -1, { waitForResponse: true } ).then( function( error ) {		
 					console.log( error );
 
 					i++;
@@ -625,7 +657,7 @@ Keithley.prototype.uploadScripts = function() {
 	
 			if( l + func[ m ].length > 1024 ) {
 				this.socket.write( b );
-
+				console.log( b );
 				b = "";
 				l = 0;
 
@@ -636,9 +668,10 @@ Keithley.prototype.uploadScripts = function() {
 		}
 
 		this.socket.write( b );
-
+		console.log( b );
 		//this.socket.write(  );
 		this.socket.write("\r\n");
+		console.log( "\r\n" );
 	}
 
 

@@ -10,9 +10,9 @@ module.exports = function( config, app ) {
 	var PWSColor = app.getInstrument("PowerSupplyColoredLED");
 
 
-	var nbpoints = 1000; // Fixed number of point. Now the question is the delay between every point ?
+	var nbpoints = 300; // Fixed number of point. Now the question is the delay between every point ?
 
-	var perturbationIteration = 0.1;
+	var perturbationIteration = 0.15;
 	var perturbationValue = PWSColor.getConfig().minVoltage; // 6V initi
 	
 
@@ -30,31 +30,31 @@ module.exports = function( config, app ) {
 			nplc = 0.001;
 		}
 
-		if( nplc > 0.05 ) {
-			nplc = 0.05;
+		if( nplc > 0.02 ) {
+			nplc = 0.02;
 		}
 
 		return nplc;
 	}
 
 	
-	var nplc = calculateNPLC( config.pulsewidth * 16, nbpoints );
+	var nplc = calculateNPLC( config.pulsewidth * 10, nbpoints );
 
 
 	var c = color().hsl( 90, 100, 35 );
 	var igorfile = app.itx();
 
-	function progress( TPV, sunLevel ) {
+	function progress( TPC, sunLevel ) {
 
-		renderer.getModule( "tpv" ).newSerie( "tpv_" + sunLevel.sun, TPV, { lineColor: c.rgbString() } );
-		renderer.getModule( "tpv" ).autoscale();
+		renderer.getModule( "tpc" ).newSerie( "tpc_" + sunLevel.sun, TPC, { lineColor: c.rgbString() } );
+		renderer.getModule( "tpc" ).autoscale();
 
-		var itxw = igorfile.newWave( "TPV_" + sunLevel.sun );
-		itxw.setWaveform( TPV );
+		var itxw = igorfile.newWave( "TPC_" + sunLevel.sun );
+		itxw.setWaveform( TPC );
 
 		c.rotate( 270 / 13 );
 
-   		var fileName = app.save( "tpv_slow/", igorfile.getFile(), "itx" );
+   		var fileName = app.save( "tpc_slow/", igorfile.getFile(), "itx" );
 	}
 
 	function setup() {
@@ -91,7 +91,7 @@ module.exports = function( config, app ) {
 
 	return new Promise( function( resolver, rejecter ) {
 
-		function *tpv() {
+		function *tpc() {
 
 			setup().then( function() {
 				method.next();
@@ -102,7 +102,7 @@ module.exports = function( config, app ) {
 			yield;
 
 			var i = 0,
-				TPV,
+				TPC,
 				levels = app.getConfig().instruments.PowerSupplyWhiteLED.voltage_sunoutput;
 
 			app.getLogger().info("Routing DC White LED to Arduino.")
@@ -121,7 +121,7 @@ module.exports = function( config, app ) {
 					app.getLogger().info("Setting current to white LED. Voltage: " + levels[ i ].voltage + "V. Sun intensity: " + levels[ i ].text );
 
 					perturbation( i == 0 ).then( function( d ) {
-						TPV = d;
+						TPC = d;
 						method.next();
 					} );
 
@@ -130,7 +130,7 @@ module.exports = function( config, app ) {
 				yield;
 
 				
-				progress( TPV, levels[ i ] );
+				progress( TPC, levels[ i ] );
 
 				i++;
 
@@ -145,7 +145,6 @@ module.exports = function( config, app ) {
 			arduino.turnLEDOff("white"); // Turn off white LEDs
 			PWSColor.turnOff(); // Turn off white LEDs
 			PWSWhite.turnOff();
-			
 			resolver(); // Done !
 		};
 
@@ -154,8 +153,10 @@ module.exports = function( config, app ) {
 		function perturbation( skipFirst ) {
 
 			var self = this;
-			var level = 5e-3;
+			var level = 1e-6; // 1mV over 50 Ohm
 			var i = 0;
+			var current = -1;
+
 			return new Promise( function( resolver, rejecter ) {
 				
 				var perturbed = 0;
@@ -173,8 +174,13 @@ module.exports = function( config, app ) {
 
 					while( true ) {
 
-console.log( nplc );
-						if( perturbed < level && perturbationValue < 15 ) {
+						if( current != -1 ) {
+							current = Math.max( 1e-7, current / 10 );
+							app.getLogger().info( "Perturbation :" + perturbed + "A. Required:" + current + "A" );
+						}
+						
+
+						if( perturbed < current && perturbationValue < 15 || current == -1 ) {
 
 							PWSColor.setVoltageLimit( perturbationValue );
 							setTimeout( function() {
@@ -185,24 +191,27 @@ console.log( nplc );
 
 							if( perturbed > 0 ) {
 
-								app.getLogger().info( "Perturbation is not strong enough (" + perturbed + "V vs " + level + "V required). Ramping voltage up to " + ( perturbationValue + perturbationIteration )  );
+								app.getLogger().info( "Perturbation is not strong enough (" + perturbed + "A vs " + current + "A required). Ramping voltage up to " + ( perturbationValue + perturbationIteration )  );
 								perturbationValue += perturbationIteration;
 							}
 
+							//keithley.getErrors();
+
 							//timeperpoint = Math.max( 50e-6, timeperpoint );
-							keithley.tpv( {
+							keithley.tpc( {
 
 								channel: "smub",
 								npoints: nbpoints,
-								ncycles: 2,//config.trialaveraging,
-								nplc: nplc, // Length is 5 times the pulse width
-								delay: config.pulsewidth
+								ncycles: 3,//config.trialaveraging,
+								nplc: calculateNPLC( config.pulsewidth * 10, nbpoints ), // Length is 5 times the pulse width
+								delay: 0
 
 							} ).then( function( w ) {
 
+								current = - w.current;
+								perturbed = Math.abs( w.wave.getMax() - w.wave.getMin() );
+								console.log("PERTURBED: " + perturbed + "; Current: " + current );
 
-								perturbed = Math.abs( w.getMax() - w.getMin() );
-								console.log("PERTURBED: " + perturbed );
 								if( isNaN( perturbed ) ) {
 									perturbed = 0;
 								}
@@ -211,14 +220,18 @@ console.log( nplc );
 									perturbed = 0;
 								}
 
+								renderer.getModule( "tpctemp" ).newSerie( "tpc_temp", w.wave, { lineColor: 'grey' } );
+								renderer.getModule( "tpctemp" ).autoscale();
+
+
 								pert.next();	
 								
 							} );
 	
 						} else {
 				
-							config.averaging = 10;
-							keithley.tpv( {
+							config.averaging = 100;
+							keithley.tpc( {
 
 								channel: "smub",
 								npoints: nbpoints,
@@ -228,7 +241,9 @@ console.log( nplc );
 
 							} ).then( function( w ) {
 
+								w = w.wave;
 
+								w.divideBy( -1 );
 								w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
 								w.divideBy( w.getMax() );
 							//	w.shiftX( - config.pulsewidth );
@@ -273,7 +288,7 @@ console.log("Found decay time:" + decaytime );
 
 
 
-		var method = tpv();
+		var method = tpc();
 		method.next();
 	});
 

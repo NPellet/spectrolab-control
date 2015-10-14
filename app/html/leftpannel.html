@@ -30,9 +30,19 @@
 			
 			{% if method._device %}
 				
-				<li class="method list-group-item" data-method="{{ method.path }}" data-method-id="{{ method.id }}">
+				<li class="method list-group-item {% if method.running %}running{% endif %}" data-method="{{ method.path }}" data-method-id="{{ method.id }}">
+
+
+
 					{{ method.name }}
-					<span class="configuremethod pull-right glyphicon glyphicon-wrench"></span>
+					
+
+					{% if method.running %}
+						<span class="pull-right glyphicon glyphicon-record"></span>
+					{% else %}
+						<span class="configuremethod pull-right glyphicon glyphicon-wrench"></span>
+					{% endif %}
+
 				</li>
 
 			{% endif %}

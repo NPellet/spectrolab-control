@@ -31,7 +31,7 @@ module.exports = function( config, app ) {
 		var perturbationValue = 6.4;
 
 	    var preTrigger = 10;
-	    var recordLength = 10000;
+	    var recordLength = 100000;
 	    var yscales = {};
 
 	    setup();
@@ -84,7 +84,7 @@ module.exports = function( config, app ) {
 	        while( ! done ) {
 
     		    oscilloscope.setHorizontalScale( Math.round( horizontalscale * Math.pow( 10, 6 ) ) / Math.pow( 10, 6 ) );
-console.log("Set scale");
+
 
 	   	        app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
 	   	        	QExtr.next();
@@ -102,14 +102,14 @@ console.log("Set scale");
 		        yield;
 
 
-	  	        app.getLogger().info("Pulsing dark... (Waiting time about " + ( ( config.timebase * 20 ) * config.blankaveraging ) + " s)");
+	  	   /*     app.getLogger().info("Pulsing dark... (Waiting time about " + ( ( config.timebase * 20 ) * config.blankaveraging ) + " s)");
 		        pulseBlank(  ).then( function( w ) {
 		          current.subtract( w[ 2 ] );
 		          voltage.subtract( w[ 1 ] );
 		          QExtr.next();
 		        });
 		        yield;
-
+*/
 
 		        current.shiftX( current.getXDeltaBetween( 0, 0.1 * recordLength ) );
 
@@ -120,9 +120,11 @@ console.log("Set scale");
 			        	box: 1,
 			        	edge: 'descending',
 			        	rounding: 'after',
-			        	direction: 'descending',
-			        	rangeP: [ 0, recordLength ]
+			        	direction: 'ascending',
+			        	rangeP: [ 0.1*recordLength, recordLength ]
 			        } );
+
+			        console.log( index );
 			    }
 		     
 		        if( index ) {
@@ -226,7 +228,7 @@ console.log("Set scale");
 	  }
 
 
-	  function pulseBlank(  ) {
+	/*  function pulseBlank(  ) {
 
 	    var nb = config.blankaveraging;
 
@@ -270,7 +272,7 @@ console.log("Set scale");
 	    })
  		
 	  }
-
+*/
 	  function setup() {
 
 	    var nbAverage = config.averaging;
@@ -300,7 +302,7 @@ console.log("Set scale");
 	    oscilloscope.setCoupling( 3, "DC");
 	    oscilloscope.setCoupling( 4, "DC");
 
-	    oscilloscope.setTriggerToChannel( 4 ); // Set trigger on switch channel
+	    oscilloscope.setTriggerToChannel( 3 ); // Set trigger on switch channel
 	    oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
 	    oscilloscope.setTriggerSlope( 4, "RISE"); // Trigger on bit going up
 	    oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
@@ -405,7 +407,7 @@ console.log("Set scale");
 		renderer.getModule( "graph" ).newScatterSerie( "qvoc", qvoc );
 		renderer.getModule( "lastqextr" ).newSerie( "qextr", arg.lastCurrentWave );
 
- 		var fileName = app.save( "qextr_voc/", itx.getFile(), app.getDeviceName(), "itx" );
+ 		var fileName = app.save( "qextr_voc/", itx.getFile(), "itx" );
 
 
 	  }

@@ -14,8 +14,8 @@ module.exports = function( config, app ) {
 
 	arduino.routeLEDToArduino( "white" );
 
-	var perturbationIteration = 0.1;
-	var perturbationValue = 6.4;
+	var perturbationIteration = 0.07;
+	var perturbationValue = 6.3;
 
 	var recordLength = 10000;
 	var timescale = 5e-3;
@@ -25,92 +25,100 @@ module.exports = function( config, app ) {
 	var c = color().hsl( 90, 100, 35 );
 	var igorfile = app.itx();
 
-		function progress( TPV, sunLevel ) {
+	function progress( TPV, sunLevel ) {
 
-			renderer.getModule( "vocDecay" ).newSerie( "lastVocDecay_" + sunLevel.sun, TPV, { lineColor: c.rgbString() } );
-			renderer.getModule( "vocDecay" ).autoscale();
+		renderer.getModule( "vocDecay" ).newSerie( "lastVocDecay_" + sunLevel.sun, TPV, { lineColor: c.rgbString() } );
+		renderer.getModule( "vocDecay" ).autoscale();
 
-			var itxw = igorfile.newWave( "TPV_" + sunLevel.sun );
-			itxw.setWaveform( TPV );
+		var itxw = igorfile.newWave( "TPV_" + sunLevel.sun );
+		itxw.setWaveform( TPV );
 
-			c.rotate( 270 / 13 );
+		c.rotate( 270 / 13 );
 
-       		var fileName = app.save( "tpv/", igorfile.getFile(), app.getDeviceName(), "itx" );
-		}
+   		var fileName = app.save( "tpv/", igorfile.getFile(), "itx" );
+	}
 
-		function setup() {
-			/* AFG SETUP */
-			afg.enableBurst( config.afgChannel );
-			afg.setShape( config.afgChannel, "PULSE" );
-			afg.setPulseHold( config.afgChannel, "WIDTH" );
-			afg.setBurstTriggerDelay( config.afgChannel, 0 );
-			afg.setBurstMode( config.afgChannel, "TRIGGERED");
-			afg.setBurstNCycles( config.afgChannel, 1 );
-			afg.setVoltageLow( config.afgChannel, 0 );
-			afg.setVoltageHigh( config.afgChannel, 1.5 );
-			afg.setPulseLeadingTime( config.afgChannel, 9e-9 );
-			afg.setPulseTrailingTime( config.afgChannel, 9e-9 );
-			afg.setPulseDelay( config.afgChannel, 0 );
-			afg.setPulsePeriod( config.afgChannel, config.pulsewidth * 15	 );
-			afg.setPulseWidth( config.afgChannel, config.pulsewidth );
-			afg.disableChannels( ); // Set the pin LOW
-			afg.getErrors();
+	function setup() {
+		/* AFG SETUP */
+		afg.enableBurst( config.afgChannel );
+		afg.setShape( config.afgChannel, "PULSE" );
+		afg.setPulseHold( config.afgChannel, "WIDTH" );
+		afg.setBurstTriggerDelay( config.afgChannel, 0 );
+		afg.setBurstMode( config.afgChannel, "TRIGGERED");
+		afg.setBurstNCycles( config.afgChannel, 1 );
+		afg.setVoltageLow( config.afgChannel, 0 );
+		afg.setVoltageHigh( config.afgChannel, 1.5 );
+		afg.setPulseLeadingTime( config.afgChannel, 9e-9 );
+		afg.setPulseTrailingTime( config.afgChannel, 9e-9 );
+		afg.setPulseDelay( config.afgChannel, 0 );
+		afg.setPulsePeriod( config.afgChannel, config.pulsewidth * 20 );
+		afg.setPulseWidth( config.afgChannel, config.pulsewidth );
+		afg.disableChannels( ); // Set the pin LOW
+		afg.getErrors();
 
-			afg.disableBurst( config.afgChannel );
+		afg.disableBurst( config.afgChannel );
 
-			/* KEITHLEY SETUP */
-			keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-			keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
-			keithley.command( "smub.source.highc = smub.ENABLE;" ); // Turn the output off
+		/* KEITHLEY SETUP */
+		keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
+		keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+		keithley.command( "smub.source.highc = smub.ENABLE;" ); // Turn the output off
 
 
-			/* OSCILLOSCOPE SETUP */
-			oscilloscope.enableAveraging();
+		/* OSCILLOSCOPE SETUP */
+		oscilloscope.enableAveraging();
 
-			oscilloscope.setCoupling( 1, "AC");
-			oscilloscope.setCoupling( 2, "GND");
-			oscilloscope.setCoupling( 3, "DC");
-			oscilloscope.setCoupling( 4, "GND");
 
-			oscilloscope.disable50Ohms( 1 );
-			oscilloscope.setRecordLength( recordLength );
+		oscilloscope.setVerticalScale( 1, 1e-3 );
+		oscilloscope.setVerticalScale( 3, 2 );
+		oscilloscope.setPosition( 1, -2 );
+		oscilloscope.setOffset( 1, 0 );
 
-			oscilloscope.setVerticalScale( 1, 1e-3 );
-			oscilloscope.setVerticalScale( 3, 2 );
-			oscilloscope.setPosition( 1, -2 );
-			oscilloscope.setOffset( 1, 0 );
 
-			oscilloscope.setTriggerToChannel( 3 ); // Set trigger on switch channel. Can also use down trigger from Channel 1
-			oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
-			oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
-			oscilloscope.setTriggerLevel( 0.7 ); // TTL down
-			oscilloscope.setTriggerRefPoint( 15 );
+		oscilloscope.setCoupling( 1, "AC");
+		oscilloscope.setCoupling( 2, "GND");
+		oscilloscope.setCoupling( 3, "GND");
+		oscilloscope.setCoupling( 4, "DC");
 
-			oscilloscope.enableChannels();
+		oscilloscope.disable50Ohms( 1 );
+		oscilloscope.setRecordLength( recordLength );
 
-			oscilloscope.setTriggerMode("NORMAL");
-			oscilloscope.setHorizontalScale( config.pulsewidth );
+		oscilloscope.setTriggerToChannel( 4 ); 
+		oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be DC
+		oscilloscope.setTriggerSlope( 1, "FALL" ); // Trigger on bit going up
+		oscilloscope.setTriggerLevel( 0.7 ); // TTL down
+		oscilloscope.setTriggerRefPoint( 15 );
 
-			oscilloscope.setMeasurementType( 1, "AMPLITUDE" );
-			oscilloscope.setMeasurementSource( 1, 1 );
-			oscilloscope.enableMeasurement( 1 );
+		oscilloscope.enableChannels();
 
-			oscilloscope.setMeasurementType( 2, "MEAN" );
-			oscilloscope.setMeasurementSource( 2, 1 );
-			oscilloscope.enableMeasurement( 2 );
+		oscilloscope.setTriggerMode("NORMAL");
+		oscilloscope.setHorizontalScale( config.pulsewidth );
 
-			oscilloscope.setMeasurementType( 3, "Pk2Pk" );
-			oscilloscope.setMeasurementSource( 3, 1 );
-			oscilloscope.enableMeasurement( 3 );
+		oscilloscope.setMeasurementType( 1, "AMPLITUDE" );
+		oscilloscope.setMeasurementSource( 1, 1 );
+		oscilloscope.enableMeasurement( 1 );
 
-			oscilloscope.setMeasurementType( 4, "FALL" );
-			oscilloscope.setMeasurementSource( 4, 1 );
-			oscilloscope.enableMeasurement( 4 );
+		oscilloscope.setMeasurementType( 2, "MEAN" );
+		oscilloscope.setMeasurementSource( 2, 1 );
+		oscilloscope.enableMeasurement( 2 );
 
-			oscilloscope.stopAfterSequence( true );
+		oscilloscope.setMeasurementType( 3, "Pk2Pk" );
+		oscilloscope.setMeasurementSource( 3, 1 );
+		oscilloscope.enableMeasurement( 3 );
 
-	 	 	  return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
-		}
+		oscilloscope.setMeasurementType( 4, "FALL" );
+		oscilloscope.setMeasurementSource( 4, 1 );
+		oscilloscope.enableMeasurement( 4 );
+
+		oscilloscope.setVerticalScale( 1, 1e-3 );
+
+		oscilloscope.setVerticalScale( 1, 1e-3 );
+
+		oscilloscope.setVerticalScale( 1, 1e-3 );
+
+		oscilloscope.stopAfterSequence( true );
+
+ 	 	return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
+	}
 
 
 
@@ -135,13 +143,15 @@ module.exports = function( config, app ) {
 			arduino.turnLEDOn("white");
 			arduino.routeLEDToAFG( config.pulseColor, config.afgChannel );
 			
+			oscilloscope.setHorizontalScale( config.pulsewidth );
+
 			while( true ) {
 				
 				sunLevel = levels[ i ];
 
 				app.getLogger().info("Setting current to white LED. Voltage: " + levels[ i ].voltage + "V. Sun intensity: " + levels[ i ].text );
 				
-				Promise.all( [ PWSWhite.setVoltageLimit( levels[ i ].voltage ), PWSWhite.turnOn(), PWSColor.turnOn(), afg.enableChannel( 1 ) ], oscilloscope.setHorizontalScale( config.pulsewidth  ) ).then( function() {
+				Promise.all( [ PWSWhite.setVoltageLimit( levels[ i ].voltage ), PWSWhite.turnOn(), PWSColor.turnOn(), afg.enableChannel( 1 ) ] ).then( function() {
 					
 					perturbation( ).then( function( d ) {
 						TPV = d;
@@ -185,7 +195,7 @@ module.exports = function( config, app ) {
 			oscilloscope.setVerticalScale( 1, 2e-3 );
 
 
-			var level = 4e-3;
+			var level = 3e-3;
 
 			return new Promise( function( resolver, rejecter ) {
 				
@@ -202,99 +212,62 @@ module.exports = function( config, app ) {
 					
 					while( true ) {
 
-						if( perturbed < level && max == false && perturbationValue < 15 ) {
+						if( perturbed < level && max == false && perturbationValue < 15 && perturbed < 1 ) {
 
 							app.getLogger().info( "Perturbation is not strong enough (" + perturbed + " vs " + level + "). Ramping up to " + ( perturbationValue + perturbationIteration )  );
 
 							perturbationValue += perturbationIteration;
 							PWSColor.setVoltageLimit( perturbationValue );
 							oscilloscope.stopAfterSequence( true );
+							oscilloscope.setVerticalScale( 1, 2e-3 );
 							oscilloscope.clear();
+							oscilloscope.startAquisition();
 
 							setTimeout( function() {
-
-								oscilloscope.startAquisition();
-								
+	
 								oscilloscope.whenready().then( function() {
 
 									oscilloscope.getMeasurementMean( 1, 4, 3 ).then( function( results ) {
 
-										perturbed = results[ 0 ];
+										perturbed = results[ 2 ];
 										timescale = results[ 1 ];
 										pert.next();	
 								
 									} );
 								} );
 
-							}, 1000 );
+							}, 2000 );
 							
 							yield;
 
 						} else {
 
-								app.getLogger().info("Perturbation was strong enough");
+							app.getLogger().info("Perturbation was strong enough");
+							console.log( "Timescale: " + timescale + ". Perturbation: " + perturbed );
+							oscilloscope.setVerticalScale( 1, Math.max( 1e-3, perturbed  / 5 ) );
 
-							
-							if( timescale > 1e-3 && config.dc ) {
-								console.log("Switching to DC");
-
-								oscilloscope.stopAquisition();
-								oscilloscope.setCoupling( 1, "DC");
-								oscilloscope.setVerticalScale( 1, 200e-3 );
-								oscilloscope.setNbAverage( 1 );
-								oscilloscope.stopAfterSequence( false );
-								oscilloscope.startAquisition();
-								
-								setTimeout( function() {
-
-									
-									oscilloscope.getMeasurementValue( 2 ).then( function( results ) {
-										console.log("Mean: ", results );
-										oscilloscope.setOffset( 1, results );
-										oscilloscope.setVerticalScale( 1, 4e-3 );
-										oscilloscope.setPosition( 1, 0 );
-										oscilloscope.stopAquisition();
-										oscilloscope.stopAfterSequence( true );
-
-
-										pert.next();
-									});
-
-								}, 30000 );
-						
-								yield;
-
-							} else {
-
-								oscilloscope.setPosition( 1, -3 );
-								oscilloscope.setCoupling( 1, "AC");
-								oscilloscope.setVerticalScale( 1, perturbed  / 5 );
-
-								if( timescale < 5e-6 ) {
-									timescale = 5e-6;
-								}
+							if( timescale < 5e-6 ) {
+								timescale = 5e-6;
 							}
 
-							oscilloscope.stopAquisition();
+							if( timescale / 2 > 0.5e-3 ) {
+								timescale = 1e-3;
+							}
+
+							oscilloscope.stopAfterSequence( false );
+							oscilloscope.startAquisition();
+							oscilloscope.setHorizontalScale( timescale * 1.5 );
 							oscilloscope.clear();
 							oscilloscope.setNbAverage( 400 );
-							oscilloscope.setHorizontalScale( timescale / 2 );
-							oscilloscope.stopAfterSequence( true );
-							oscilloscope.startAquisition();
-
-							setTimeout( function() {
-
-								oscilloscope.whenready().then( function() {
-
+							
+						
+							oscilloscope.getMeasurementUntilStdDev( 3, 10e-9, 20, 15, 1 ).then( function() {
+									oscilloscope.stopAquisition();
 									oscilloscope.getWaves().then( function( w ) {
 										resolver( w[ 1 ] );
 									});
+							});
 
-								}, 2000 );
-
-	
-							})
-							
 							break;
 						}
 					}

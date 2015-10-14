@@ -598,7 +598,7 @@ Waveform.prototype = {
 				var xWave = this.getXWave().getData();
 				for( ; from <= to ; from ++ ) {
 
-					if( xWave.length > from ) {
+					if( xWave.length - 1 > from ) {
 
 						deltaTot += xWave[ from + 1 ] - xWave[ from ]
 						sum += this.data[ from ] * ( xWave[ from + 1] - xWave[ from ] );
@@ -784,7 +784,7 @@ Waveform.prototype = {
 				l = options.rangeP[ 1 ],
 				increment = +1;
 		}
-console.log( i, l, increment );
+
 		for(; ; i += increment ) {
 
 			if( options.direction == "descending" ) {

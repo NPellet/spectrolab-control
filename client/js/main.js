@@ -125,17 +125,6 @@ function global( IO, Util, ModuleFactory ) {
 		}
 
 
-		if( state.method ) {
-
-			$("#leftpannel .method")
-				.removeClass("running")
-				.find(".glyphicon")
-				.remove()
-				.end()
-				.filter("[data-method-id=" + state.method + "]")
-				.addClass('running')
-				.append('<span class="pull-right glyphicon glyphicon-record"></span>');
-		}
 	} );
 
 	$("#modal-modal" ).on('click', 'button.ok', function() {

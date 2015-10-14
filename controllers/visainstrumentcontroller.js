@@ -35,7 +35,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
       module.connecting = this;
       module.emit("connecting");
 
-      module.log( "Trying to connect to VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+      module.log( "Trying to connect to VISA resource (" + module.getName() + ") on host " + module.config.host + " via VISA" );
 
       /* Handles connection timeout */
       var timeout = setTimeout( function() {
@@ -47,7 +47,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
         
         rejecter();
 
-        module.logError( "Timeout while reaching VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA" );
+        module.logError( "Timeout while reaching VISA resource (" + module.getName() + ") on host " + module.config.host + " via VISA" );
 
         if( module.shellInstance ) {
           module.shellInstance.end();
@@ -59,7 +59,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
       module.shellInstance = new pythonShell( 'iovisa.py', {
 
         scriptPath: path.resolve( 'app/util/visa/' ),
-        args: [ module.params.host ], // Pass the VISA address
+        args: [ module.config.host ], // Pass the VISA address
         mode: "text" // Text mode
 
       } );
@@ -80,7 +80,7 @@ VISAInstrumentController.prototype.connect = function(  ) {
           clearTimeout( timeout );
           module.connected = true;
           module.connecting = false;
-          module.logOk( "Successfully found VISA resource (" + module.getName() + ") on host " + module.params.host + " via VISA. Resource name: " + data );
+          module.logOk( "Successfully found VISA resource (" + module.getName() + ") on host " + module.config.host + " via VISA. Resource name: " + data );
           
           module.emit("connected");
 

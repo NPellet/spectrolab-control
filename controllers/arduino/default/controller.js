@@ -33,12 +33,17 @@ Arduino.prototype.onConnectionInit = function() {
 	this.initPin( this.config.digital.LEDCard.relays.bypassAFG, 1 );
 	this.initPin( this.config.digital.LEDCard.relays.inverter, 1 );
 
+	this.setDigital( this.config.digital.LEDCard.relays.bypassAFG, 0 );	
+	this.setDigital( this.config.digital.LEDCard.relays.inverter, 0 );	
+
 	for( var i in this.config.digital.LEDCard.relays.colors ) {
 		this.initPin( this.config.digital.LEDCard.relays.colors[ i ], 1 );	
+		this.setDigital( this.config.digital.LEDCard.relays.colors[ i ], 0 );	
 	}
 	
 	for( var i in this.config.digital.LEDCard.colors ) {
 		this.initPin( this.config.digital.LEDCard.colors[ i ], 1 );	
+		this.setDigital( this.config.digital.LEDCard.colors[ i ], 0 );	
 	}
 
 }
@@ -135,7 +140,7 @@ Arduino.prototype.routeLEDToAFG = function( color, output ) {
 
 	// If the input is on channel B, we need to turn on the inverter relay
 	// If B, then A is routed to its bypass. If A, then B is routed to its bypass
-	this.setDigital( this.config.digital.LEDCard.relays.inverter, output == "B" );
+	this.setDigital( this.config.digital.LEDCard.relays.inverter, output == "B" ? 1 : 0 );
 }
 
 

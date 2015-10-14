@@ -219,6 +219,8 @@ SerialDevice.prototype.query = function( command, queueElement ) {
 
 		var timeout;
 
+		console.log( command );
+
 		setTimeout( function() {
 
 			instrument._serialPort.write( command + "\n\r", function( err, results ) {

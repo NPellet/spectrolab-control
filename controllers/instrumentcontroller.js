@@ -42,9 +42,11 @@ InstrumentController.prototype.getConfig = function( ) {
 };
 
 
-InstrumentController.prototype.command = function( command, priority ) {
+InstrumentController.prototype.command = function( command, priority, options ) {
 
 	var instrument = this;
+
+	priority = priority || 0;
 
 	makeReadyPromise( instrument );
 
@@ -56,13 +58,39 @@ InstrumentController.prototype.command = function( command, priority ) {
 		instrument._queue[ priority ].push( { 
 			command: command, 
 			resolver: resolver, 
-			rejecter: rejecter 
+			rejecter: rejecter,
+			options: options || {}
 		} );
 
 		checkQueue( instrument );
 
 	} );
 
+}
+
+
+
+InstrumentController.prototype.commands = function( priority, options ) {
+
+	var instrument = this;
+	
+	var priority = arguments[ 0 ];
+	var options = arguments[ 1 ];
+
+	makeReadyPromise( instrument );
+
+	this._queue = this._queue || {};
+	this._queue[ priority ] = this._queue[ priority ] || [];
+	
+	var i = 0;
+	return Promise.all( [].map.call( arguments, function( cmd ) {
+		i++;
+		if( i < 3 ) {
+			return true;
+		}
+		
+		return instrument.command( cmd, priority, options );
+	} ) );
 }
 
 
@@ -75,6 +103,7 @@ function checkQueue( instrument ) {
 	}	
 
 	instrument._queue = instrument._queue || {};
+
 
 	var processesInQueue = 0;
 
@@ -131,7 +160,6 @@ function processQueue( instrument ) {
 		}
 
 		var queueElement = instrument._queue[ priorities[ i ] ].shift();
-
 
 		instrument._currentQueue = queueElement;
 

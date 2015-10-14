@@ -82,7 +82,7 @@ VXI11InstrumentController.prototype.connect = function( ) {
 			return;
 		}
 
-		instrument.log( "Trying to connect to " + instrument.getName() + "  on host " + instrument.params.host + " via VXI11" );
+		instrument.log( "Trying to connect to " + instrument.getName() + "  on host " + instrument.config.host + " via VXI11" );
 
 		      /* Handles connection timeout */
 	      var timeout = setTimeout( function() {
@@ -94,7 +94,7 @@ VXI11InstrumentController.prototype.connect = function( ) {
 	        
 	        rejecter();
 
-	        instrument.logError( "Timeout while reaching LXI resource (" + instrument.getName() + ") on host " + instrument.params.host + " via VXI11" );
+	        instrument.logError( "Timeout while reaching LXI resource (" + instrument.getName() + ") on host " + instrument.config.host + " via VXI11" );
 
 	        if( instrument.shellInstance ) {
 	          instrument.shellInstance.end();
@@ -109,7 +109,7 @@ VXI11InstrumentController.prototype.connect = function( ) {
 			// Launches a python instance which will communicate in VXI11 with the scope
 			instrument.shellInstance = new pythonShell( 'iovxi.py', {
 				scriptPath: path.resolve( 'app/util/vxi11/' ),
-				args: [ instrument.params.host ], // Pass the IP address
+				args: [ instrument.config.host ], // Pass the IP address
 				mode: "text" // Text mode
 			} );
 
@@ -119,12 +119,11 @@ VXI11InstrumentController.prototype.connect = function( ) {
 			// At this point we are already connected. No asynchronous behaviour with python
 			instrument.shellInstance.once( 'message', function( data ) {
 
-				console.log( data );
 				clearTimeout( timeout );
 				instrument.connecting = false;
 				instrument.connected = true;
 
-				instrument.logOk("Connected to " + instrument.getName() + "  on host " + instrument.params.host + " via VXI11. Resource name " + data );
+				instrument.logOk("Connected to " + instrument.getName() + "  on host " + instrument.config.host + " via VXI11. Resource name " + data );
 				resolver( instrument );
 				instrument.emit("connected");
 
