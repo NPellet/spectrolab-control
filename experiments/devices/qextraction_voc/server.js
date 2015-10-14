@@ -27,11 +27,9 @@ module.exports = function( config, app ) {
 
 		arduino.routeLEDToAFG( "white" );
 
-		var perturbationIteration = 0.1;
-		var perturbationValue = 6.4;
 
-	    var preTrigger = 10;
-	    var recordLength = 100000;
+	    var recordLength = 10000;
+
 	    var yscales = {};
 
 	    setup();
