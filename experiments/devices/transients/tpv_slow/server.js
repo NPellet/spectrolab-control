@@ -1,4 +1,5 @@
 var color = require("color");
+var Waveform = require("../../../../app/waveform");
 
 module.exports = function( config, app ) {
 
@@ -10,7 +11,7 @@ module.exports = function( config, app ) {
 	var PWSColor = app.getInstrument("PowerSupplyColoredLED");
 
 
-	var nbpoints = 1000; // Fixed number of point. Now the question is the delay between every point ?
+	var nbpoints = 500; // Fixed number of point. Now the question is the delay between every point ?
 
 	var perturbationIteration = 0.1;
 	var perturbationValue = PWSColor.getConfig().minVoltage; // 6V initi
@@ -173,7 +174,6 @@ module.exports = function( config, app ) {
 
 					while( true ) {
 
-console.log( nplc );
 						if( perturbed < level && perturbationValue < 15 ) {
 
 							PWSColor.setVoltageLimit( perturbationValue );
@@ -194,15 +194,20 @@ console.log( nplc );
 
 								channel: "smub",
 								npoints: nbpoints,
-								ncycles: 2,//config.trialaveraging,
-								nplc: nplc, // Length is 5 times the pulse width
-								delay: config.pulsewidth
+								ncycles: config.trialaveraging,
+								nplc: calculateNPLC( config.pulsewidth * 10, nbpoints ), // Length is 5 times the pulse width
+								delay: 0
 
 							} ).then( function( w ) {
 
 
 								perturbed = Math.abs( w.getMax() - w.getMin() );
 								console.log("PERTURBED: " + perturbed );
+
+								renderer.getModule( "tpvtemp" ).newSerie( "tpv_temp", w, { lineColor: 'grey' } );
+								renderer.getModule( "tpvtemp" ).autoscale();
+
+
 								if( isNaN( perturbed ) ) {
 									perturbed = 0;
 								}
@@ -216,48 +221,62 @@ console.log( nplc );
 							} );
 	
 						} else {
-				
-							config.averaging = 10;
-							keithley.tpv( {
+							
+							var nJsCycles = 1;
+							var ncycles = config.averaging;
+							if( nbpoints * ncycles > 40000 ) {
 
-								channel: "smub",
-								npoints: nbpoints,
-								ncycles: config.averaging,
-								nplc: nplc,
-								delay: config.pulsewidth
+								nJsCycles = Math.ceil( ( nbpoints * config.averaging ) / 40000 );
+								ncycles = Math.ceil( config.averaging / nJsCycles );
+							}
 
-							} ).then( function( w ) {
+							var ws = [];
+							for( var j = 0; j < nJsCycles; j ++ ) {
 
+								keithley.tpv( {
 
-								w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
-								w.divideBy( w.getMax() );
-							//	w.shiftX( - config.pulsewidth );
+									channel: "smub",
+									npoints: nbpoints,
+									ncycles: ncycles,
+									nplc: nplc,
+									delay: config.pulsewidth
 
-								var decaytime = w.findLevel( 0.3, {
-									rounding: 'after',
-						        	direction: 'ascending',
-									edge: "descending",
-									rangeP: [ 0, w.getDataLength() - 1 ]
+								} ).then( function( w ) {
+
+									renderer.getModule( "tpvtemp" ).newSerie( "tpv_temp", w, { lineColor: 'grey' } );
+									renderer.getModule( "tpvtemp" ).autoscale();
+
+									ws.push( w );
+									pert.next();
+
 								} );
 
-								console.log("Found decay time:" + decaytime );
+								yield;
+							}
 
-								if( ! decaytime || decaytime > w.getDataLength() - 1 ) {
+							var w = Waveform.average.apply( Waveform, ws );
+							w.setXWave( ws[ 0 ].getXWave() );
 
-									decaytime = w.getXFromIndex( w.getDataLength() - 1 );
+							w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
+							w.divideBy( w.getMax() );
 
-								} else {
-
-									decaytime = w.getXFromIndex( decaytime );
-								}
-console.log("Found decay time:" + decaytime );
-								decaytime *= 5; // We want to see 3 times longer than the fittable decay time
-
-								nplc = calculateNPLC( Math.min( config.pulsewidth * 16, decaytime ), nbpoints );
-
-								console.log( nplc );
-								resolver( w );
+							var decaytime = w.findLevel( 0.3, {
+								rounding: 'after',
+					        	direction: 'ascending',
+								edge: "descending",
+								rangeP: [ 0, w.getDataLength() - 1 ]
 							} );
+
+							if( ! decaytime || decaytime > w.getDataLength() - 1 ) {
+								decaytime = w.getXFromIndex( w.getDataLength() - 1 );
+
+							} else {
+								decaytime = w.getXFromIndex( decaytime );
+							}
+
+							decaytime *= 5; // We want to see 3 times longer than the fittable decay time
+							nplc = calculateNPLC( Math.min( config.pulsewidth * 16, decaytime ), nbpoints );
+							resolver( w );
 						}
 
 						yield;

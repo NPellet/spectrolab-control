@@ -268,6 +268,10 @@ TektronixAFG.prototype.disableChannels = function() {
 	this.turnChannelOff( 2 );
 }
 
+TektronixAFG.prototype.alignPhases = function() {
+	this.command("SOURCE1:PHASE:INITIATE");
+}
+
 TektronixAFG.prototype.trigger = function() { // Generates a trigger
 	this.command("TRIGger:SEQuence:IMMediate");
 }

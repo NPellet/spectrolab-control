@@ -92,10 +92,12 @@ module.exports = function( config, app ) {
 	   	        app.getLogger().info("Pulsing with horizontale timescale of: " + horizontalscale + "s and vertical scale " + yscale + "V... (Waiting time about " + ( ( config.pulsetime + config.delaytime ) + 1 ) * config.averaging + " s)");
 
 		        pulse( yscale ).then( function( w ) {
+
 		          	app.getLogger().info("Pulsing done");
 	                current = w[ 2 ];
 	                voltage = w[ 1 ];
 					QExtr.next();
+
 		        } );
 		        yield;
 
@@ -156,7 +158,7 @@ module.exports = function( config, app ) {
 	  }
 
 	    oscilloscope.disableChannels();
-
+	    resolver();
 
 	}
 	  function pulse( vscale ) {
@@ -164,64 +166,25 @@ module.exports = function( config, app ) {
 	    var nb = config.averaging;
 
 		oscilloscope.stopAquisition();
-	    oscilloscope.setNbAverage( nb );
+  	    oscilloscope.setVerticalScale( 2, vscale );	    
 	    oscilloscope.clear();
-  	    oscilloscope.setVerticalScale( 2, vscale );
-	    
-
-
-	    afg.setShape( 1, "PULSE" );
-	    afg.setVoltageLow( 1, 0 );
-	    afg.setVoltageHigh( 1, 4 );
-	    afg.enableBurst( 1 );
-
-
-	    afg.setBurstNCycles( 1, nb );
-	    afg.setBurstNCycles( 2, nb );
-
-	    afg.setPulseHold( 1 , "WIDTH" );
-	    afg.setBurstTriggerDelay(  1, 0 );
-	    afg.setBurstNCycles( 1, nb );
-	    afg.setPulseLeadingTime( 1, 9e-9 );
-	    afg.setPulseTrailingTime( 1, 9e-9 );
-	    afg.setPulseDelay( 1, 0 );
-	    afg.setPulsePeriod( 1, ( config.pulsetime + config.delaytime ) + 1 );
-	    afg.setPulseWidth( 1, config.pulsetime );
-
-
-
-	    afg.setPulsePeriod( 2, ( config.pulsetime + config.delaytime ) + 1 );
-	    afg.setPulseWidth( 2, config.delaytime );
-	    afg.setPulseDelay( 2, config.pulsetime );
-
-	    afg.wait();
+	    oscilloscope.stopAfterSequence( true );
+	    oscilloscope.setNbAverage( nb );
+		PWSWhite.turnOn();
 		oscilloscope.startAquisition();
 
-	    return new Promise( function( resolver ) {
+		return app.wait( 1 ).then( function() {
+			
+			
+			return app.wait( 2 ).then( function() {
+				return oscilloscope.whenready( ).then( function() {
 
-	    	setTimeout( function() {
-			  
-	   	    
+				  //	afg.disableChannels();
+			    	return oscilloscope.getWaves();
+			  });
+			})
+		})
 
-			  afg.enableChannel( 1 );
-		      afg.enableChannel( 2 );
-		      afg.trigger();
-
-		      oscilloscope.whenready().then( function() {
-
-		     	 	afg.disableChannels();
-			  		
-
-		      		oscilloscope.getWaves().then( function( w ) {
-		      			resolver( w );
-		      		});
-		    	})
-
-		    }, 5000 );
-		    
-		    
-	    })
-	    
 
 	  }
 
@@ -343,16 +306,16 @@ module.exports = function( config, app ) {
 
 	    /* AFG SETUP */
 
+	    afg.disableChannels();
+
 	    afg.setTriggerExternal(); // Only external trigger
 
 	    var pulseChannel = 1;
-	    afg.enableBurst( pulseChannel );
+	    afg.disableBurst( pulseChannel );
 	    afg.setShape( pulseChannel, "PULSE" );
 	    afg.setVoltageLow( pulseChannel, 0 );
 	    afg.setVoltageHigh( pulseChannel, 4 );
 	    afg.setPulseHold( pulseChannel , "WIDTH" );
-	    afg.setBurstTriggerDelay(  pulseChannel, 0 );
-	    afg.setBurstNCycles( pulseChannel, nbAverage );
 	    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
 	    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
 	    afg.setPulseDelay( pulseChannel, 0 );
@@ -360,18 +323,19 @@ module.exports = function( config, app ) {
 	    afg.setPulseWidth( pulseChannel, pulsetime );
 
 	    var pulseChannel = 2;
-	    afg.enableBurst( pulseChannel );
+	    afg.disableBurst( pulseChannel );
 	    afg.setShape( pulseChannel, "PULSE" );
 	    afg.setPulseHold( pulseChannel , "WIDTH" );
-	    afg.setBurstTriggerDelay(  pulseChannel, 0 );
-	    afg.setBurstNCycles( pulseChannel, nbAverage ); // One pulse
 	    afg.setVoltageLow( pulseChannel, 0 );
 	    afg.setVoltageHigh( pulseChannel, 1.5 );
 	    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
 	    afg.setPulseTrailingTime( pulseChannel, 9e-9 );
+	    afg.setPulsePeriod( pulseChannel, ( pulsetime + delaytime ) + 1 );
+	    afg.setPulseWidth( pulseChannel, delaytime );
+		afg.setPulseDelay( pulseChannel, pulsetime );
 
-	    afg.disableChannels( ); // Set the pin LOW
-
+	    afg.enableChannels( ); // Set the pin LOW
+	    afg.alignPhases();
 	    afg.getErrors();
 
 	    return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );

@@ -175,11 +175,16 @@ module.exports = function( config, app ) {
 				}	
 			}
 
-			resolver();
-
+			PWSWhite.turnOff()
+			PWSColor.turnOff()
+			arduino.turnLEDOff("white");
 			afg.disableChannels();
 			
-			arduino.turnLEDOff("white");
+			resolver();
+
+			
+			
+			
 		};
 
 

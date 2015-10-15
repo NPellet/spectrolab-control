@@ -14,18 +14,18 @@ module.exports = function( config, app ) {
 
 	var perturbationIteration = 0.15;
 	var perturbationValue = PWSColor.getConfig().minVoltage; // 6V initi
-	
+	console.log( config );
 
+	var nplc = false;
 
 	function calculateNPLC( decaytime, nbpoints ) {
 		// time per point
-		console.log( decaytime, nbpoints );
 		var timeperpoint = ( decaytime ) / nbpoints;
 		var nplc = timeperpoint / 16e-3;
 
 
 		nplc = Math.round( nplc * 500 ) / 500;
-
+console.log(nplc);
 		if( nplc < 0.001 ) {
 			nplc = 0.001;
 		}
@@ -37,8 +37,28 @@ module.exports = function( config, app ) {
 		return nplc;
 	}
 
-	
-	var nplc = calculateNPLC( config.pulsewidth * 10, nbpoints );
+	function nplcFromWave( wave, level ) {
+
+		var decaytime = wave.findLevel( level, {
+			rounding: 'after',
+        	direction: 'ascending',
+			edge: "descending",
+			rangeP: [ 0, wave.getDataLength() - 1 ]
+		} );
+
+		console.log("Found decay time:" + decaytime );
+
+		if( ! decaytime || decaytime > wave.getDataLength() - 1 ) {
+			decaytime = wave.getXFromIndex( wave.getDataLength() - 1 );
+		} else {
+			decaytime = wave.getXFromIndex( decaytime );
+		}
+		
+		decaytime *= 5; // We want to see 3 times longer than the fittable decay time
+console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
+
+		return calculateNPLC( Math.min( config.pulsewidth * 16, decaytime ), nbpoints );
+	}
 
 
 	var c = color().hsl( 90, 100, 35 );
@@ -175,7 +195,7 @@ module.exports = function( config, app ) {
 					while( true ) {
 
 						if( current != -1 ) {
-							current = Math.max( 1e-7, current / 10 );
+							current = Math.max( 1e-7, current < 2e-6 ? current / 20 : current / 10 );
 							app.getLogger().info( "Perturbation :" + perturbed + "A. Required:" + current + "A" );
 						}
 						
@@ -202,7 +222,7 @@ module.exports = function( config, app ) {
 
 								channel: "smub",
 								npoints: nbpoints,
-								ncycles: 3,//config.trialaveraging,
+								ncycles: config.trialaveraging,
 								nplc: calculateNPLC( config.pulsewidth * 10, nbpoints ), // Length is 5 times the pulse width
 								delay: 0
 
@@ -229,8 +249,36 @@ module.exports = function( config, app ) {
 							} );
 	
 						} else {
-				
-							config.averaging = 100;
+					
+							if( ! nplc ) {
+
+								keithley.tpc( {
+
+									channel: "smub",
+									npoints: nbpoints,
+									ncycles: Math.round( config.averaging / 3 ),
+									nplc: calculateNPLC( config.pulsewidth * 16, nbpoints ),
+									delay: config.pulsewidth
+
+								} ).then( function( w ) {
+
+									w = w.wave;
+									w.divideBy( -1 );
+									w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
+									w.divideBy( w.getMax() );
+								//	w.shiftX( - config.pulsewidth );
+
+									renderer.getModule( "tpctemp" ).newSerie( "tpc_temp", w, { lineColor: 'grey' } );
+									renderer.getModule( "tpctemp" ).autoscale();
+
+									nplc = nplcFromWave( w, 0.1 );
+									pert.next();
+								} );
+
+								yield;
+
+							}
+
 							keithley.tpc( {
 
 								channel: "smub",
@@ -242,35 +290,11 @@ module.exports = function( config, app ) {
 							} ).then( function( w ) {
 
 								w = w.wave;
-
 								w.divideBy( -1 );
 								w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
 								w.divideBy( w.getMax() );
-							//	w.shiftX( - config.pulsewidth );
-
-								var decaytime = w.findLevel( 0.3, {
-									rounding: 'after',
-						        	direction: 'ascending',
-									edge: "descending",
-									rangeP: [ 0, w.getDataLength() - 1 ]
-								} );
-
-								console.log("Found decay time:" + decaytime );
-
-								if( ! decaytime || decaytime > w.getDataLength() - 1 ) {
-
-									decaytime = w.getXFromIndex( w.getDataLength() - 1 );
-
-								} else {
-
-									decaytime = w.getXFromIndex( decaytime );
-								}
-console.log("Found decay time:" + decaytime );
-								decaytime *= 5; // We want to see 3 times longer than the fittable decay time
-
-								nplc = calculateNPLC( Math.min( config.pulsewidth * 16, decaytime ), nbpoints );
-
-								console.log( nplc );
+								nplc = nplcFromWave( w, 0.1 );
+								
 								resolver( w );
 							} );
 						}

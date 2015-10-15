@@ -13,7 +13,7 @@ util.inherits( SocketInstrumentController, instrumentcontroller );
 SocketInstrumentController.prototype.query = function( command, element ) {
 
 	var instrument = this;
-console.log( command, element.options );
+console.log( command );
 	return new Promise( function( resolver, rejecter ) {
 		if( element.options.waitForResponse ) {
 
@@ -119,13 +119,13 @@ SocketInstrumentController.prototype.connect = function( ) {
 
 				clearTimeout( timeout );
 
-				self.commands( 0, { waitForResponse: false }, "ABORT", "digio.writeport(0)", "format.byteorder=format.LITTLEENDIAN" ).then( function() {
+				self.commands( -1, { waitForResponse: false }, "ABORT", "digio.writeport(0)", "format.byteorder=format.LITTLEENDIAN" ).then( function() {
 
 					self.socket.removeAllListeners( 'data' );
 					
 					setTimeout( function() {
 
-						self.command("SpetroscopyScripts();", 0, { waitForResponse: false } ); // Load the scripts
+						self.command("SpetroscopyScripts();", -1, { waitForResponse: false } ); // Load the scripts
 						module.logOk("Connected to Keithley on host " + module.config.host + " on port " + module.config.port );
 
 						self.emit("connected");

@@ -33,17 +33,17 @@ Arduino.prototype.onConnectionInit = function() {
 	this.initPin( this.config.digital.LEDCard.relays.bypassAFG, 1 );
 	this.initPin( this.config.digital.LEDCard.relays.inverter, 1 );
 
-	this.setDigital( this.config.digital.LEDCard.relays.bypassAFG, 0 );	
-	this.setDigital( this.config.digital.LEDCard.relays.inverter, 0 );	
+	this.setDigital( this.config.digital.LEDCard.relays.bypassAFG, 0, -1 );	
+	this.setDigital( this.config.digital.LEDCard.relays.inverter, 0, -1 );	
 
 	for( var i in this.config.digital.LEDCard.relays.colors ) {
 		this.initPin( this.config.digital.LEDCard.relays.colors[ i ], 1 );	
-		this.setDigital( this.config.digital.LEDCard.relays.colors[ i ], 0 );	
+		this.setDigital( this.config.digital.LEDCard.relays.colors[ i ], 0, -1 );	
 	}
 	
 	for( var i in this.config.digital.LEDCard.colors ) {
 		this.initPin( this.config.digital.LEDCard.colors[ i ], 1 );	
-		this.setDigital( this.config.digital.LEDCard.colors[ i ], 0 );	
+		this.setDigital( this.config.digital.LEDCard.colors[ i ], 0, -1 );	
 	}
 
 }
@@ -84,9 +84,9 @@ Arduino.prototype.readAnalog = function( pinNumber ) {
 		});
 }
 
-Arduino.prototype.setDigital = function( pinNumber, pinValue ) {
+Arduino.prototype.setDigital = function( pinNumber, pinValue, priority ) {
 
-	return this.command( "5," + pinNumber + "," + pinValue + ";" );
+	return this.command( "5," + pinNumber + "," + pinValue + ";", priority );
 }
 
 

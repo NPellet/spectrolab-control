@@ -27,18 +27,18 @@ module.exports = function( config, app ) {
 
 		arduino.routeLEDToAFG( "white" );
 
-	    var recordLength = 10000;
+	    var recordLength = 100000;
 	    var yscales = {};
 
-	    setup();
 
 	    function *QExtr(  ) {
 
 	      oscilloscope.setRecordLength( recordLength );
 
-	      setTimeout( function() {
+
+	      setup().then( function() {
 	      	QExtr.next();
-	      }, 2000 );
+	      });
 
 	      yield;
 
@@ -51,12 +51,14 @@ module.exports = function( config, app ) {
 	        charges: [],
 	        lightLevels: [],
 	        currentWaves: [],
-	        voltageWaves: []
 	      };
 
 	      var current, voltage;
 
 	      var voltagesun = app.getConfig().instruments.PowerSupplyWhiteLED.voltage_sunoutput;
+
+        var inityscale = 80e-3;
+        var yscale = inityscale;
 
 	      for( var lightLevel = voltagesun.length - 1; lightLevel >= 0; lightLevel -- ) {
 
@@ -73,8 +75,6 @@ module.exports = function( config, app ) {
 	        var done = false;
 	        var horizontalscale = config.timebase;
 
-	        var inityscale = 80e-3;
-	        var yscale = config.vscale;
 
 	        var finalCurrent = new Waveform();
 	        var time = false;
@@ -83,26 +83,24 @@ module.exports = function( config, app ) {
 
     		    oscilloscope.setHorizontalScale( Math.round( horizontalscale * Math.pow( 10, 6 ) ) / Math.pow( 10, 6 ) );
 
-	   	        app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
+	   	        app.ready( arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
 	   	        	QExtr.next();
 	   	        });
 	   	        yield;
 
 	   	        app.getLogger().info("Pulsing with horizontale timescale of: " + horizontalscale + "s and vertical scale " + yscale + "V... (Waiting time about " + ( ( config.pulsetime + config.delaytime ) + 1 ) * config.averaging + " s)");
 
-		        pulse( yscale ).then( function( w ) {
+		        pulse( yscale, config.averaging ).then( function( w ) {
 		          	app.getLogger().info("Pulsing done");
-	                current = w[ 2 ];
-	                voltage = w[ 1 ];
+	                current = w[ 1 ];
 					QExtr.next();
 		        } );
 		        yield;
 
 
-	  	        app.getLogger().info("Pulsing dark... (Waiting time about " + ( ( config.timebase * 20 ) * config.blankaveraging ) + " s)");
+	  	        app.getLogger().info("Pulsing dark... (Waiting time about 10s)");
 		        pulseBlank(  ).then( function( w ) {
-		          current.subtract( w[ 2 ] );
-		          voltage.subtract( w[ 1 ] );
+		          current.subtract( w[ 1 ] );
 		          QExtr.next();
 		        });
 		        yield;
@@ -110,27 +108,28 @@ module.exports = function( config, app ) {
    				var jsc = current.average( recordLength * 0.09, recordLength * 0.1 );
 				var charges = current.integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
 
-				if( jsc < yscale / 3 ) {
+				if( jsc * 3 < yscale * 8 && yscale > 1e-3 ) {
 					yscale /= 2
+					done = false;
 					continue;
 				} else {
-					yscale = inityscale;
+				//	yscale = inityscale;
+					done = true;
 				}
 	      }
 
       	
-	    results.jscs.push( jscs );
+	    results.jscs.push( jsc );
 	    results.charges.push( charges );
 	    results.lightLevels.push( lightLevel );
 	    results.currentWaves.push( current );
-	    results.voltageWaves.push( voltage );
 	    results.lastCurrentWave = current;
 	    
 	    progress( results );
 	  }
 
 	    oscilloscope.disableChannels();
-
+resolver();
 
 	}
 
@@ -140,43 +139,39 @@ module.exports = function( config, app ) {
 	    oscilloscope.clear();
 	    oscilloscope.setTriggerMode("NORMAL");
 	    oscilloscope.stopAfterSequence( true );
-	    afg.setBurstNCycles( 1, nb );
+	    oscilloscope.setVerticalScale( 1, vscale );
 
-	    oscilloscope.setVerticalScale( 3, vscale );
-	    oscilloscope.startAquisition();
+		PWSWhite.turnOn();
+	    afg.enableChannels( );
+		
+		return app.wait( 1 ).then( function() {
 
-	    return new Promise( function( resolver ) {
+			oscilloscope.clear();
+			oscilloscope.startAquisition();
 
-		    setTimeout( function() {
+			return app.wait( 2 ).then( function() {
+				return oscilloscope.whenready( ).then( function() {
 
-		      afg.enableChannels( );
-		      afg.trigger();
-
-		      oscilloscope.whenready( ).then( function() {
-			  	afg.disableChannels();
-		    	oscilloscope.getWaves().then( function( w ) {
-		    		resolver( w );
-		    	});
+				  	afg.disableChannels();
+			    	return oscilloscope.getWaves();
 			  });
+			})
+		})
 
-		    }, 2000 );
-
-		});
+	   
 	  }
 
 
 	  function pulseBlank( nb ) {
 
-	    var nb = config.blankaveraging;
-		var self = experiment;
-    	oscilloscope.setTriggerMode("AUTO");
+		PWSWhite.turnOff();
+
+		oscilloscope.setTriggerMode("AUTO");
     	oscilloscope.stopAfterSequence( false );
-		oscilloscope.setNbAverage( nb );
-		oscilloscope.setHorizontalScale( config.timebase );
+		oscilloscope.setNbAverage( 1000 );
 		oscilloscope.clear();
 		oscilloscope.startAquisition();
-
-
+		
 		return app.wait( 10 ).then( function() {
 			return oscilloscope.getWaves();
 		})
@@ -196,11 +191,11 @@ module.exports = function( config, app ) {
 
 	    oscilloscope.disable50Ohms( 2 );
 	    oscilloscope.enable50Ohms( 3 );
-	    oscilloscope.disable50Ohms( 1 );
+	    oscilloscope.enable50Ohms( 1 );
 	    oscilloscope.disable50Ohms( 4 );
 
 	    oscilloscope.setHorizontalScale( timeBase );
-	    oscilloscope.setVerticalScale( 3, vscale ); // 200mV over channel 3
+	    oscilloscope.setVerticalScale( 1, vscale ); // 200mV over channel 3
 	    oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
 
 	    oscilloscope.setTriggerCoupling( "AC" ); // Trigger coupling should be AC
@@ -210,7 +205,7 @@ module.exports = function( config, app ) {
 	    oscilloscope.setCoupling( 3, "DC");
 	    oscilloscope.setCoupling( 4, "DC");
 
-	    oscilloscope.setTriggerToChannel( 1 ); // Set trigger on switch channel
+	    oscilloscope.setTriggerToChannel( 4 ); // Set trigger on switch channel
 	    oscilloscope.setTriggerCoupling( "DC" ); // Trigger coupling should be AC
 	    oscilloscope.setTriggerSlope( 4, "FALL"); // Trigger on bit going up
 	    oscilloscope.setTriggerRefPoint( 10 ); // Set pre-trigger, 10%
@@ -219,8 +214,8 @@ module.exports = function( config, app ) {
 	    oscilloscope.enableChannels();
 
 	    oscilloscope.setPosition( 2, -4 );
-	    oscilloscope.setPosition( 3, -4 );
-	    oscilloscope.setPosition( 1, 0 );
+	    oscilloscope.setPosition( 1, -4 );
+	    oscilloscope.setPosition( 3, 0 );
 	    oscilloscope.setPosition( 4, 0 );
 
 	    oscilloscope.setOffset( 1, 0 );
@@ -232,7 +227,7 @@ module.exports = function( config, app ) {
 	    oscilloscope.disableCursors( );
 
 	    oscilloscope.setMeasurementType( 1, "AMPlitude" );
-	    oscilloscope.setMeasurementSource( 1, 3 );
+	    oscilloscope.setMeasurementSource( 1, 1 );
 	    oscilloscope.enableMeasurement( 1 );
 	    oscilloscope.setMeasurementGating( "OFF" );
 
@@ -242,11 +237,9 @@ module.exports = function( config, app ) {
 	    afg.setTriggerExternal(); // Only external trigger
 
 	    var pulseChannel = 1;
-	    afg.enableBurst( pulseChannel );
+	    afg.disableBurst( pulseChannel );
 	    afg.setShape( pulseChannel, "PULSE" );
 	    afg.setPulseHold( pulseChannel , "WIDTH" );
-	    afg.setBurstTriggerDelay(  pulseChannel, 0 );
-	    afg.setBurstNCycles( pulseChannel, nbAverage );
 	    afg.setVoltageLow( pulseChannel, 0 );
 	    afg.setVoltageHigh( pulseChannel, 1.5 );
 	    afg.setPulseLeadingTime( pulseChannel, 9e-9 );
@@ -258,22 +251,22 @@ module.exports = function( config, app ) {
 	    afg.setShape( 2, "DC" );
 	    afg.setVoltageOffset( 2, 0 );
 
-	    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;" ); // The off mode of the Keithley should be high impedance
-	    keithley.command( "smub.source.output = smub.OUTPUT_OFF;" ); // Turn the output off
+	//    keithley.command( "smub.source.offmode = smub.OUTPUT_HIGH_Z;", { waitForResponse: false } ); // The off mode of the Keithley should be high impedance
+	 //   keithley.command( "smub.source.output = smub.OUTPUT_OFF;", { waitForResponse: false } ); // Turn the output off
 
 	    afg.disableChannels( ); // Set the pin LOW
 
 	    afg.getErrors();
 
 
-	    return app.ready( keithley, arduino, afg, oscilloscope, PWSWhite, PWSColor );
+	    return app.ready( arduino, afg, oscilloscope, PWSWhite, PWSColor );
 	  }
 
 
 	  function progress( arg ) {
 
   		var itx = app.itx();
-		var qvoc = new Waveform();
+		var qjscs = new Waveform();
 
 		var itxw = itx.newWave( "lightLevels" );
 		itxw.setWaveform( arg.lightLevels );
@@ -281,23 +274,20 @@ module.exports = function( config, app ) {
 		var itxw = itx.newWave( "charges" );
 		itxw.setWaveform( arg.charges );
 
-		var itxw = itx.newWave( "vocs" );
-		itxw.setWaveform( arg.vocs );
+		var itxw = itx.newWave( "jscs" );
+		itxw.setWaveform( arg.jscs );
 
 		for( var i = 0; i < arg.lightLevels.length; i ++ ) {
-			qvoc.push( arg.charges[ i ], arg.vocs[ i ] );
+			qjscs.push( arg.charges[ i ], arg.jscs[ i ] );
 
 			var itxw = itx.newWave( "current_" + i );
 			itxw.setWaveform( arg.currentWaves[ i ] );
-
-			var itxw = itx.newWave( "voltage_" + i );
-			itxw.setWaveform( arg.voltageWaves[ i ] );
 		}
 
-		renderer.getModule( "graph" ).newScatterSerie( "qvoc", qvoc );
+		renderer.getModule( "graph" ).newScatterSerie( "qvoc", qjscs );
 		renderer.getModule( "lastqextr" ).newSerie( "qextr", arg.lastCurrentWave );
 
- 		var fileName = app.save( "qextr_voc/", itx.getFile(), app.getDeviceName(), "itx" );
+ 		var fileName = app.save( "qextr_jsc/", itx.getFile(), "itx" );
 
 
 	  }

@@ -8,22 +8,29 @@ function tpc( smu, npoints, ncycles, nplc , tdelay )
 	digio.trigger[1].clear() -- Clear the current value
 
   	smu.source.func = smu.OUTPUT_DCVOLTS
+  	smu.source.output = smu.OUTPUT_ON
 	smu.source.rangev = 100e-3
 	smu.source.limitv = 100e-3
-  	smu.source.output = smu.OUTPUT_ON
+	smu.source.levelv = 0;
 
   	smu.measure.autorangei = smu.AUTORANGE_ON
+	display.smub.measure.func = display.MEASURE_DCAMPS
 
   	delay( 1 )
 	current = smu.measure.i()
---	smu.source.output = smu.OUTPUT_OFF	
-
 	delay( 2 )
 
-	smu.measure.autorangei = smu.AUTORANGE_OFF
-  	
 
+	smu.measure.autorangei = smu.AUTORANGE_OFF
 	smu.measure.rangei = math.min( 1e-7, current * 10 )
+  	
+  	--smu.source.output = smu.OUTPUT_OFF
+	smu.source.offmode = smu.OUTPUT_ZERO
+
+	display.clear();
+	display.setcursor(1,1,0)
+	display.settext("TPC in progress...");
+
 
 	smu.nvbuffer1.clear()
 	smu.nvbuffer1.appendmode = 1
@@ -37,13 +44,10 @@ function tpc( smu, npoints, ncycles, nplc , tdelay )
 	smu.trigger.measure.i( smu.nvbuffer1 )
 	smu.trigger.measure.action = smu.ENABLE
 	smu.trigger.source.action = smu.ENABLE
-	
 	smu.measure.count = npoints;
 	smu.measure.interval = 0;
-	
 	smu.trigger.count = 1
 	smu.trigger.source.listv({0})
-	
 	smu.trigger.arm.count = ncycles
 
 	smu.trigger.initiate()
@@ -51,8 +55,11 @@ function tpc( smu, npoints, ncycles, nplc , tdelay )
 	trigInput = digio.trigger[1].wait( 10 );
 
 	if trigInput == true then
-		
-		print("(current:" . tostring( current ) . ")");
+			
+		local txtcurrent = tostring( current );
+		local str;
+		str = "(current:" .. txtcurrent .. ")";
+		print(str);
 
 		waitcomplete();
 		printbuffer ( 1, ncycles * npoints, smu.nvbuffer1, smu.nvbuffer1.timestamps );
