@@ -36,12 +36,13 @@
 
 					{{ method.name }}
 					
-
+					<div class="pull-right">
 					{% if method.running %}
-						<span class="pull-right glyphicon glyphicon-record"></span>
+						<span class="glyphicon glyphicon-record"></span>
 					{% else %}
-						<span class="configuremethod pull-right glyphicon glyphicon-wrench"></span>
+						<span class="configuremethod glyphicon glyphicon-wrench"></span> <span class="removemethod glyphicon glyphicon-remove"></span>
 					{% endif %}
+					</div>
 
 				</li>
 

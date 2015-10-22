@@ -151,10 +151,20 @@ function global( IO, Util, ModuleFactory ) {
 
 	$("#leftpannel").on('click', '.configuremethod', function() {
 
-		methodid = $( this ).parent().data( 'method-id');
-		methodSelected = $( this ).parent().data( 'method' );
+		methodid = $( this ).parent().parent().data( 'method-id');
+		methodSelected = $( this ).parent().parent().data( 'method' );
 		$( "#modal-configuremethod" ).modal( "show" );
 		configureMethod( methodSelected, methodid );
+
+	} );
+
+
+	$("#leftpannel").on('click', '.removemethod', function() {
+
+		methodid = $( this ).parent().parent().data( 'method-id');
+		methodSelected = $( this ).parent().parent().data( 'method' );
+
+		IO.writeGlobal("removemethod", { method: methodSelected, methodid: methodid } );
 
 	} );
 
