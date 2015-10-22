@@ -12,6 +12,7 @@ function tpc( smu, npoints, ncycles, nplc , tdelay )
 	smu.source.rangev = 100e-3
 	smu.source.limitv = 100e-3
 	smu.source.levelv = 0;
+	smu.source.limiti = 10e-3
 
   	smu.measure.autorangei = smu.AUTORANGE_ON
 	display.smub.measure.func = display.MEASURE_DCAMPS
@@ -52,7 +53,7 @@ function tpc( smu, npoints, ncycles, nplc , tdelay )
 
 	smu.trigger.initiate()
 	
-	trigInput = digio.trigger[1].wait( 10 );
+	trigInput = digio.trigger[1].wait( 30 );
 
 	if trigInput == true then
 			
@@ -68,11 +69,8 @@ function tpc( smu, npoints, ncycles, nplc , tdelay )
 
 		
 		print("NOTOK");
-		print("keithley:end;");
-
 		exit();		
 		print("keithley:end;");
-
 end
 
 

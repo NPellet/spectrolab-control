@@ -12,34 +12,34 @@ var InstrumentController = require("../../socketinstrumentcontroller");
 
 
 var tpctpvprocess = function( data, options ) {
+console.log( data );
+	var ws = [];
+	data = data.split(/,[\t\r\s\n]*/);
+	var wX = new Waveform();
 
-			var ws = [];
-			data = data.split(/,[\t\r\s\n]*/);
-			var wX = new Waveform();
+	for( var j = 0; j < options.ncycles; j ++ ) {
 
-			for( var j = 0; j < options.ncycles; j ++ ) {
+		var w = new Waveform();
 
-				var w = new Waveform();
+		var dataFinal = [], dataFinalX = [];
+		for( var i = options.npoints * j; i < ( options.npoints * ( j + 1 ) ); i += 2 ) {
+			dataFinal.push( parseFloat( data[ i ] ) );
+			dataFinalX.push( parseFloat( data[ i + 1 ] ) );
+		}
 
-				var dataFinal = [], dataFinalX = [];
-				for( var i = options.npoints * j; i < ( options.npoints * ( j + 1 ) ); i += 2 ) {
-					dataFinal.push( parseFloat( data[ i ] ) );
-					dataFinalX.push( parseFloat( data[ i + 1 ] ) );
-				}
+		w.setData( dataFinal );
 
-				w.setData( dataFinal );
+		if( j == 0 ) {
+			wX.setData( dataFinalX );
+		}
 
-				if( j == 0 ) {
-					wX.setData( dataFinalX );
-				}
+		ws.push( w );
+	}
 
-				ws.push( w );
-			}
-
-			var w = Waveform.average.apply( Waveform, ws );
-			w.setXWave( wX );
-			return w;
-		};
+	var w = Waveform.average.apply( Waveform, ws );
+	w.setXWave( wX );
+	return w;
+};
 
 
 var methods = {

@@ -61,7 +61,7 @@ module.exports = function( config, app ) {
 
 	      var voltagesun = app.getConfig().instruments.PowerSupplyWhiteLED.voltage_sunoutput;
 
-	      for( var lightLevel = voltagesun.length - 1; lightLevel >= 0; lightLevel -- ) {
+	      for( var lightLevel = voltagesun.length - 2; lightLevel >= 0; lightLevel -- ) {
 
 	        PWSWhite.setVoltageLimit( voltagesun[ lightLevel ].voltage );
 			app.getLogger().info("Using bias light intensity: " + voltagesun[ lightLevel ].text );

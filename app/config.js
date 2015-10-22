@@ -145,7 +145,8 @@
 			"name": "PWS - Colored LEDs",
 			"host": "USB0::0x0699::0x0392::C011451::INSTR",
 
-			"minVoltage": 6.6
+			"minVoltage": 6.6,
+			"maxVoltage": 15
 		},
 		"OBIS 420m": {
 			"name": "OBIS Laser 420nm",

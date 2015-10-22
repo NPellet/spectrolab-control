@@ -1,4 +1,8 @@
 {
 
-	"name": "Transient photocurrent (slow)"
+	"name": "Transient photocurrent (slow)",
+
+	"defaults": {
+		"pulsecolor": "red"
+	}
 }

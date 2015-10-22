@@ -12,7 +12,8 @@ function tpv( smu, npoints, ncycles, nplc , tdelay )
 	smu.source.limiti = 100e-9
 	smu.source.leveli = 0;
 	smu.measure.rangev = 2;
-	
+	smu.source.limitv = 2;
+	smu.source.rangev = 2;
 
 	smu.source.offmode = smu.OUTPUT_HIGH_Z
 	--smu.source.offfunc = smu.OUTPUT_DCAMPS
@@ -22,6 +23,12 @@ function tpv( smu, npoints, ncycles, nplc , tdelay )
 	smu.nvbuffer1.appendmode = 1
 	smu.nvbuffer1.collecttimestamps = 1
 	smu.measure.delay = tdelay
+
+	display.clear();
+	display.setcursor(1,1,0)
+	display.settext("TPV in progress...");
+
+
 
 	smu.measure.nplc = nplc
 	smu.trigger.source.stimulus = digio.trigger[1].EVENT_ID
@@ -40,7 +47,7 @@ function tpv( smu, npoints, ncycles, nplc , tdelay )
 	smu.trigger.arm.count = ncycles
 	smu.trigger.initiate()
 	
-	trigInput = digio.trigger[1].wait( 10 );
+	trigInput = digio.trigger[1].wait( 30 );
 
 	if trigInput == true then
 		
@@ -49,10 +56,9 @@ function tpv( smu, npoints, ncycles, nplc , tdelay )
 		print("keithley:end;");
 	else
 		print("NOTOK");
-		print("keithley:end;");
-
 		exit();		
 		print("keithley:end;");
+
 
 end
 end

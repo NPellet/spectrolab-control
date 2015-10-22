@@ -6,7 +6,7 @@ module.exports = {
       title: "Charges",
       path: 'display/graph',
       width: 30,
-      height: 20,
+      height: 15,
       top: 2,
       left: 2
     },
@@ -16,7 +16,7 @@ module.exports = {
       title: "Last charge extraction trace",
       path: 'display/graph',
       width: 30,
-      height: 20,
+      height: 15,
       top: 32,
       left: 2
     }
@@ -25,6 +25,22 @@ module.exports = {
 
   method: function( renderer ) {
     
+    renderer.getModule("graph")
+      .setXScientificTicks( true )
+      .setYScientificTicks( true )
+      .setXUnit( "V" )
+      .setYUnit( "C" )
+      .setYLogScale( true )
+
+
+    renderer.getModule("lastqextr")
+      .setXScientificTicks( true )
+      .setYScientificTicks( true )
+      .setXUnit( "s" )
+      .setYUnit( "V" )
+      .setXLogScale( true )
+
+
   }
 
 };

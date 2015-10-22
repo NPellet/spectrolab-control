@@ -267,10 +267,10 @@ module.exports = function( config, app ) {
 							
 						
 							oscilloscope.getMeasurementUntilStdDev( 3, 10e-9, 20, 15, 1 ).then( function() {
-									oscilloscope.stopAquisition();
-									oscilloscope.getWaves().then( function( w ) {
-										resolver( w[ 1 ] );
-									});
+								oscilloscope.stopAquisition();
+								oscilloscope.getWaves().then( function( w ) {
+									resolver( w[ 1 ] );
+								});
 							});
 
 							break;

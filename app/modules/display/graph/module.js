@@ -70,6 +70,7 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		return this;
 	},
 
+
 	setXLogScale: function( bln ) {
 		this.status.xLogScale = bln;
 		this.out( "setXLogScale", { bln: bln } );
@@ -123,19 +124,11 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 		return this;
 	},
 
-	setXAxisLael: function( label ) {
-		this.status.xAxisLabel = label;
-		this.out( "setXAxisLabel", label );
-		return this;
-	},
-
 	setYAxisLabel: function( label ) {
 		this.status.yAxisLabel = label;
 		this.out( "setYAxisLabel", label );
 		return this;
 	},
-
-
 
 
 	setXAxisLabel: function( label ) {
@@ -152,6 +145,18 @@ GraphDisplay.prototype = extend( GraphDisplay.prototype, {
 	setYScientificTicks: function( bln ) {
 		this.status.yScientificTicks = bln;
 		this.out( "setYScientificTicks", bln );
+		return this;
+	},
+
+	setXUnit: function( unit ) {
+		this.status.xUnit = unit;
+		this.out( "setXUnit", unit );
+		return this;
+	},
+
+	setYUnit: function( unit ) {
+		this.status.yUnit = unit;
+		this.out( "setYUnit", unit );
 		return this;
 	},
 

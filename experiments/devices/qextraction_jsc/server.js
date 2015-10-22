@@ -14,8 +14,8 @@ module.exports = function( config, app ) {
 
 	return new Promise( function( resolver, rejecter ) {
 
-	    app.getLogger().info("Starting charge extraction experiment at 50 Ohm load");
-	
+		app.getLogger().info("Starting charge extraction experiment at 50 Ohm load");
+
 		config.pulsetime = parseFloat( config.pulsetime );
 		config.delaytime = parseFloat( config.delaytime );
 		config.timebase = parseFloat( config.timebase ) * 1e-6;
@@ -27,123 +27,119 @@ module.exports = function( config, app ) {
 
 		arduino.routeLEDToAFG( "white" );
 
-	    var recordLength = 100000;
-	    var yscales = {};
+		var recordLength = 100000;
+		var yscales = {};
 
 
-	    function *QExtr(  ) {
+		function *QExtr(  ) {
 
-	      oscilloscope.setRecordLength( recordLength );
-
-
-	      setup().then( function() {
-	      	QExtr.next();
-	      });
-
-	      yield;
-
-	      app.getLogger().info("Starting charge extraction measurement at jsc ");
-
-	      var lightLevel = 0;
-
-	      var results = {
-	        jscs: [],
-	        charges: [],
-	        lightLevels: [],
-	        currentWaves: [],
-	      };
-
-	      var current, voltage;
-
-	      var voltagesun = app.getConfig().instruments.PowerSupplyWhiteLED.voltage_sunoutput;
-
-        var inityscale = 80e-3;
-        var yscale = inityscale;
-
-	      for( var lightLevel = voltagesun.length - 1; lightLevel >= 0; lightLevel -- ) {
-
-	        PWSWhite.setVoltageLimit( voltagesun[ lightLevel ].voltage );
-			app.getLogger().info("Using bias light intensity: " + voltagesun[ lightLevel ].text );
-
-	        yscales[ lightLevel ] = yscales[ lightLevel ] || yscales[ lightLevel - 1 ] || config.vscale;
-
-	        var breakit = false;
-
-	        oscilloscope.setOffset( 2, 0 );
+			oscilloscope.setRecordLength( recordLength );
 
 
-	        var done = false;
-	        var horizontalscale = config.timebase;
+			setup().then( function() {
+				QExtr.next();
+			});
+
+			yield;
+
+			app.getLogger().info("Starting charge extraction measurement at jsc ");
+
+			var lightLevel = 0;
+
+			var results = {
+				jscs: [],
+				charges: [],
+				lightLevels: [],
+				currentWaves: [],
+			};
+
+			var current, voltage;
+
+			var voltagesun = app.getConfig().instruments.PowerSupplyWhiteLED.voltage_sunoutput;
+
+			var inityscale = 80e-3;
+			var yscale = inityscale;
+
+			for( var lightLevel = voltagesun.length - 2; lightLevel >= 0; lightLevel -- ) {
+
+				PWSWhite.setVoltageLimit( voltagesun[ lightLevel ].voltage );
+				app.getLogger().info("Using bias light intensity: " + voltagesun[ lightLevel ].text );
+
+				yscales[ lightLevel ] = yscales[ lightLevel ] || yscales[ lightLevel - 1 ] || config.vscale;
 
 
-	        var finalCurrent = new Waveform();
-	        var time = false;
+				oscilloscope.setOffset( 2, 0 );
 
-	        while( ! done ) {
+				var done = false;
+				var horizontalscale = config.timebase;
+				var finalCurrent = new Waveform();
+				var time = false;
 
-    		    oscilloscope.setHorizontalScale( Math.round( horizontalscale * Math.pow( 10, 6 ) ) / Math.pow( 10, 6 ) );
+				while( ! done ) {
 
-	   	        app.ready( arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
-	   	        	QExtr.next();
-	   	        });
-	   	        yield;
+					oscilloscope.setHorizontalScale( Math.round( horizontalscale * Math.pow( 10, 6 ) ) / Math.pow( 10, 6 ) );
 
-	   	        app.getLogger().info("Pulsing with horizontale timescale of: " + horizontalscale + "s and vertical scale " + yscale + "V... (Waiting time about " + ( ( config.pulsetime + config.delaytime ) + 1 ) * config.averaging + " s)");
+					app.ready( arduino, afg, oscilloscope, PWSWhite, PWSColor ).then( function() {
+						QExtr.next();
+					});
+					yield;
 
-		        pulse( yscale, config.averaging ).then( function( w ) {
-		          	app.getLogger().info("Pulsing done");
-	                current = w[ 1 ];
-					QExtr.next();
-		        } );
-		        yield;
+					app.getLogger().info("Pulsing with horizontale timescale of: " + horizontalscale + "s and vertical scale " + yscale + "V... (Waiting time about " + ( ( config.pulsetime + config.delaytime ) + 1 ) * config.averaging + " s)");
+
+					pulse( yscale, config.averaging ).then( function( w ) {
+						app.getLogger().info("Pulsing done");
+						current = w[ 1 ];
+						QExtr.next();
+					} );
+					yield;
 
 
-	  	        app.getLogger().info("Pulsing dark... (Waiting time about 10s)");
-		        pulseBlank(  ).then( function( w ) {
-		          current.subtract( w[ 1 ] );
-		          QExtr.next();
-		        });
-		        yield;
+					app.getLogger().info("Pulsing dark... (Waiting time about 10s)");
+					pulseBlank(  ).then( function( w ) {
+						current.subtract( w[ 1 ] );
+						QExtr.next();
+					});
+					yield;
 
-   				var jsc = current.average( recordLength * 0.09, recordLength * 0.1 );
-				var charges = current.integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
+					var jsc = current.average( recordLength * 0.09, recordLength * 0.1 );
+					var charges = current.integrateP( Math.round( 0.1 * recordLength ), recordLength - 1 );
 
-				if( jsc * 3 < yscale * 8 && yscale > 1e-3 ) {
-					yscale /= 2
-					done = false;
-					continue;
-				} else {
-				//	yscale = inityscale;
-					done = true;
+					if( jsc * 3 < yscale * 8 && yscale > 1e-3 ) {
+						yscale /= 2
+						done = false;
+						continue;
+					} else {
+						//	yscale = inityscale;
+						done = true;
+					}
 				}
-	      }
 
-      	
-	    results.jscs.push( jsc );
-	    results.charges.push( charges );
-	    results.lightLevels.push( lightLevel );
-	    results.currentWaves.push( current );
-	    results.lastCurrentWave = current;
-	    
-	    progress( results );
-	  }
 
-	    oscilloscope.disableChannels();
-resolver();
+			results.jscs.push( jsc );
+			results.charges.push( charges );
+			results.lightLevels.push( lightLevel );
+			results.currentWaves.push( current );
+			results.lastCurrentWave = current;
+
+			progress( results );
+		}
+
+		oscilloscope.disableChannels();
+		resolver();
 
 	}
 
 	function pulse( vscale, nb ) {
-		
-	    oscilloscope.setNbAverage( nb );
-	    oscilloscope.clear();
-	    oscilloscope.setTriggerMode("NORMAL");
-	    oscilloscope.stopAfterSequence( true );
-	    oscilloscope.setVerticalScale( 1, vscale );
+
+		oscilloscope.setNbAverage( nb );
+		oscilloscope.clear();
+		oscilloscope.setTriggerMode("NORMAL");
+		oscilloscope.stopAfterSequence( true );
+		oscilloscope.setVerticalScale( 1, vscale );
 
 		PWSWhite.turnOn();
-	    afg.enableChannels( );
-		
+		afg.enableChannels( );
+
 		return app.wait( 1 ).then( function() {
 
 			oscilloscope.clear();
@@ -152,49 +148,49 @@ resolver();
 			return app.wait( 2 ).then( function() {
 				return oscilloscope.whenready( ).then( function() {
 
-				  	afg.disableChannels();
-			    	return oscilloscope.getWaves();
-			  });
+					afg.disableChannels();
+					return oscilloscope.getWaves();
+				});
 			})
 		})
 
-	   
-	  }
+
+	}
 
 
-	  function pulseBlank( nb ) {
+	function pulseBlank( nb ) {
 
 		PWSWhite.turnOff();
 
 		oscilloscope.setTriggerMode("AUTO");
-    	oscilloscope.stopAfterSequence( false );
+		oscilloscope.stopAfterSequence( false );
 		oscilloscope.setNbAverage( 1000 );
 		oscilloscope.clear();
 		oscilloscope.startAquisition();
-		
+
 		return app.wait( 10 ).then( function() {
 			return oscilloscope.getWaves();
 		})
-	  }
+	}
 
-	  function setup() {
+	function setup() {
 
-	   var nbAverage = config.averaging;
-	    var pulsetime = config.pulsetime;
-	    var delaytime = config.delaytime;
-	    var timeBase = config.timebase;
-	    var vscale = config.vscale;
+		var nbAverage = config.averaging;
+		var pulsetime = config.pulsetime;
+		var delaytime = config.delaytime;
+		var timeBase = config.timebase;
+		var vscale = config.vscale;
 
-	    oscilloscope.setTriggerMode("AUTO");
-	    oscilloscope.stopAfterSequence( false );
+		oscilloscope.setTriggerMode("AUTO");
+		oscilloscope.stopAfterSequence( false );
 
 
-	    oscilloscope.disable50Ohms( 2 );
-	    oscilloscope.enable50Ohms( 3 );
-	    oscilloscope.enable50Ohms( 1 );
-	    oscilloscope.disable50Ohms( 4 );
+		oscilloscope.disable50Ohms( 2 );
+		oscilloscope.enable50Ohms( 3 );
+		oscilloscope.enable50Ohms( 1 );
+		oscilloscope.disable50Ohms( 4 );
 
-	    oscilloscope.setHorizontalScale( timeBase );
+		oscilloscope.setHorizontalScale( timeBase );
 	    oscilloscope.setVerticalScale( 1, vscale ); // 200mV over channel 3
 	    oscilloscope.setVerticalScale( 4, 1 ); // 1V over channel 4
 
@@ -260,12 +256,12 @@ resolver();
 
 
 	    return app.ready( arduino, afg, oscilloscope, PWSWhite, PWSColor );
-	  }
+	}
 
 
-	  function progress( arg ) {
+	function progress( arg ) {
 
-  		var itx = app.itx();
+		var itx = app.itx();
 		var qjscs = new Waveform();
 
 		var itxw = itx.newWave( "lightLevels" );
@@ -287,18 +283,18 @@ resolver();
 		renderer.getModule( "graph" ).newScatterSerie( "qvoc", qjscs );
 		renderer.getModule( "lastqextr" ).newSerie( "qextr", arg.lastCurrentWave );
 
- 		var fileName = app.save( "qextr_jsc/", itx.getFile(), "itx" );
+		var fileName = app.save( "qextr_jsc/", itx.getFile(), "itx" );
 
 
-	  }
+	}
 
-	   var QExtr = QExtr();
-	   QExtr.next();
+	var QExtr = QExtr();
+	QExtr.next();
 
 
 
 
 	});
-	
+
 
 };

@@ -6,7 +6,7 @@ module.exports = {
       title: "Transient photocurrent",
       path: 'display/graph',
       width: 30,
-      height: 20,
+      height: 15,
       top: 2,
       left: 2
     },
@@ -15,7 +15,7 @@ module.exports = {
       title: "Transient photocurrent",
       path: 'display/graph',
       width: 30,
-      height: 20,
+      height: 15,
       top: 2,
       left: 2
     }
@@ -24,6 +24,25 @@ module.exports = {
 
   method: function( renderer ) {
     
+    renderer
+      .getModule("tpc")
+      .setYAxisLabel( "Normalized current perturbation")
+      .setYUnit("V")
+      .setXAxisLabel( "Time" )
+      .setXUnit( "s")
+      .setXScientificTicks( true )
+      .setYScientificTicks( true );
+
+
+    renderer
+      .getModule("tpctemp")
+      .setYAxisLabel( "current perturbation")
+      .setYUnit("V")
+      .setXAxisLabel( "Time" )
+      .setXUnit( "s")
+      .setXScientificTicks( true )
+      .setYScientificTicks( true );
+
   }
 
 };

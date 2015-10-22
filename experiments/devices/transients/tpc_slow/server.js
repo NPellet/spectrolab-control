@@ -1,4 +1,6 @@
 var color = require("color");
+var Waveform = require("../../../../app/waveform");
+
 
 module.exports = function( config, app ) {
 
@@ -10,13 +12,15 @@ module.exports = function( config, app ) {
 	var PWSColor = app.getInstrument("PowerSupplyColoredLED");
 
 
-	var nbpoints = 300; // Fixed number of point. Now the question is the delay between every point ?
+	var nbpoints = 500; // Fixed number of point. Now the question is the delay between every point ?
 
 	var perturbationIteration = 0.15;
-	var perturbationValue = PWSColor.getConfig().minVoltage; // 6V initi
-	console.log( config );
+	var perturbationValue = 1; // 6V initi
 
+	var decaytime;
 	var nplc = false;
+	var period = config.pulsewidth * 30;
+	var periodKeithley = config.pulsewidth * 20;
 
 	function calculateNPLC( decaytime, nbpoints ) {
 		// time per point
@@ -25,13 +29,13 @@ module.exports = function( config, app ) {
 
 
 		nplc = Math.round( nplc * 500 ) / 500;
-console.log(nplc);
+
 		if( nplc < 0.001 ) {
 			nplc = 0.001;
 		}
 
-		if( nplc > 0.02 ) {
-			nplc = 0.02;
+		if( nplc > 0.1 ) {
+			nplc = 0.1;
 		}
 
 		return nplc;
@@ -39,14 +43,12 @@ console.log(nplc);
 
 	function nplcFromWave( wave, level ) {
 
-		var decaytime = wave.findLevel( level, {
+		decaytime = wave.findLevel( level, {
 			rounding: 'after',
         	direction: 'ascending',
 			edge: "descending",
 			rangeP: [ 0, wave.getDataLength() - 1 ]
 		} );
-
-		console.log("Found decay time:" + decaytime );
 
 		if( ! decaytime || decaytime > wave.getDataLength() - 1 ) {
 			decaytime = wave.getXFromIndex( wave.getDataLength() - 1 );
@@ -54,8 +56,7 @@ console.log(nplc);
 			decaytime = wave.getXFromIndex( decaytime );
 		}
 		
-		decaytime *= 5; // We want to see 3 times longer than the fittable decay time
-console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
+		decaytime *= 8; // We want to see 3 times longer than the fittable decay time
 
 		return calculateNPLC( Math.min( config.pulsewidth * 16, decaytime ), nbpoints );
 	}
@@ -99,7 +100,7 @@ console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
 		afg.setPulseLeadingTime( config.afgChannel, 9e-9 );
 		afg.setPulseTrailingTime( config.afgChannel, 9e-9 );
 		afg.setPulseDelay( config.afgChannel, 0 );
-		afg.setPulsePeriod( config.afgChannel, config.pulsewidth * 21 ); // Total time is 6x the pulse width
+		afg.setPulsePeriod( config.afgChannel, period ); // Total time is 6x the pulse width
 		afg.setPulseWidth( config.afgChannel, config.pulsewidth );
 		afg.disableChannels( ); // Set the pin LOW
 		afg.getErrors();
@@ -173,8 +174,6 @@ console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
 		function perturbation( skipFirst ) {
 
 			var self = this;
-			var level = 1e-6; // 1mV over 50 Ohm
-			var i = 0;
 			var current = -1;
 
 			return new Promise( function( resolver, rejecter ) {
@@ -183,9 +182,14 @@ console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
 
 				function *perturbator() {
 
-					var perturbed = 0;
-					perturbationValue -= perturbationIteration / 2;
-					PWSColor.setVoltageLimit( perturbationValue );
+					var perturbed = 0,
+						i = 0;
+
+					perturbationValue --;
+					var levelRatio = ( Math.exp( perturbationValue / 35 * 2  ) - 1 ) / ( Math.exp( 2 ) - 1 ); // Between 0 and 1
+
+					var newVoltage = Math.round( ( PWSColor.getConfig().maxVoltage - PWSColor.getConfig().minVoltage ) * levelRatio * 10000 ) / 10000 + PWSColor.getConfig().minVoltage;
+					PWSColor.setVoltageLimit( newVoltage );
 
 					setTimeout( function() {
 						pert.next();
@@ -195,42 +199,40 @@ console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
 					while( true ) {
 
 						if( current != -1 ) {
-							current = Math.max( 1e-7, current < 2e-6 ? current / 20 : current / 10 );
+							current = current < 2e-7 ? current * 0.5 : ( current < 2e-6 ? current / 5 : current / 10 );
 							app.getLogger().info( "Perturbation :" + perturbed + "A. Required:" + current + "A" );
 						}
 						
+						if( perturbed < current && perturbationValue < 35 || current == -1 || perturbed > 1 ) {
+							var levelRatio = ( Math.exp( perturbationValue / 35 * 2  ) - 1 ) / ( Math.exp( 2 ) - 1 ); // Between 0 and 1
+							var newVoltage = Math.round( ( PWSColor.getConfig().maxVoltage - PWSColor.getConfig().minVoltage ) * levelRatio * 10000 ) / 10000 + PWSColor.getConfig().minVoltage;
+							PWSColor.setVoltageLimit( newVoltage );
 
-						if( perturbed < current && perturbationValue < 15 || current == -1 ) {
-
-							PWSColor.setVoltageLimit( perturbationValue );
 							setTimeout( function() {
 								pert.next();
 							}, 1000 );
 							yield;
 							
-
 							if( perturbed > 0 ) {
+								app.getLogger().info( "Perturbation is not strong enough (" + perturbed + "A vs " + current + "A required). Ramping PWS voltage up to " + newVoltage + "V" );
+								perturbationValue ++;
 
-								app.getLogger().info( "Perturbation is not strong enough (" + perturbed + "A vs " + current + "A required). Ramping voltage up to " + ( perturbationValue + perturbationIteration )  );
-								perturbationValue += perturbationIteration;
+							
+
 							}
 
-							//keithley.getErrors();
-
-							//timeperpoint = Math.max( 50e-6, timeperpoint );
 							keithley.tpc( {
 
 								channel: "smub",
 								npoints: nbpoints,
 								ncycles: config.trialaveraging,
-								nplc: calculateNPLC( config.pulsewidth * 10, nbpoints ), // Length is 5 times the pulse width
+								nplc: calculateNPLC( periodKeithley, nbpoints ), // Length is 5 times the pulse width
 								delay: 0
 
 							} ).then( function( w ) {
 
 								current = - w.current;
 								perturbed = Math.abs( w.wave.getMax() - w.wave.getMin() );
-								console.log("PERTURBED: " + perturbed + "; Current: " + current );
 
 								if( isNaN( perturbed ) ) {
 									perturbed = 0;
@@ -252,61 +254,94 @@ console.log( Math.min( config.pulsewidth * 16, decaytime ), decaytime );
 					
 							if( ! nplc ) {
 
-								keithley.tpc( {
-
-									channel: "smub",
-									npoints: nbpoints,
-									ncycles: Math.round( config.averaging / 3 ),
-									nplc: calculateNPLC( config.pulsewidth * 16, nbpoints ),
-									delay: config.pulsewidth
-
-								} ).then( function( w ) {
-
-									w = w.wave;
-									w.divideBy( -1 );
-									w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
-									w.divideBy( w.getMax() );
-								//	w.shiftX( - config.pulsewidth );
-
+								dotpc( Math.round( config.averaging / 3 ), calculateNPLC( config.pulsewidth * 16, nbpoints ) ).then( function( w ) {
+									pert.next();
 									renderer.getModule( "tpctemp" ).newSerie( "tpc_temp", w, { lineColor: 'grey' } );
 									renderer.getModule( "tpctemp" ).autoscale();
-
-									nplc = nplcFromWave( w, 0.1 );
-									pert.next();
-								} );
+								});
 
 								yield;
-
 							}
 
-							keithley.tpc( {
 
-								channel: "smub",
-								npoints: nbpoints,
-								ncycles: config.averaging,
-								nplc: nplc,
-								delay: config.pulsewidth
+							period = config.pulsewidth + Math.max( 1e-1, decaytime * 4 );
+							periodKeithley = config.pulsewidth + Math.max( 1e-1, decaytime * 2 )
 
-							} ).then( function( w ) {
+							afg.setPulsePeriod( config.afgChannel, period ); // Total time is 6x the pulse width
 
-								w = w.wave;
-								w.divideBy( -1 );
-								w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
-								w.divideBy( w.getMax() );
-								nplc = nplcFromWave( w, 0.1 );
-								
+							
+
+							dotpc( config.averaging, nplc ).then( function( w ) {
 								resolver( w );
 							} );
 						}
 
 						yield;
-
 						i++;
 					}
 				}
 
 				var pert = perturbator();
 				pert.next();
+			});
+		}
+
+
+		function dotpc( averaging, nplcToUse ) {
+
+			
+
+			return new Promise( function( resolver, rejecter ) {
+
+				function *tpcgen() {
+
+					var nJsCycles = 1;
+					var ncycles = averaging;
+					if( nbpoints * ncycles > 40000 ) {
+
+						nJsCycles = Math.ceil( ( nbpoints * averaging ) / 40000 );
+						ncycles = Math.ceil( averaging / nJsCycles );
+					} else {
+						ncycles = Math.ceil( averaging );
+					}
+
+					var ws = [];
+					for( var j = 0; j < nJsCycles; j ++ ) {
+
+						keithley.tpc( {
+
+							channel: "smub",
+							npoints: nbpoints,
+							ncycles: ncycles,
+							nplc: nplcToUse,
+							delay: config.pulsewidth
+
+						} ).then( function( w ) {
+
+							renderer.getModule( "tpctemp" ).newSerie( "tpc_temp", w.wave, { lineColor: 'grey' } );
+							renderer.getModule( "tpctemp" ).autoscale();
+
+							ws.push( w.wave );
+							tpcit.next();
+
+						} );
+
+						yield;
+					}
+
+					var w = Waveform.average.apply( Waveform, ws );
+					w.setXWave( ws[ 0 ].getXWave() );
+
+					w.divideBy( -1 );
+					w.subtract( w.getValueAt( w.getDataLength() - 1 ) );
+					w.divideBy( w.getMax() );
+					nplc = nplcFromWave( w, 0.1 );
+					resolver( w );
+				}
+
+				var tpcit = tpcgen();
+				tpcit.next();
+
 			});
 		}
 

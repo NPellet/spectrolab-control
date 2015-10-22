@@ -1,59 +1,37 @@
 <form>
 
+  <div class="form-group">
+    <label for="pulsecolor">Pulse color</label>
+    <select name="pulsecolor" class="form-control">
+       {% for c in config.instruments.arduinoDigio.digital.LEDCard.colornames %}
+        {% assign color = c[0] %}
+        {% assign colorname = c[1] %}
+         <option value="{{color}}" {% if method.defaults.pulsecolor == color %}selected="selected"{% endif %}>{{colorname}}</option>
+       {% endfor %}
+     </select>
+  </div>
 
-<div class="form-group">
-  <label for="pulsecolor">Pulse color</label>
-  <select name="pulsecolor" class="form-control">
-     {% for c in config.instruments.arduinoDigio.digital.LEDCard.colornames %}
-      {% assign colorname = c[1] %}
-       <option value="{{colorname}}">{{colorname}}</option>
-     {% endfor %}
-   </select>
-</div>
+  <div class="form-group">
+    <label for="pulsecolor">AFG Channel</label>
+    <select name="pulsecolor" class="form-control">
+      <option value="A">A</option>
+      <option value="B">B</option>
+    </select>
+  </div>
 
+  <div class="form-group">
+  <label for="averaging">Number of averagings</label>
+      <input type="number" class="form-control" id="averaging" name="averaging" value="200" placeholder="Enter here the number of averagings" />
+  </div>
 
-<div class="form-group">
-  <label for="pulsecolor">AFG Channel</label>
-  <select name="pulsecolor" class="form-control">
-    <option value="A">A</option>
-    <option value="B">B</option>
-  </select>
-</div>
+  <div class="form-group">
+      <label for="trialaveraging">Number of averaging in trial pulses</label>
+      <input type="number" class="form-control" id="trialaveraging" name="trialaveraging" value="2" placeholder="Enter here the number of averaging in trial pulses" />
+  </div>
 
-
-<div class="form-group">
-<label for="averaging">Number of averagings</label>
-    <input type="number" class="form-control" id="averaging" name="averaging" value="200" placeholder="Enter here the number of averagings" />
-</div>
-
-
-
-
-<div class="form-group">
-    <label for="trialaveraging">Number of averaging in trial pulses</label>
-    <input type="number" class="form-control" id="trialaveraging" name="trialaveraging" value="2" placeholder="Enter here the number of averaging in trial pulses" />
-</div>
-
-
-
-
-<div class="form-group">
-    <label for="trialaveraging">Pulse width</label>
-    <input type="number" class="form-control" id="pulsewidth" name="pulsewidth" value="0.01" placeholder="Pulse width in seconds" />
-</div>
-
-
-
-
-<div class="checkbox">
-
-    <label>
-      <input type="checkbox" name="dc" /> DC coupling
-    </label>
-</div>
-
-
-
-
+  <div class="form-group">
+      <label for="trialaveraging">Pulse width</label>
+      <input type="number" class="form-control" id="pulsewidth" name="pulsewidth" value="0.01" placeholder="Pulse width in seconds" />
+  </div>
 
 </form>

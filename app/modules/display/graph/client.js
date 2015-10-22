@@ -27,25 +27,26 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 
 			dblclick: {
 				type: 'plugin',
-				plugin: 'graph.plugin.zoom',
+				plugin: 'zoom',
 				options: {
 					mode: 'total'
 				}
 			},
 
 			plugins: {
-				'graph.plugin.zoom': {
+				'zoom': {
 					zoomMode: 'xy'
 				}
 			},
 
 			pluginAction: {
-				'graph.plugin.zoom': {
+				'zoom': {
 					shift: false,
 					ctrl: false
 				}
 			}
 		} );
+
 
 		g.setSize( dom.width(), dom.height() );
 
@@ -53,7 +54,7 @@ define(  [ 'js/module', 'jsgraph'], function( defaultModule, Graph ) {
 	}
 
 	module.prototype.newSerie = function( data, type ) {
-console.log( data );
+
 		var module = this;
 		var g = this.checkGraph();
 		if( serie = g.getSerie( data.name ) ) {
@@ -65,9 +66,10 @@ console.log( data );
 
 				case 'scatter':
 					serie.setDataError( data.errors );
-					serie.setStyle( data.style );
+				//	serie.setStyle( data.style );
 				break;
 			}
+
 
 		} else {
 
@@ -83,7 +85,7 @@ console.log( data );
 
 					serie.setDataError( data.errors );
 					serie.setErrorStyle( [ 'bar'] );
-					serie.setStyle( data.style );
+					//serie.setStyle( data.style );
 
 					serie.on( "mouseover", function( id ) {
 						module.out("mouseOverPoint", { serieName: data.name, pointId: id } );
@@ -93,8 +95,7 @@ console.log( data );
 			}
 		}
 
-		g.redraw();
-		g.drawSeries();
+		g.draw();
 	}
 
 	module.prototype.in = {
@@ -110,16 +111,16 @@ console.log( data );
 			var g = this.checkGraph();
 
 			g.autoscaleAxes();
-			g.redraw();
-			g.drawSeries();
+			g.draw();
+			
 		},
 
 		forceXScale: function( d ) {
 			var g = this.checkGraph();
 
 			g.getXAxis().zoom( d[ 0 ], d[ 1 ] );
-			g.redraw();
-			g.drawSeries();
+			g.draw();
+			
 		},
 
 		"newSerie": function( data ) {
@@ -189,14 +190,14 @@ console.log( data );
 		"setXScientificTicks": function( bln ) {
 			var g = this.checkGraph();
 
-			g.getXAxis().options.scientificTicks = bln;
+			g.getXAxis().setScientific( bln );
 			return this;
 		},
 
 		"setYScientificTicks": function( bln ) {
 			var g = this.checkGraph();
+			g.getLeftAxis().setScientific( bln );
 
-			g.getYAxis().options.scientificTicks = bln;
 			return this;
 		},
 
@@ -224,8 +225,21 @@ console.log( data );
 		"redraw": function ( data ) {
 
 			var g = this.checkGraph();
-			g.redraw();
-			g.drawSeries();
+			g.draw();
+		},
+
+		"setXUnit": function( unit ) {
+
+			var g = this.checkGraph();
+			g.getBottomAxis().setUnit( unit );
+			g.draw();
+		},
+
+		"setYUnit": function( unit ) {
+
+			var g = this.checkGraph();
+			g.getLeftAxis().setUnit( unit );
+			g.draw();
 		}
 	};
 
@@ -234,9 +248,9 @@ console.log( data );
 		var g = this.checkGraph();
 		var self = this;
 
-		if( status.height ) {
-			g.setHeight( status.height );
-		}
+		
+		g.setHeight( this.getDom().height() - this.getDom().children( 0 ).height() - 50 );
+		
 
 		if( status.xScale ) {
 			g.getXAxis().forceMin( status.xScale[ 0 ] ).forceMax( status.xScale[ 1 ]);
@@ -267,12 +281,27 @@ console.log( data );
 		}
 
 		if( status.xScientificTicks !== undefined ) {
-			g.getXAxis().options.scientificTicks = status.xScientificTicks;
+			g.getXAxis().setScientific( status.xScientificTicks );
 		}
+
+		if( status.yScientificTicks !== undefined ) {
+			g.getYAxis().setScientific( status.yScientificTicks );
+		}
+
+		if( status.xUnit !== undefined ) {
+			g.getXAxis().setUnit( status.xUnit );
+		}
+
+		if( status.yUnit !== undefined ) {
+			g.getYAxis().setUnit( status.yUnit );
+		}
+
+
 
 		if( status.yScientificTicks !== undefined ) {
 			g.getYAxis().options.scientificTicks = status.yScientificTicks;
 		}
+
 
 		if( status.xLogScale ) {
 			g.getXAxis().options.logScale = true;
